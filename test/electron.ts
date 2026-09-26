@@ -52,9 +52,41 @@ export const app = { getPath: () => userData, getVersion: () => 'test' }
 export const ipcMain = {
   handle: (channel: string, fn: Handler) => handlers.set(channel, fn)
 }
-export const dialog = {}
+
+/** Where the next Save dialog "saves" to; `null` means the user cancelled. */
+let savePath: string | null = null
+export function setSavePath(path: string | null): void {
+  savePath = path
+}
+export const dialog = {
+  showSaveDialog: async (options: { defaultPath?: string }) => {
+    dialog.lastDefaultPath = options.defaultPath
+    return savePath ? { canceled: false, filePath: savePath } : { canceled: true, filePath: '' }
+  },
+  lastDefaultPath: undefined as string | undefined
+}
+
 export const session = { defaultSession: { allowNTLMCredentialsForDomains() {} } }
-export const safeStorage = { isEncryptionAvailable: () => false }
+
+/**
+ * DPAPI stand-in. Off by default, as on a machine where Windows will not provide it; a test
+ * turns it on to store a token. The "cipher" is recognisable so a test can prove the clear
+ * token never reaches the file.
+ */
+let encryption = false
+export function setEncryptionAvailable(on: boolean): void {
+  encryption = on
+}
+export const safeStorage = {
+  isEncryptionAvailable: () => encryption,
+  encryptString: (text: string) => Buffer.from(`sealed:${[...text].reverse().join('')}`),
+  decryptString: (cipher: Buffer) => {
+    const text = cipher.toString()
+    if (!text.startsWith('sealed:')) throw new Error('not ours')
+    return [...text.slice('sealed:'.length)].reverse().join('')
+  }
+}
+export { userData }
 export const shell = {}
 export const BrowserWindow = class {}
 export const net = {
