@@ -357,8 +357,9 @@ const SECTIONS: Section[] = [
           <li>Nobody is put over their capacity. What does not fit stays in the backlog.</li>
           <li>Tasks assigned to nobody on the team stay in the backlog.</li>
           <li>
-            <strong>Meetings</strong> (a task titled just "Meeting" or "Meetings") are split into
-            2–5 pieces and spread over the sprint, never on the first day.
+            <strong>Meetings</strong> (a task titled just "Meeting" or "Meetings", or starting with
+            it and a colon, like "Meetings:: Tech talk + Others") are split into 2–5 pieces and
+            spread over the sprint, never on the first day.
           </li>
           <li>
             A <strong>VAL</strong> task starts the hour its DEV task (under the same parent) ends,

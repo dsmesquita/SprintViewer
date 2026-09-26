@@ -4,9 +4,17 @@ import type { Sprint, WorkItem } from '../types'
 
 /** The kinds of task auto-assign treats specially: meetings, and VALs that follow a DEV. */
 
-/** A meeting allowance: the title, once its tag is off, is just "Meeting" or "Meetings". */
+/**
+ * A meeting allowance: a title that is just "Meeting" or "Meetings", or starts with it and a
+ * colon or two — "Meetings:: Tech talk + Others", "Meetings: Tech talk" — with or without a tag
+ * in front. The colon is what makes it a label rather than the first word of something else,
+ * like "Meeting notes".
+ */
 export function isMeeting(item: WorkItem | undefined): boolean {
-  return item !== undefined && /^meetings?$/i.test(untagged(item.title))
+  if (item === undefined) return false
+  return [item.title.trim(), untagged(item.title)].some((title) =>
+    /^meetings?\s*(:{1,2}.*)?$/i.test(title)
+  )
 }
 
 export function isTagged(item: WorkItem, tag: string): boolean {

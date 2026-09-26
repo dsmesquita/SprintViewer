@@ -76,6 +76,16 @@ describe('recognising tasks', () => {
     expect(isMeeting(undefined)).toBe(false)
   })
 
+  it('a meeting is also a task whose title starts with Meeting(s) and a colon', () => {
+    expect(isMeeting(item(1, { title: 'Meetings:: Tech talk + Others' }))).toBe(true)
+    expect(isMeeting(item(1, { title: 'Meetings: Tech talk + Others' }))).toBe(true)
+    expect(isMeeting(item(1, { title: 'meeting : Tech talk' }))).toBe(true)
+    expect(isMeeting(item(1, { title: 'MTG:: Meetings: Tech talk' }))).toBe(true)
+    // A title that merely begins with the word is not one.
+    expect(isMeeting(item(1, { title: 'Meeting notes: sprint review' }))).toBe(false)
+    expect(isMeeting(item(1, { title: 'Meetings room booking' }))).toBe(false)
+  })
+
   it('a VAL is chained only when a DEV sibling exists under the same parent', () => {
     const s = sprint({
       items: [
@@ -137,5 +147,27 @@ describe('meetings over the sprint', () => {
     expect(dates).not.toContain(MON)
     expect(dates).not.toContain(MON2)
     expect(dates.every((d) => d !== undefined && d >= TUE && d <= FRI2)).toBe(true)
+  })
+
+  it('a "Meetings:: Tech talk + Others" task is split like any meeting', () => {
+    const s = sprint({
+      items: [
+        item(1, {
+          title: 'Meetings:: Tech talk + Others',
+          assignedTo: 'Diogo Mesquita',
+          remainingWork: 8
+        })
+      ],
+      backlog: [block('m', 1, 8)]
+    })
+    let n = 0
+    const plan = planAutoAssign(s, MON, { newId: () => `p${++n}` })
+    expect(plan.summary.meetingsSplit).toBe(1)
+    expect(plan.sprint.queues.diogo.map((b) => [b.hours, b.pin?.startHour])).toEqual([
+      [2, 0],
+      [2, 0],
+      [2, 0],
+      [2, 0]
+    ])
   })
 })
