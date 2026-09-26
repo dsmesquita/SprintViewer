@@ -1,4 +1,4 @@
-import { memberMatches } from './assignment'
+import { memberFor } from './assignment'
 import { toISO } from './dates'
 import { isContainerType } from './grouping'
 import { NOTE_CATEGORIES } from './notes'
@@ -292,8 +292,7 @@ function lastDates(layouts: Record<string, MemberLayout>): Map<number, ISODate> 
 }
 
 function assignee(sprint: Sprint, item: WorkItem | undefined): string | undefined {
-  if (!item?.assignedTo) return undefined
-  return sprint.members.find((member) => memberMatches(member, item.assignedTo!))?.id
+  return memberFor(sprint.members, item?.assignedTo)?.id
 }
 
 function isClosed(state: string | undefined): boolean {

@@ -101,6 +101,21 @@ describe('recognising tasks', () => {
     expect(ownerOf(s, s.workItems[2])).toBeNull()
     expect(ownerOf(s, s.workItems[3])).toBeNull()
   })
+
+  it('ownerOf: with two Diogos, a task goes to the right one, or to nobody', () => {
+    const s = sprint({
+      members: [
+        { id: 'm', name: 'Diogo', tfsIdentity: 'Diogo Mesquita', order: 0 },
+        { id: 's', name: 'Diogo S.', tfsIdentity: 'Diogo Silva', order: 1 }
+      ],
+      items: [
+        item(1, { assignedTo: 'Diogo Silva <CMF\\dsilva>' }),
+        item(2, { assignedTo: 'Diogo Santos' })
+      ]
+    })
+    expect(ownerOf(s, s.workItems[1])).toBe('s')
+    expect(ownerOf(s, s.workItems[2])).toBeNull()
+  })
 })
 
 describe('meetings over the sprint', () => {

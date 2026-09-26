@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { memberMatches } from '@shared/assignment'
+import { memberFor } from '@shared/assignment'
 import {
   assigneeFor,
   DEFAULT_TASK_TEMPLATES,
@@ -51,9 +51,7 @@ export default function CreateTasksDialog(): JSX.Element | null {
     : DEFAULT_TASK_TEMPLATES
   // The parent's own assignee is the best first guess for a single task, and only for that:
   // a VAL or QA task is exactly the kind that belongs to someone else.
-  const parentOwner = members.find(
-    (member) => parent?.assignedTo !== undefined && memberMatches(member, parent.assignedTo)
-  )
+  const parentOwner = memberFor(members, parent?.assignedTo)
 
   const [mode, setMode] = useState<Mode>('single')
   const [rows, setRows] = useState<Row[]>(() => [row(baseTitle, parentOwner?.id ?? '')])

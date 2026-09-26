@@ -425,7 +425,9 @@ const SECTIONS: Section[] = [
       <>
         <p>
           The team lives in <strong>Settings → Team</strong>. Each person has a name and, ideally,
-          their TFS identity — that is how tasks are matched to rows.
+          their TFS identity — that is how tasks are matched to rows. A full name always matches; a
+          first or last name alone only when nobody else on the team shares it, so with two Diogos,
+          fill in each one's TFS identity.
         </p>
         <p>
           <strong>Sync with TFS team…</strong> reads a team from TFS and proposes changes:

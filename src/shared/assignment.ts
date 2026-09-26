@@ -40,25 +40,32 @@ function partsOf(value: string): NameParts | null {
 }
 
 /**
- * Whether two names plausibly refer to the same person: the full name, else the first name,
- * else the last name — in that order of confidence, all compared with accents and case
- * stripped, since TFS and the team roster rarely spell them the same way.
+ * The roster member a TFS assignee is — or `undefined` when nobody on the roster is, or there is
+ * no telling which one.
  *
- * Deliberately generous. A false match costs nothing but a missing prompt; a false mismatch
- * would nag on every correct drop, which is how a warning gets ignored.
+ * TFS and the roster rarely spell a name alike, so names are compared with accents, case and
+ * word order set aside, against both the row name and the TFS identity. A full name is the
+ * surest sign, then a first name, then a last name — but a first or last name only counts when
+ * one person alone has it: with two Diogos on the squad, "Diogo Santos" is neither of them.
  */
-export function sameName(a: string, b: string): boolean {
-  const left = partsOf(a)
-  const right = partsOf(b)
-  if (!left || !right) return false
-  return left.full === right.full || left.first === right.first || left.last === right.last
-}
+export function memberFor(members: Member[], assignee: string | undefined): Member | undefined {
+  const wanted = partsOf(assignee ?? '')
+  if (!wanted) return undefined
 
-/** True when the TFS assignee looks like this team member, under any of their known names. */
-export function memberMatches(member: Member, assignee: string): boolean {
-  return [member.name, member.tfsIdentity]
-    .filter((name): name is string => typeof name === 'string' && name.length > 0)
-    .some((name) => sameName(name, assignee))
+  const namesOf = (member: Member): NameParts[] =>
+    [member.name, member.tfsIdentity]
+      .map((name) => (name ? partsOf(name) : null))
+      .filter((parts): parts is NameParts => parts !== null)
+  const sharing = (part: keyof NameParts): Member[] =>
+    members.filter((member) => namesOf(member).some((parts) => parts[part] === wanted[part]))
+
+  const full = sharing('full')
+  if (full.length > 0) return full[0]
+  for (const part of ['first', 'last'] as const) {
+    const found = sharing(part)
+    if (found.length === 1) return found[0]
+  }
+  return undefined
 }
 
 export interface AssignmentMismatch {
@@ -86,7 +93,7 @@ export function checkAssignment(
 
   const assignee = displayName(item.assignedTo)
   if (assignee.length === 0) return null
-  if (memberMatches(member, item.assignedTo ?? '')) return null
+  if (memberFor(sprint.members, item.assignedTo)?.id === member.id) return null
 
   return { assignee, memberName: member.name, workItemId }
 }

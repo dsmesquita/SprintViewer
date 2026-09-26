@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkAssignment, displayName, memberMatches, sameName } from '@shared/assignment'
+import { checkAssignment, displayName, memberFor } from '@shared/assignment'
 import {
   addDays,
   buildSprintDays,
@@ -30,29 +30,44 @@ describe('names and assignment', () => {
     expect(displayName(undefined)).toBe('')
   })
 
-  it('sameName: same person however TFS writes them', () => {
-    expect(sameName('Bruno Sá', 'Sá, Bruno')).toBe(true)
-    expect(sameName('Beatriz Rocha', 'Beatriz Rocha <CMF\\bsrocha>')).toBe(true)
-    expect(sameName('João', 'joao')).toBe(true)
-    expect(sameName('', 'anyone')).toBe(false)
+  it('memberFor: the same person however TFS writes them', () => {
+    const bruno = { id: 'b', name: 'Bruno Sá', order: 0 }
+    const beatriz = { id: 'r', name: 'Beatriz Rocha', order: 1 }
+    const joao = { id: 'j', name: 'João', order: 2 }
+    const roster = [bruno, beatriz, joao]
+    expect(memberFor(roster, 'Sá, Bruno')).toBe(bruno)
+    expect(memberFor(roster, 'Beatriz Rocha <CMF\\bsrocha>')).toBe(beatriz)
+    expect(memberFor(roster, 'joao')).toBe(joao)
+    expect(memberFor(roster, '')).toBeUndefined()
+    expect(memberFor(roster, undefined)).toBeUndefined()
   })
 
-  it('sameName: a shared first or last name alone counts as a match (known looseness)', () => {
-    // Pinned down as it is today: two different people called Diogo are "the same". Worth
-    // tightening if a squad ever has two people sharing a first or last name.
-    expect(sameName('Diogo Mesquita', 'Diogo Silva')).toBe(true)
-    expect(sameName('Ana Silva', 'Rui Silva')).toBe(true)
-    expect(sameName('Ana Lopes', 'Rui Costa')).toBe(false)
+  it('memberFor: the row name or the TFS identity', () => {
+    const bia = { id: 'x', name: 'Bia', tfsIdentity: 'Beatriz Rocha', order: 0 }
+    expect(memberFor([bia], 'Beatriz Rocha')).toBe(bia)
+    expect(memberFor([bia], 'Bia')).toBe(bia)
   })
 
-  it('memberMatches uses the roster name or the TFS identity', () => {
-    expect(
-      memberMatches(
-        { id: 'x', name: 'Bia', tfsIdentity: 'Beatriz Rocha', order: 0 },
-        'Beatriz Rocha'
-      )
-    ).toBe(true)
-    expect(memberMatches(DIOGO, '')).toBe(false)
+  it('memberFor: a first or last name alone counts when one person has it', () => {
+    // A roster of first names, as most squads write it.
+    const diogo = { id: 'd', name: 'Diogo', order: 0 }
+    const ana = { id: 'a', name: 'Ana Silva', order: 1 }
+    expect(memberFor([diogo, ana], 'Diogo Mesquita <CMF\\dmesquita>')).toBe(diogo)
+    expect(memberFor([diogo, ana], 'Maria Silva')).toBe(ana)
+    expect(memberFor([diogo, ana], 'Rui Costa')).toBeUndefined()
+  })
+
+  it('memberFor: with two people sharing a name, only a full match picks one', () => {
+    const mesquita = { id: 'm', name: 'Diogo', tfsIdentity: 'Diogo Mesquita', order: 0 }
+    const silva = { id: 's', name: 'Diogo S.', tfsIdentity: 'Diogo Silva', order: 1 }
+    const roster = [mesquita, silva]
+    expect(memberFor(roster, 'Diogo Silva')).toBe(silva)
+    expect(memberFor(roster, 'Silva, Diogo')).toBe(silva)
+    expect(memberFor(roster, 'Diogo Mesquita')).toBe(mesquita)
+    // Shares the first name with both: neither is guessed.
+    expect(memberFor(roster, 'Diogo Santos')).toBeUndefined()
+    // Ambiguous first name, but only one Silva: the last name settles it.
+    expect(memberFor(roster, 'Diogo A. Silva')).toBe(silva)
   })
 
   it('checkAssignment flags a drop on someone TFS does not name', () => {
@@ -65,6 +80,23 @@ describe('names and assignment', () => {
     expect(checkAssignment(s, 1, 'sofia')).toBeNull()
     expect(checkAssignment(s, 2, 'diogo')).toBeNull() // nobody assigned: nothing to contradict
     expect(checkAssignment(s, 99, 'diogo')).toBeNull()
+  })
+
+  it('checkAssignment asks about a drop on the wrong one of two people sharing a name', () => {
+    const mesquita = { id: 'm', name: 'Diogo', tfsIdentity: 'Diogo Mesquita', order: 0 }
+    const silva = { id: 's', name: 'Diogo S.', tfsIdentity: 'Diogo Silva', order: 1 }
+    const s = sprint({
+      members: [mesquita, silva],
+      items: [item(1, { assignedTo: 'Diogo Silva' }), item(2, { assignedTo: 'Diogo Santos' })]
+    })
+    expect(checkAssignment(s, 1, 's')).toBeNull()
+    expect(checkAssignment(s, 1, 'm')).toMatchObject({
+      assignee: 'Diogo Silva',
+      memberName: 'Diogo'
+    })
+    // Someone off the roster: either row is worth a question.
+    expect(checkAssignment(s, 2, 'm')).not.toBeNull()
+    expect(checkAssignment(s, 2, 's')).not.toBeNull()
   })
 })
 

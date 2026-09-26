@@ -1,4 +1,4 @@
-import { memberMatches } from '../assignment'
+import { memberFor } from '../assignment'
 import { plannedHoursIn } from '../sizing'
 import type { Block, Sprint, WorkItem } from '../types'
 
@@ -58,7 +58,5 @@ export function rank(a: boolean, b: boolean): number {
 
 /** Who on the team this task belongs to, by the name TFS has against it. */
 export function ownerOf(sprint: Sprint, item: WorkItem): string | null {
-  if (!item.assignedTo) return null
-  const member = sprint.members.find((m) => memberMatches(m, item.assignedTo ?? ''))
-  return member ? member.id : null
+  return memberFor(sprint.members, item.assignedTo)?.id ?? null
 }

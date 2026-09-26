@@ -24,9 +24,9 @@ Ideas raised but not asked for, kept so they are not lost:
 Pinned down as they behave today, so the refactor cannot change them by accident. Each is a
 decision for later, not a bug fix slipped in.
 
-- **Name matching is loose.** `sameName` treats two people as the same when they share only a
-  first _or_ a last name ("Diogo Mesquita" and "Diogo Silva"). Fine for a squad with distinct
-  names; wrong for one with two Diogos. See `src/shared/__tests__/people.test.ts`.
+- ~~Name matching was loose~~ — two people sharing a first or last name counted as one.
+  Fixed after 1.3.2: a full name wins, and a first or last name only counts when one person on
+  the roster has it (`memberFor` in `src/shared/assignment.ts`).
 - **A pin on a day that left the sprint keeps its hour.** Pinned at 17:00 on a day no longer
   in the sprint, a block lands at 17:00 on the next sprint day, not at its start.
 - ~~Locking a day split blocks that never reached it~~ — found by the end-to-end drag tests,

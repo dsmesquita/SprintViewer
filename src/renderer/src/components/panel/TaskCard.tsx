@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useDraggable } from '@dnd-kit/core'
-import { displayName, memberMatches } from '@shared/assignment'
+import { displayName, memberFor } from '@shared/assignment'
 import {
   hasCustomHours,
   isReportedOnly,
@@ -38,9 +38,7 @@ export default function TaskCard({
   const isSplit = item !== undefined && block.hours < planned
   const assignee = displayName(item?.assignedTo)
   // Nobody on the squad owns it in TFS — unassigned, or someone from outside the team.
-  const outsider =
-    item !== undefined &&
-    !sprint.members.some((member) => memberMatches(member, item.assignedTo ?? ''))
+  const outsider = item !== undefined && memberFor(sprint.members, item.assignedTo) === undefined
   const done = item ? reportedHours(item) : 0
   const data: DragData = {
     kind: 'block',

@@ -1,4 +1,4 @@
-import { memberMatches } from '../assignment'
+import { memberFor } from '../assignment'
 import { round } from '../math'
 import { reportedHours } from '../sizing'
 import type { ISODate, Segment, Sprint } from '../types'
@@ -64,7 +64,7 @@ export function withReportedHours(
   // without this they would be drawn nowhere at all.
   for (const item of Object.values(sprint.workItems)) {
     if (targets.has(item.id) || reportedHours(item) <= 0) continue
-    const owner = sprint.members.find((member) => memberMatches(member, item.assignedTo ?? ''))
+    const owner = memberFor(sprint.members, item.assignedTo)
     if (owner && layouts[owner.id]) {
       targets.set(item.id, { memberId: owner.id, date: anchor, hour: 0 })
     }
