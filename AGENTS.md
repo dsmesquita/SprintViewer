@@ -73,6 +73,12 @@ owner's call.
 - `e2e/data.ts` has the shared TFS data (a story with DEV and VAL tasks) and `sprintFor(tfs)`, a
   saved sprint of it. Dates follow the real clock, so e2e tests don't assert which day a block
   lands on — the unit tests do that against fixed dates.
+- A fixed date: seed **without** `activeSprintId` and call `launch({ today, open, hourWidth })` —
+  the window loads empty, the clock is set, then the sprint opens and only ever sees that day.
+  `drag.spec.ts` runs on Wednesday 16 Sep 2026 this way.
+- Drags: real mouse down/move/up through dnd-kit (`drag.spec.ts` has `pickUp`, `moveTo`,
+  `release`, `slot`). dnd-kit swallows clicks for 50ms after a drop, so `release` waits before
+  the test clicks again — otherwise a click on the dialog a drop opened silently does nothing.
 - Native things can't be clicked: replace them inside the main process with `app.evaluate`, e.g.
   `dialog.showSaveDialog` (see `files.spec.ts`) or `shell.openExternal` (`window.spec.ts`). Work
   item links go through `shell.openExternal` in the **preload**, which can't be replaced from a

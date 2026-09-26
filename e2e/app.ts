@@ -20,8 +20,9 @@ import { startFakeTfs, type FakeTfs } from './fakeTfs'
  * - `tfs`: a fake TFS server on localhost (`fakeTfs.ts`).
  * - `seed`: writes settings and sprint files into `dataDir` before the app starts.
  * - `launch`: starts the built app (`out/`) on `dataDir`. It can be called again after
- *   `close()` to test what survives a restart. Every window's console errors and uncaught
- *   exceptions are collected, and any of them fails the test.
+ *   `close()` to test what survives a restart; `launch({ today, open })` fixes the date first.
+ *   Every window's console errors and uncaught exceptions are collected, and any of them fails
+ *   the test.
  */
 
 export interface Launched {
@@ -31,6 +32,22 @@ export interface Launched {
   close(): Promise<void>
 }
 
+export interface LaunchOptions {
+  /**
+   * Run the window's clock from 09:00 on this day (`YYYY-MM-DD`) instead of now, so tests that
+   * depend on which day is "today" do not change with the calendar.
+   *
+   * The clock can only be set once the window exists, so the window first loads with no sprint
+   * open (seed without `activeSprintId`); the sprint named by `open` is opened afterwards, and
+   * only ever sees the fixed date.
+   */
+  today?: string
+  /** A seeded sprint's id to open once the clock is set. */
+  open?: string
+  /** The calendar's hour width in pixels (a zoom step from `grid.ts`), set before opening. */
+  hourWidth?: number
+}
+
 /** Stored settings: the public ones, minus what is derived from the token. */
 export type SeedSettings = Partial<Omit<AppSettings, 'hasPat' | 'patHint'>>
 
@@ -38,7 +55,7 @@ interface Fixtures {
   dataDir: string
   tfs: FakeTfs
   seed(data: { settings?: SeedSettings; sprints?: Sprint[] }): Promise<void>
-  launch(): Promise<Launched>
+  launch(options?: LaunchOptions): Promise<Launched>
   /** Console errors and page errors from every window so far. */
   errors: string[]
 }
@@ -88,7 +105,7 @@ export const test = base.extend<Fixtures>({
   launch: async ({ dataDir, errors }, use) => {
     const running: ElectronApplication[] = []
 
-    await use(async () => {
+    await use(async ({ today, open, hourWidth }: LaunchOptions = {}) => {
       const app = await electron.launch({
         args: [MAIN, `--user-data-dir=${dataDir}`],
         // A packaged-like run: no dev server URL, so the built renderer in out/ is loaded.
@@ -110,6 +127,19 @@ export const test = base.extend<Fixtures>({
       const page = await app.firstWindow()
       watch(page)
       await page.waitForLoadState('domcontentloaded')
+
+      if (today || open || hourWidth) {
+        if (today) await page.clock.install({ time: new Date(`${today}T09:00:00`) })
+        await page.evaluate(
+          async ({ open, hourWidth }) => {
+            if (hourWidth) localStorage.setItem('sprint-viewer.hourWidth', String(hourWidth))
+            if (open) await window.api.updateSettings({ activeSprintId: open })
+          },
+          { open, hourWidth }
+        )
+        await page.reload()
+        await page.waitForLoadState('domcontentloaded')
+      }
 
       return {
         app,

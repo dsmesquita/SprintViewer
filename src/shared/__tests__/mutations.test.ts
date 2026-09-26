@@ -195,6 +195,20 @@ describe('locking days', () => {
     expect(locked.backlog).toEqual([block('n1', 1, 4)])
   })
 
+  // Known bug, found by the end-to-end drag tests (see ROADMAP.md): lockDay cuts every block
+  // that runs from one day into the next, wherever the locked day is. `it.fails` passes while
+  // the bug is there; when it is fixed, this test fails — then turn it into a plain `it`.
+  it.fails('a block that does not reach the locked day is left whole', () => {
+    // 12h from Monday: Monday 8h, Tuesday 4h. Locking Thursday touches neither.
+    const s = sprint({
+      items: [item(1, { remainingWork: 12 })],
+      queues: { diogo: [block('a', 1, 12)] }
+    })
+    const locked = lockDay(s, THU, MON, ids())
+    expect(findBlock(locked, 'a')?.block.hours).toBe(12)
+    expect(locked.backlog).toEqual([])
+  })
+
   it('unlockDay removes it', () => {
     expect(unlockDay(lockDay(three(), WED, MON, ids()), WED).lockedDays).toEqual([])
   })
