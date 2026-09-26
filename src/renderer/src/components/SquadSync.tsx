@@ -72,7 +72,9 @@ export default function SquadSync({ url, roster, onApply, onClose }: Props): JSX
     return () => {
       cancelled = true
     }
-    // Loaded once per opening; the URL cannot change while the panel is open.
+    // Loaded once per opening; the URL cannot change while the panel is open, and re-running
+    // on every render (which listing loadMembers would do) would fetch the teams in a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const toggle = (key: string): void =>

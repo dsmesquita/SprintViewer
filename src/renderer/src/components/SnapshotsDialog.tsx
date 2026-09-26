@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { SnapshotMeta } from '@shared/snapshots'
 import { useApp, useSprint } from '../store'
 import Dialog from './Dialog'
@@ -21,13 +21,13 @@ export default function SnapshotsDialog(): JSX.Element {
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
 
-  const reload = async (): Promise<void> => {
+  const reload = useCallback(async (): Promise<void> => {
     if (!window.api) return
     setList(await window.api.listSnapshots(sprint.id))
-  }
+  }, [sprint.id])
   useEffect(() => {
     void reload()
-  }, [sprint.id])
+  }, [reload])
 
   const take = async (): Promise<void> => {
     setBusy(true)
