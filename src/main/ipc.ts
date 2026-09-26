@@ -8,6 +8,7 @@ import type {
 import type { TaskDraft } from '@shared/taskCreation'
 import type { Sprint } from '@shared/types'
 import { exportNotes, exportSnapshot, saveSummary } from './handlers/files'
+import { openInBrowser } from './handlers/links'
 import { startSprint, switchSprint } from './handlers/sprint'
 import {
   createTasks,
@@ -43,6 +44,7 @@ import { sanitiseDrafts, writable } from './validate'
 export function registerIpc(): void {
   ipcMain.handle('app:version', () => app.getVersion())
   ipcMain.handle('app:storagePath', () => storageRoot())
+  ipcMain.handle('app:openExternal', (_event, url: string) => openInBrowser(url))
 
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:update', (_event, patch: WritableSettings) =>

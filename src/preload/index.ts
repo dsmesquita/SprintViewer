@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, shell } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import type { Result } from '@shared/ipc'
 import type {
   AppSettings,
@@ -17,7 +17,8 @@ import type { Sprint, WorkItem } from '@shared/types'
  * is no route that returns a decrypted PAT, no file handle, and no raw `ipcRenderer`.
  */
 const api = {
-  openExternal: (url: string): Promise<void> => shell.openExternal(url),
+  // Opened by the main process, which only lets web addresses through.
+  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:openExternal', url),
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
   getStoragePath: (): Promise<string> => ipcRenderer.invoke('app:storagePath'),
 

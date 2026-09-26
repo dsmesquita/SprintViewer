@@ -45,10 +45,9 @@ Known and accepted for now; each says what closing it would take.
   the row they started on. With the rows memoised, switching back to `WhileDragging` breaks no
   test — including a mid-drag scroll tried on purpose. Keep it (it is harmless); if the old bug
   comes back, reproduce it in `e2e/drag.spec.ts` first.
-- **Clicking a work item link.** Links open through `shell.openExternal` in the preload, which a
-  test cannot replace, so a click would open the real browser. Only the main process's handler
-  for new windows is tested (`e2e/window.spec.ts`). Routing links through an IPC call to main
-  would make them testable.
+- ~~Clicking a work item link~~ — links now open through the main process
+  (`handlers/links.ts`), which only lets `http`/`https` through; clicking one is tested end to
+  end, and so is refusing `file:` and other schemes.
 - **The trusted-certificate setting.** `installCertificatePolicy` in `src/main/index.ts` has no
   test: it needs an HTTPS fake TFS with a certificate Windows does not trust.
 - **Dates in the non-drag end-to-end tests** follow the real clock, so they check what is

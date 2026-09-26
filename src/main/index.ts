@@ -1,5 +1,6 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, session, shell } from 'electron'
+import { app, BrowserWindow, session } from 'electron'
+import { openInBrowser } from './handlers/links'
 import { registerIpc } from './ipc'
 import { primeSettings, trustedHostsSync } from './storage'
 
@@ -32,7 +33,7 @@ function createWindow(): void {
 
   // Work item links open in the real browser, never inside the app.
   window.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url)
+    void openInBrowser(url)
     return { action: 'deny' }
   })
 
@@ -63,7 +64,7 @@ export function openSnapshotWindow(sprintId: string, snapshotId: string): void {
 
   window.once('ready-to-show', () => window.show())
   window.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url)
+    void openInBrowser(url)
     return { action: 'deny' }
   })
 

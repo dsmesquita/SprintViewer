@@ -80,9 +80,9 @@ owner's call.
   `release`, `slot`). dnd-kit swallows clicks for 50ms after a drop, so `release` waits before
   the test clicks again — otherwise a click on the dialog a drop opened silently does nothing.
 - Native things can't be clicked: replace them inside the main process with `app.evaluate`, e.g.
-  `dialog.showSaveDialog` (see `files.spec.ts`) or `shell.openExternal` (`window.spec.ts`). Work
-  item links go through `shell.openExternal` in the **preload**, which can't be replaced from a
-  test — clicking one would open the real browser, so no spec does.
+  `dialog.showSaveDialog` (see `files.spec.ts`) or `shell.openExternal` (`stubBrowser` in
+  `window.spec.ts`). Every link goes through main (`handlers/links.ts`), so stubbing it there
+  catches them all.
 - Seed `authMode: 'windows'` to talk to the fake TFS without a token.
 - Use e2e for what needs the real window: real pointer drags, the preload bridge, files on disk,
   several windows. Everything else belongs in the Vitest suites, which are much faster.
@@ -94,7 +94,8 @@ src/main/            Electron main process
   index.ts             windows (main + read-only snapshot windows)
   ipc.ts               every ipcMain.handle route, one line each
   handlers/            what the routes do: tfs.ts (client with the user's credentials, fetch,
-                       teams, createTasks), sprint.ts (start, switch), files.ts (Save dialogs)
+                       teams, createTasks), sprint.ts (start, switch), files.ts (Save dialogs),
+                       links.ts (the only way a link is opened: web addresses only)
   validate.ts          checking what the renderer sends (settings patches, task drafts)
   result.ts            guard(): failures become a Result with a message for the user
   storage.ts           JSON files on disk, settings + sealed PAT, snapshots, the auto baseline

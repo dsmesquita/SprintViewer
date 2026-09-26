@@ -87,7 +87,13 @@ export const safeStorage = {
   }
 }
 export { userData }
-export const shell = {}
+/** Links "opened in the browser", in order. */
+export const opened: string[] = []
+export const shell = {
+  openExternal: async (url: string) => {
+    opened.push(url)
+  }
+}
 export const BrowserWindow = class {}
 export const net = {
   fetch: async (url: string, init: RequestInit = {}): Promise<Response> => {

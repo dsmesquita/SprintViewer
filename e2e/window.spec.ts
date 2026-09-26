@@ -1,5 +1,6 @@
+import type { ElectronApplication } from '@playwright/test'
 import { expect, test } from './app'
-import { settingsFor, sprintFor } from './data'
+import { settingsFor, sprintFor, VAL } from './data'
 
 /** The windows themselves: what opens, what the page can reach, and what it cannot. */
 
@@ -58,11 +59,11 @@ test('the page gets window.api and nothing else from Node or Electron', async ({
   })
 })
 
-test('a link that asks for a new window opens in the browser, never in the app', async ({
-  launch
-}) => {
-  const { app, page } = await launch()
-  // Stand in for the real browser, so the test does not open one.
+/**
+ * Stands in for the real browser inside the main process, so a test can open links without
+ * opening one. Returns a reader for what was "opened".
+ */
+async function stubBrowser(app: ElectronApplication): Promise<() => Promise<string[]>> {
   await app.evaluate(({ shell }) => {
     const opened: string[] = []
     ;(globalThis as { opened?: string[] }).opened = opened
@@ -70,14 +71,50 @@ test('a link that asks for a new window opens in the browser, never in the app',
       opened.push(url)
     }
   })
+  return () => app.evaluate(() => (globalThis as { opened?: string[] }).opened ?? [])
+}
+
+test('a work item link opens in the browser', async ({ launch, seed, tfs }) => {
+  const sprint = sprintFor(tfs)
+  await seed({ settings: { ...settingsFor(tfs), activeSprintId: sprint.id }, sprints: [sprint] })
+  const { app, page } = await launch()
+  const opened = await stubBrowser(app)
+
+  await page
+    .locator('.task-card', { hasText: 'VAL:: Export service' })
+    .locator('.task-link')
+    .click()
+  await expect.poll(opened).toEqual([sprint.workItems[VAL].url])
+  expect(app.windows()).toHaveLength(1)
+})
+
+test('a link that asks for a new window opens in the browser, never in the app', async ({
+  launch
+}) => {
+  const { app, page } = await launch()
+  const opened = await stubBrowser(app)
 
   await page.evaluate(() => window.open('https://tfs.example/tfs/Coll/Proj/_workitems/edit/7'))
 
-  await expect
-    .poll(() => app.evaluate(() => (globalThis as { opened?: string[] }).opened))
-    .toEqual(['https://tfs.example/tfs/Coll/Proj/_workitems/edit/7'])
+  await expect.poll(opened).toEqual(['https://tfs.example/tfs/Coll/Proj/_workitems/edit/7'])
   expect(app.windows()).toHaveLength(1)
   await expect(page).toHaveURL(/index\.html$/)
+})
+
+test('only web addresses are opened: files and other schemes are refused', async ({ launch }) => {
+  const { app, page } = await launch()
+  const opened = await stubBrowser(app)
+
+  await page.evaluate(async () => {
+    await window.api.openExternal('file:///C:/Windows/System32/calc.exe')
+    await window.api.openExternal('ms-settings:privacy')
+    window.open('file:///C:/Windows/System32/calc.exe')
+    // A web link last: once it is through, anything refused before it has been handled too.
+    await window.api.openExternal('https://tfs.example/ok')
+  })
+
+  await expect.poll(opened).toEqual(['https://tfs.example/ok'])
+  expect(app.windows()).toHaveLength(1)
 })
 
 test('a snapshot opens in its own read-only window, beside the board', async ({

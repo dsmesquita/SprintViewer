@@ -7,6 +7,7 @@ import {
   dialog,
   invoke,
   json,
+  opened,
   requests,
   setSavePath,
   setServer,
@@ -302,5 +303,34 @@ describe('tfs:test', () => {
       ok: false,
       message: expect.stringMatching(/valid URL/)
     })
+  })
+})
+
+describe('app:openExternal opens web addresses only', () => {
+  it('passes http and https links to the browser', async () => {
+    opened.length = 0
+    await invoke('app:openExternal', 'https://tfs.example/tfs/Coll/Proj/_workitems/edit/7')
+    await invoke('app:openExternal', 'http://tfs.example/tfs/Coll/Proj/_workitems/edit/8')
+    expect(opened).toEqual([
+      'https://tfs.example/tfs/Coll/Proj/_workitems/edit/7',
+      'http://tfs.example/tfs/Coll/Proj/_workitems/edit/8'
+    ])
+  })
+
+  it('refuses anything else, quietly', async () => {
+    opened.length = 0
+    for (const url of [
+      'file:///C:/Windows/System32/calc.exe',
+      'javascript:alert(1)',
+      'ms-settings:privacy',
+      '\\\\server\\share',
+      'not a url',
+      '',
+      42,
+      undefined
+    ]) {
+      await expect(invoke('app:openExternal', url)).resolves.toBeUndefined()
+    }
+    expect(opened).toEqual([])
   })
 })
