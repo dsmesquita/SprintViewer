@@ -18,21 +18,38 @@ User-facing documentation lives **in the app**: `src/renderer/src/components/Hel
 
 ## Commands
 
-| Command             | What it does                                                                                                                                                                                                                                                    |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm install`       | Dependencies (Node 18+)                                                                                                                                                                                                                                         |
-| `npm run dev`       | The real Electron app with hot reload                                                                                                                                                                                                                           |
-| `npm run dev:web`   | Renderer only, in a browser at **http://localhost:5178** (`.claude/launch.json` → `sprint-viewer-web`). `window.api` is absent, so anything that needs TFS or disk is inert — click **Load sample data** to get a full mid-sprint board (`src/shared/mock.ts`). |
-| `npm run typecheck` | `tsc` over both projects (`tsconfig.node.json`, `tsconfig.web.json`)                                                                                                                                                                                            |
-| `npm run build`     | typecheck + `electron-vite build` into `out/`                                                                                                                                                                                                                   |
-| `npm run dist`      | build + `electron-builder --win` → `release/Sprint Viewer <version> Setup.exe` (unsigned; SmartScreen warns)                                                                                                                                                    |
+- `npm install` — dependencies (Node 18+).
+- `npm run dev` — the real Electron app, with hot reload.
+- `npm run dev:web` — renderer only, in a browser at **http://localhost:5178**
+  (`.claude/launch.json` → `sprint-viewer-web`). `window.api` is absent, so anything that needs
+  TFS or disk is inert; click **Load sample data** for a full mid-sprint board
+  (`src/shared/mock.ts`).
+- `npm test` — all tests once (Vitest). `npm run test:watch` while working;
+  `npm run coverage` writes `coverage/index.html`.
+- `npm run lint` / `npm run format` (Prettier, writes) / `npm run format:check`.
+- `npm run typecheck` — `tsc` over the main, renderer and test projects.
+- **`npm run check`** — typecheck + lint + format check + tests. **Must be green before every
+  commit.**
+- `npm run build` — typecheck + `electron-vite build` into `out/`.
+- `npm run dist` — `check`, build, then `electron-builder --win` →
+  `release/Sprint Viewer <version> Setup.exe` (unsigned; SmartScreen warns).
 
-A release is: bump `version` in `package.json`, `npm run dist`. Version bumps are the owner's call.
+A release is: bump `version` in `package.json`, then `npm run dist`. Version bumps are the
+owner's call.
 
-> **Tests.** An automated suite exists (≈230 checks) but is being moved into the repo as Vitest
-> (`npm test`, `npm run check`) — see the refactor plan below. Until those scripts exist,
-> `npm run typecheck` plus a `dev:web` check is the bar. Once they exist: **`npm run check` must
-> be green before every commit.**
+## Tests
+
+- They live next to the code: `src/shared/__tests__/`, `src/main/__tests__/`, and later
+  `src/renderer/src/**/__tests__/` (`*.test.tsx` runs in jsdom; everything else in Node).
+- Electron is never loaded. `test/setup.ts` swaps it for `test/electron.ts`: a temp
+  `userData` folder, captured IPC `handlers` (call a route with `invoke(channel, ...args)`),
+  and a fake TFS server (`setServer((request) => json(200, {...}))`, requests recorded in
+  `requests`). Import those helpers from `test/electron`, not from `'electron'`.
+- Two styles. Standalone behaviour: plain `describe` / `it` / `expect`. Long step-by-step
+  scenarios (refresh on Wednesday, then Thursday…): `checklist()` from `test/checklist.ts` —
+  `check(name, ok, detail)` at each step, `report()` at the end turns each into a test. The
+  suites that predate the runner use this form; don't rewrite their assertions.
+- `test/**` and `__tests__` may use `any` for fake TFS JSON; nothing else may.
 
 ## Map
 
@@ -107,6 +124,9 @@ src/renderer/src/  React UI
   in `ipc.ts`, a method in `src/preload/index.ts`, and input sanitising in main.
 - Never add a second TFS write path without the owner asking for it.
 - Every behaviour change comes with a test; every user-visible one with a Read me update.
+- Formatting is Prettier's (`npm run format`); lint is ESLint. ESLint also enforces the
+  layering — `src/shared` importing React/Electron/Node, or the renderer importing Electron,
+  is an error.
 - Match the house style: TypeScript strict, no semicolons, single quotes, 2-space indent,
   ~100 columns. Comments explain **why**, in plain sentences; don't narrate the code.
 - Colours come from CSS tokens on `:root` (with dark-mode values) — no hard-coded colours.
@@ -129,14 +149,15 @@ src/renderer/src/  React UI
 
 ## Verifying a change
 
-1. `npm run typecheck` (and `npm run check` once it exists).
+1. `npm run check`.
 2. UI: `npm run dev:web` → **Load sample data** → exercise the change → no console errors.
 3. Anything behind `window.api` (TFS, files, snapshots windows): `npm run dev`.
 
 ## Planned refactor
 
-A behaviour-preserving cleanup is planned: tests into the repo (Vitest + Testing Library),
-ESLint/Prettier, then splitting `scheduling.ts`, `autoAssign.ts`, `App.tsx`, `SidePanel.tsx`,
-`store.ts` and `styles.css` into folders, de-duplicating helpers (`round`/`clamp`, block-list
-helpers), and retiring the legacy `history` drawing path. If the folders above have already
-moved, trust the tree over this file — and fix this file.
+A behaviour-preserving cleanup is under way. Done: git, Vitest with the old suites, ESLint +
+Prettier. Next: tests for everything not yet covered (logic, main process, store, components),
+then splitting `scheduling.ts`, `autoAssign.ts`, `App.tsx`, `SidePanel.tsx`, `store.ts` and
+`styles.css` into folders, de-duplicating helpers (`round`/`clamp`, block-list helpers), and
+retiring the legacy `history` drawing path. If the folders above have already moved, trust the
+tree over this file — and fix this file.
