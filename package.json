@@ -10,10 +10,13 @@
     "dev:web": "vite --config vite.web.config.ts",
     "build": "npm run typecheck && electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.test.json",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
-    "check": "npm run typecheck && npm test",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
     "preview": "electron-vite preview",
     "dist": "npm run check && electron-vite build && electron-builder --win"
   },
@@ -24,6 +27,7 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
@@ -36,10 +40,16 @@
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
     "electron-vite": "^2.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^15.15.0",
     "jsdom": "^25.0.1",
+    "prettier": "^3.9.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "typescript": "^5.6.3",
+    "typescript-eslint": "^8.70.1",
     "vite": "^5.4.11",
     "vitest": "^2.1.9"
   }
