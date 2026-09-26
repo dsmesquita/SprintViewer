@@ -1,0 +1,496 @@
+/* ---------- forms, dialogs, menus ---------- */
+
+input[type='text'],
+input[type='password'],
+input[type='url'],
+input[type='date'],
+input[type='number'],
+select,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 5px 8px;
+  width: 100%;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button.primary:hover {
+  filter: brightness(1.08);
+  background: var(--accent);
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.field > label {
+  display: block;
+  color: var(--text-2);
+  margin-bottom: 4px;
+}
+
+.hint,
+.field .hint {
+  color: var(--text-3);
+  font-size: 11.5px;
+  margin-top: 4px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 24px;
+}
+
+.dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  width: 560px;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dialog-head h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+}
+
+.dialog-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+}
+
+.dialog-foot {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.dialog-foot .spacer {
+  flex: 1;
+}
+
+.message {
+  border-radius: var(--radius);
+  padding: 7px 9px;
+  margin-bottom: 10px;
+}
+
+.message.is-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.message.is-ok {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.roster-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.roster-row .handle {
+  color: var(--text-3);
+  width: 18px;
+  text-align: center;
+  flex: none;
+}
+
+.context-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 190px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 4px;
+}
+
+.context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 8px;
+}
+
+.context-menu .menu-label {
+  padding: 4px 8px 6px;
+  color: var(--text-3);
+  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-2);
+  text-align: center;
+}
+
+.empty-state h1 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.empty-state .actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.sample-banner {
+  background: var(--accent-bg);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.group {
+  margin-bottom: 12px;
+}
+
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 5px;
+  padding: 3px 4px;
+  font-weight: 500;
+}
+
+.group-caret {
+  flex: none;
+  color: var(--text-3);
+  font-size: 10px;
+  transition: transform 120ms ease;
+}
+
+.group-caret.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.group-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.group-meta {
+  flex: none;
+  font-size: 11px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.group-sub {
+  font-size: 11px;
+  color: var(--text-3);
+  margin: 0 0 6px 20px;
+}
+
+.group .task-card {
+  margin-left: 12px;
+}
+
+.search-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.search-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 8px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day-off-pill {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 7px;
+  margin: 0 4px 4px 0;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+
+/* Tag filter chips above the backlog. A chip that is switched off stays legible rather than
+   fading out — it is still a control, and you need to read it to switch it back on. */
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tag-chip {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text-1);
+  cursor: pointer;
+}
+
+.tag-chip:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.tag-chip.is-off {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text-2);
+  text-decoration: line-through;
+}
+
+.tag-count {
+  opacity: 0.7;
+  font-weight: 500;
+}
+
+/* The TFS assignee on a backlog card. Quiet: it is context for the drop, not the heading. */
+.task-assignee {
+  color: var(--text-2);
+}
+
+/*
+ * Hours reported in TFS, drawn before today. Hatched because they are a record rather than a
+ * plan — but a draggable one: where they sit says when the work was done, and only the user
+ * knows that.
+ */
+.seg.is-done {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgb(0 0 0 / 0.06) 0 5px,
+    transparent 5px 10px
+  );
+  opacity: 0.72;
+}
+
+/* The provisional landing spot while a task is being dragged. */
+.seg.is-preview {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+  opacity: 0.9;
+  z-index: 2;
+}
+
+.group-empty {
+  margin: 2px 0 6px;
+  padding-left: 18px;
+  font-size: 11.5px;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+.fold-all {
+  flex: none;
+  padding: 2px 6px;
+  color: var(--text-3);
+  display: inline-flex;
+  align-items: center;
+}
+
+.fold-all:hover {
+  color: var(--text-1);
+}
+
+/* A dialog that offers several ways forward rather than a yes and a no. */
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.choice:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.choice.is-primary {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.choice-label {
+  font-weight: 600;
+}
+
+.choice-detail {
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
+/* What auto-assign is leaving behind, and why. */
+.left-behind {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+
+.left-behind li {
+  margin-bottom: 3px;
+}
+
+/* A warning in the toolbar that opens onto its own explanation. */
+.warn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+}
+
+.warn-pill:hover {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.conflict {
+  margin-bottom: 10px;
+}
+
+.conflict-head {
+  margin-bottom: 3px;
+}
+
+.conflict-bad {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+/* A task whose hours were set by hand rather than read from TFS. */
+.manual-mark {
+  color: var(--accent);
+  font-weight: 700;
+  cursor: help;
+}
+
+/* One of several mutually exclusive answers, the chosen one filled in. */
+.choice-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-1);
+  cursor: pointer;
+}
+
+.choice-pill.is-on {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  font-weight: 600;
+}
+
+.choice-pill input {
+  width: 58px;
+  padding: 1px 4px;
+  font-size: 12px;
+}

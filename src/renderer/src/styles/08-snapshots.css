@@ -1,0 +1,74 @@
+/* ---------- snapshots ---------- */
+
+.snapshot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 0;
+  border-top: 1px solid var(--border);
+}
+
+.snapshot-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A snapshot window is a record, so nothing in its grid invites a drag. */
+.snapshot-grid {
+  display: contents;
+}
+
+.snapshot-grid .seg {
+  cursor: default;
+}
+
+/* Called out only while the differences toggle is on. */
+.seg.is-changed {
+  outline: 2px solid var(--danger);
+  outline-offset: -2px;
+  z-index: 2;
+}
+
+.change {
+  padding: 7px 0;
+  border-top: 1px solid var(--border);
+}
+
+.change-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+.change-title {
+  font-size: 12.5px;
+}
+
+.change-tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+
+.change-tag.is-gone,
+.change-tag.is-shrank {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.change-tag.is-added,
+.change-tag.is-grew,
+.change-tag.is-slipped {
+  color: var(--accent);
+  border-color: var(--accent);
+}

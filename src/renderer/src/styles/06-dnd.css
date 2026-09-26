@@ -1,0 +1,34 @@
+/* ---------- drag and drop ---------- */
+
+.seg.is-draggable,
+.task-card.is-draggable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.seg.is-dragging,
+.task-card.is-dragging {
+  opacity: 0.3;
+}
+
+.row-track.is-over {
+  background: var(--accent-bg);
+}
+
+.backlog-drop {
+  min-height: 100%;
+  border-radius: var(--radius);
+}
+
+.backlog-drop.is-over {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+}
+
+.drag-ghost {
+  position: static;
+  height: 26px;
+  min-width: 88px;
+  box-shadow: var(--shadow);
+  cursor: grabbing;
+}

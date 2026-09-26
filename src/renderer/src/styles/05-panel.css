@@ -1,0 +1,348 @@
+/* ---------- side panel ---------- */
+
+.panel {
+  flex: none;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.panel.is-collapsed {
+  width: 44px;
+}
+
+.panel-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-tabs {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tab {
+  border: none;
+  border-radius: 6px;
+  padding: 4px 9px;
+  color: var(--text-2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.tab.is-active {
+  background: var(--surface-3);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.tab:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px;
+}
+
+.panel-collapsed-label {
+  writing-mode: vertical-rl;
+  padding: 12px 0;
+  color: var(--text-2);
+  font-size: 12px;
+  text-align: center;
+}
+
+.task-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 9px;
+  margin-bottom: 7px;
+  background: var(--surface-2);
+}
+
+.task-card:hover {
+  border-color: var(--border-strong);
+}
+
+/* Nobody on the squad owns it in TFS: something to sort out before it can be planned. */
+.task-card.is-outsider {
+  background: var(--outsider-bg);
+  border-color: var(--outsider-border);
+}
+
+.task-card .task-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-link {
+  color: var(--accent);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.task-link:hover {
+  text-decoration: underline;
+  background: none;
+}
+
+.task-card .task-type {
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-left: auto;
+}
+
+.task-card .task-title {
+  margin: 1px 0 3px;
+}
+
+.task-card .task-meta {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.task-time-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 0;
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border);
+}
+
+.time-row {
+  display: contents;
+}
+
+.time-row .time-label {
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.time-row .time-value {
+  font-size: 10.5px;
+  color: var(--text-2);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.time-row.is-active .time-label,
+.time-row.is-active .time-value {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* F5 — Lock a day */
+.day-head .day-lock {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: var(--text-3);
+  opacity: 0;
+  cursor: pointer;
+  transition:
+    opacity 0.1s,
+    color 0.1s;
+}
+.day-head:hover .day-lock {
+  opacity: 1;
+}
+.day-head .day-lock.is-locked {
+  opacity: 1;
+  color: var(--danger, #e45c4a);
+}
+.day-head .day-lock:hover {
+  color: var(--text-1);
+  background: var(--surface-2, rgba(0, 0, 0, 0.07));
+}
+.day-head {
+  position: relative;
+}
+.day-head.is-locked {
+  background: color-mix(in srgb, var(--danger, #e45c4a) 8%, transparent);
+}
+.seg.is-day-locked {
+  outline: 1.5px solid color-mix(in srgb, var(--danger, #e45c4a) 40%, transparent);
+  outline-offset: -1px;
+}
+
+/* F7 — Export notes */
+/* (button uses existing toolbar styles, no extra CSS needed) */
+
+/* F8 — Sprint menu */
+.sprint-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  min-width: 220px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px;
+  margin-top: 4px;
+}
+.sprint-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 7px 10px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-1);
+}
+.sprint-menu-item:hover {
+  background: var(--surface-2, rgba(0, 0, 0, 0.05));
+}
+.sprint-menu-item.is-active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+.sprint-menu-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+.sprint-menu-date {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* F4 — Split in N parts */
+.parts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.empty {
+  color: var(--text-3);
+  text-align: center;
+  padding: 24px 8px;
+}
+
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+  margin: 4px 0 8px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+.stat-row .k {
+  color: var(--text-2);
+}
+
+.stat-row .v {
+  font-variant-numeric: tabular-nums;
+}
+
+/* A figure that is real but not on anybody's calendar yet, e.g. a part still in the backlog. */
+.stat-row .v.is-muted {
+  color: var(--text-3);
+}
+
+.stat-row .v.is-danger {
+  color: var(--danger);
+  font-weight: 500;
+}
+
+.note {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 9px;
+  margin-bottom: 7px;
+  background: var(--surface-2);
+}
+
+.note .note-text {
+  white-space: pre-wrap;
+}
+
+.note .note-tasks,
+.note-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.chip {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button:disabled:hover {
+  background: transparent;
+}
+
+.seg.is-highlighted,
+.task-card.is-highlighted {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/*
+ * The block the Task panel is describing. Heavier than the hover highlight above, and it
+ * stays: hovering is a passing glance, clicking is a question the panel is answering.
+ */
+.seg.is-selected {
+  outline: 2px solid var(--text);
+  outline-offset: -1px;
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}

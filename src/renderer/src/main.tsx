@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 import SnapshotView from './SnapshotView'
-import './styles.css'
+import './styles/index.css'
 
 /**
  * One bundle, two windows. A `?snapshot=` in the address means this window is a read-only

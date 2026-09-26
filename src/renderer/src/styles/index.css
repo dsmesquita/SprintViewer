@@ -1,0 +1,19 @@
+/*
+ * All of the app's styles, in the order they cascade. Each file is one contiguous stretch of
+ * what was a single stylesheet, kept in the same order so no rule changes which one wins.
+ * Add a rule to the file for its area; a rule that must beat another goes after it.
+ */
+@import './00-tokens.css';
+@import './01-base.css';
+@import './02-shell.css';
+@import './03-calendar.css';
+@import './04-blocks.css';
+@import './05-panel.css';
+@import './06-dnd.css';
+@import './07-dialogs.css';
+@import './08-snapshots.css';
+@import './09-create-tasks.css';
+@import './10-settings.css';
+@import './11-notes.css';
+@import './12-help.css';
+@import './13-later-additions.css';

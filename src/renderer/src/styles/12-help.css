@@ -1,0 +1,118 @@
+/* ---------- read me ---------- */
+
+.dialog.is-wide {
+  width: min(920px, calc(100vw - 32px));
+  max-width: none;
+}
+
+.help {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 18px;
+  min-height: min(520px, 60vh);
+}
+
+.help-toc {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-right: 1px solid var(--border);
+  padding-right: 10px;
+}
+
+.help-toc-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--text-2);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.help-toc-item:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.help-toc-item.is-on {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.help-toc-num {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+  min-width: 14px;
+  font-size: 11px;
+}
+
+.help-body {
+  font-size: 13.5px;
+  line-height: 1.55;
+  max-width: 64ch;
+}
+
+.help-body h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.help-body h4 {
+  margin: 16px 0 4px;
+  font-size: 13.5px;
+}
+
+.help-body p {
+  margin: 0 0 10px;
+}
+
+.help-body ul,
+.help-body ol {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.help-body li {
+  margin-bottom: 4px;
+}
+
+.help-body code,
+.help-body kbd {
+  font-family: 'Cascadia Mono', Consolas, monospace;
+  font-size: 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.help-body kbd {
+  border-bottom-width: 2px;
+}
+
+.help-swatch.is-outsider {
+  background: var(--outsider-bg);
+  border: 1px solid var(--outsider-border);
+  border-radius: 4px;
+  padding: 0 5px;
+}
+
+@media (max-width: 640px) {
+  .help {
+    grid-template-columns: 1fr;
+  }
+
+  .help-toc {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0 0 8px;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
