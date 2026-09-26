@@ -65,7 +65,10 @@ export function rosterName(display: string): string {
 
 /** The account inside an identity, `DOMAIN\user` from `Name <DOMAIN\user>`. */
 function accountOf(identity: string | undefined): string | undefined {
-  return identity?.match(/<([^>]+)>\s*$/)?.[1]?.trim().toLowerCase()
+  return identity
+    ?.match(/<([^>]+)>\s*$/)?.[1]
+    ?.trim()
+    .toLowerCase()
 }
 
 function tokens(value: string): string[] {
@@ -183,7 +186,12 @@ export function planSquadSync(roster: Member[], people: TfsPerson[]): SyncRow[] 
 export function defaultChoices(rows: SyncRow[]): Set<string> {
   return new Set(
     rows
-      .filter((row) => row.kind === 'link' || row.kind === 'keep' || (row.kind === 'add' && row.maybe.length === 0))
+      .filter(
+        (row) =>
+          row.kind === 'link' ||
+          row.kind === 'keep' ||
+          (row.kind === 'add' && row.maybe.length === 0)
+      )
       .map((row) => row.key)
   )
 }

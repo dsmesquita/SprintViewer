@@ -360,11 +360,7 @@ button:focus-visible {
   position: absolute;
   top: 0;
   bottom: 0;
-  background-image: repeating-linear-gradient(
-    135deg,
-    var(--off-stripe) 0 4px,
-    transparent 4px 8px
-  );
+  background-image: repeating-linear-gradient(135deg, var(--off-stripe) 0 4px, transparent 4px 8px);
 }
 
 .today-marker {
@@ -434,24 +430,88 @@ button:focus-visible {
   border-bottom-right-radius: 2px;
 }
 
-.tone-0 { background: #e6f1fb; color: #0c447c; border-color: #c8dff5; }
-.tone-1 { background: #e1f5ee; color: #085041; border-color: #c0e6d9; }
-.tone-2 { background: #eeedfe; color: #3c3489; border-color: #d8d5f7; }
-.tone-3 { background: #faece7; color: #712b13; border-color: #f2d6cb; }
-.tone-4 { background: #fbeaf0; color: #72243e; border-color: #f3d2de; }
-.tone-5 { background: #faeeda; color: #633806; border-color: #f0dcb8; }
-.tone-6 { background: #eaf3de; color: #27500a; border-color: #d5e6c1; }
-.tone-7 { background: #f1efe8; color: #444441; border-color: #dedbd0; }
+.tone-0 {
+  background: #e6f1fb;
+  color: #0c447c;
+  border-color: #c8dff5;
+}
+.tone-1 {
+  background: #e1f5ee;
+  color: #085041;
+  border-color: #c0e6d9;
+}
+.tone-2 {
+  background: #eeedfe;
+  color: #3c3489;
+  border-color: #d8d5f7;
+}
+.tone-3 {
+  background: #faece7;
+  color: #712b13;
+  border-color: #f2d6cb;
+}
+.tone-4 {
+  background: #fbeaf0;
+  color: #72243e;
+  border-color: #f3d2de;
+}
+.tone-5 {
+  background: #faeeda;
+  color: #633806;
+  border-color: #f0dcb8;
+}
+.tone-6 {
+  background: #eaf3de;
+  color: #27500a;
+  border-color: #d5e6c1;
+}
+.tone-7 {
+  background: #f1efe8;
+  color: #444441;
+  border-color: #dedbd0;
+}
 
 @media (prefers-color-scheme: dark) {
-  .tone-0 { background: #12314f; color: #b5d4f4; border-color: #1d4977; }
-  .tone-1 { background: #103d33; color: #9fe1cb; border-color: #1a5b4b; }
-  .tone-2 { background: #2b2660; color: #cecbf6; border-color: #3f3888; }
-  .tone-3 { background: #46200f; color: #f5c4b3; border-color: #6a3218; }
-  .tone-4 { background: #421828; color: #f4c0d1; border-color: #64253c; }
-  .tone-5 { background: #422a08; color: #fac775; border-color: #63400c; }
-  .tone-6 { background: #22350d; color: #c0dd97; border-color: #365214; }
-  .tone-7 { background: #34342f; color: #d3d1c7; border-color: #4a4a43; }
+  .tone-0 {
+    background: #12314f;
+    color: #b5d4f4;
+    border-color: #1d4977;
+  }
+  .tone-1 {
+    background: #103d33;
+    color: #9fe1cb;
+    border-color: #1a5b4b;
+  }
+  .tone-2 {
+    background: #2b2660;
+    color: #cecbf6;
+    border-color: #3f3888;
+  }
+  .tone-3 {
+    background: #46200f;
+    color: #f5c4b3;
+    border-color: #6a3218;
+  }
+  .tone-4 {
+    background: #421828;
+    color: #f4c0d1;
+    border-color: #64253c;
+  }
+  .tone-5 {
+    background: #422a08;
+    color: #fac775;
+    border-color: #63400c;
+  }
+  .tone-6 {
+    background: #22350d;
+    color: #c0dd97;
+    border-color: #365214;
+  }
+  .tone-7 {
+    background: #34342f;
+    color: #d3d1c7;
+    border-color: #4a4a43;
+  }
 }
 
 /* ---------- side panel ---------- */
@@ -624,7 +684,9 @@ button:focus-visible {
   color: var(--text-3);
   opacity: 0;
   cursor: pointer;
-  transition: opacity 0.1s, color 0.1s;
+  transition:
+    opacity 0.1s,
+    color 0.1s;
 }
 .day-head:hover .day-lock {
   opacity: 1;
@@ -635,7 +697,7 @@ button:focus-visible {
 }
 .day-head .day-lock:hover {
   color: var(--text-1);
-  background: var(--surface-2, rgba(0,0,0,0.07));
+  background: var(--surface-2, rgba(0, 0, 0, 0.07));
 }
 .day-head {
   position: relative;
@@ -660,7 +722,7 @@ button:focus-visible {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   min-width: 220px;
   max-height: 320px;
   overflow-y: auto;
@@ -681,7 +743,7 @@ button:focus-visible {
   color: var(--text-1);
 }
 .sprint-menu-item:hover {
-  background: var(--surface-2, rgba(0,0,0,0.05));
+  background: var(--surface-2, rgba(0, 0, 0, 0.05));
 }
 .sprint-menu-item.is-active {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
@@ -1501,7 +1563,6 @@ button.primary:hover {
   margin-bottom: 6px;
 }
 
-
 /* ---------- squad sync (settings) ---------- */
 
 .squad-sync {
@@ -1569,7 +1630,6 @@ button.primary:hover {
   margin-top: 3px;
 }
 
-
 /* A task sitting somewhere it should not — a VAL starting before its DEV ends. */
 .seg.has-warning {
   box-shadow: inset 0 0 0 1px var(--danger);
@@ -1599,7 +1659,6 @@ button.primary:hover {
   margin-bottom: 4px;
 }
 
-
 /* ---------- note categories ---------- */
 
 .note-categories {
@@ -1618,7 +1677,6 @@ button.primary:hover {
   padding: 1px 8px;
   margin-bottom: 5px;
 }
-
 
 .snapshot-badge {
   margin-left: 6px;

@@ -164,7 +164,11 @@ export default function SplitDialog(): JSX.Element | null {
             <label>Hours per part</label>
             <div className="parts-grid">
               {parts.map((p, i) => (
-                <div key={i} className="row" style={{ alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <div
+                  key={i}
+                  className="row"
+                  style={{ alignItems: 'center', gap: 8, marginBottom: 4 }}
+                >
                   <span style={{ minWidth: 56, fontSize: 12, color: 'var(--text-3)' }}>
                     {i === 0 ? 'Part 1 (here)' : `Part ${i + 1}`}
                   </span>

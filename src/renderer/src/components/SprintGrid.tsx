@@ -4,12 +4,7 @@ import { formatDayHeader } from '@shared/dates'
 import { effectiveCapacity, type MemberLayout } from '@shared/scheduling'
 import type { ISODate, Member, Segment, Sprint } from '@shared/types'
 import { cx, hours, toneFor } from '../format'
-import {
-  DRAG_ID_PREFIX,
-  MEMBER_DROP_PREFIX,
-  zoomPercent,
-  type DragData
-} from '../grid'
+import { DRAG_ID_PREFIX, MEMBER_DROP_PREFIX, zoomPercent, type DragData } from '../grid'
 import { LockIcon, NoteIcon, WarningIcon } from '../icons'
 import { useApp, useSprint } from '../store'
 
@@ -165,7 +160,9 @@ export default function SprintGrid({
                   <div className="day-name">{formatDayHeader(day.date)}</div>
                   <div className="day-label">
                     {day.label ??
-                      (day.capacity < sprint.hoursPerDay ? `${hours(day.capacity)} available` : ' ')}
+                      (day.capacity < sprint.hoursPerDay
+                        ? `${hours(day.capacity)} available`
+                        : ' ')}
                   </div>
                   {!readOnly && (onLockDay || onUnlockDay) && (
                     <button
@@ -449,152 +446,163 @@ interface SegmentProps {
 /** How far the pointer may travel and still count as a click rather than the start of a drag. */
 const CLICK_SLOP = 4
 
-const SegmentBlock = memo(function SegmentBlock({
-  segment,
-  title,
-  dragId,
-  left,
-  width,
-  isHighlighted,
-  isSelected,
-  isPreview,
-  isChanged,
-  isReportedPinned,
-  warning,
-  readOnly: locked,
-  isLocked,
-  onBlockContextMenu,
-  onReportedContextMenu,
-  onSelectTask
-}: SegmentProps): JSX.Element {
-  // Hours reported in TFS are drawn from a field rather than from a block, so there is no
-  // block to move — but *when* they were worked is still the user's to say, and dragging the
-  // ribbon is how they say it. History segments (auto-layout past positions) ARE real blocks
-  // and can be repositioned; pinned past blocks were placed by hand and always could be.
-  const isReported = segment.isDone === true
-  const isPast = segment.fromHistory === true || isReported
-  const data: DragData = isReported
-    ? { kind: 'reported', workItemId: segment.workItemId, hours: segment.hours }
-    : { kind: 'block', blockId: segment.blockId, workItemId: segment.workItemId, hours: segment.hours }
-  // Locked-day segments can still be dragged OUT of that day (to unpin them), but drops
-  // onto locked days are blocked in App.tsx's applyDrop. The visual lock indicator is enough.
-  const { attributes, listeners, setNodeRef } = useDraggable({ id: dragId, data, disabled: locked })
+const SegmentBlock = memo(
+  function SegmentBlock({
+    segment,
+    title,
+    dragId,
+    left,
+    width,
+    isHighlighted,
+    isSelected,
+    isPreview,
+    isChanged,
+    isReportedPinned,
+    warning,
+    readOnly: locked,
+    isLocked,
+    onBlockContextMenu,
+    onReportedContextMenu,
+    onSelectTask
+  }: SegmentProps): JSX.Element {
+    // Hours reported in TFS are drawn from a field rather than from a block, so there is no
+    // block to move — but *when* they were worked is still the user's to say, and dragging the
+    // ribbon is how they say it. History segments (auto-layout past positions) ARE real blocks
+    // and can be repositioned; pinned past blocks were placed by hand and always could be.
+    const isReported = segment.isDone === true
+    const isPast = segment.fromHistory === true || isReported
+    const data: DragData = isReported
+      ? { kind: 'reported', workItemId: segment.workItemId, hours: segment.hours }
+      : {
+          kind: 'block',
+          blockId: segment.blockId,
+          workItemId: segment.workItemId,
+          hours: segment.hours
+        }
+    // Locked-day segments can still be dragged OUT of that day (to unpin them), but drops
+    // onto locked days are blocked in App.tsx's applyDrop. The visual lock indicator is enough.
+    const { attributes, listeners, setNodeRef } = useDraggable({
+      id: dragId,
+      data,
+      disabled: locked
+    })
 
-  // Where the pointer went down, so releasing it without a drag having started counts as a
-  // click on the task. `isDragging` cannot answer this — it is already false by the time the
-  // click event lands, so every drop would also open the panel.
-  const pressedAt = useRef<{ x: number; y: number } | null>(null)
+    // Where the pointer went down, so releasing it without a drag having started counts as a
+    // click on the task. `isDragging` cannot answer this — it is already false by the time the
+    // click event lands, so every drop would also open the panel.
+    const pressedAt = useRef<{ x: number; y: number } | null>(null)
 
-  const label = `#${segment.workItemId} ${title}`
+    const label = `#${segment.workItemId} ${title}`
 
-  return (
-    <div
-      ref={setNodeRef}
-      {...(locked ? {} : listeners)}
-      {...attributes}
-      className={cx(
-        'seg',
-        toneFor(segment.workItemId),
-        isPast && 'is-past',
-        segment.isDone && 'is-done',
-        (segment.pinned || (isReported && isReportedPinned)) && 'is-pinned',
-        segment.continued && 'is-continued',
-        segment.continues && 'is-continues',
-        isHighlighted && 'is-highlighted',
-        isSelected && 'is-selected',
-        isPreview && 'is-preview',
-        isChanged && 'is-changed',
-        isLocked && 'is-day-locked',
-        warning !== undefined && 'has-warning',
-        !locked && 'is-draggable'
-      )}
-      style={{ left, width }}
-      title={`${warning ? `⚠ ${warning}\n` : ''}${label} — ${hours(segment.hours)}${
-        segment.continues ? ' (continues next day)' : ''
-      }${segment.pinned ? '\nPinned to this slot' : ''}${isLocked ? '\nDay is locked' : ''}${
-        isReported
-          ? `\nReported in TFS as done${
-              segment.doneOverflow
-                ? `\n${hours(segment.doneOverflow)} more was reported than fits before the sprint`
-                : ''
-            }\n${
-              isReportedPinned
-                ? 'Placed by hand · drag to move, right-click to reset'
-                : 'Drag to say when it was worked'
-            }`
-          : segment.fromHistory
-            ? '\nFrom an earlier refresh · drag to move'
-            : '\nDrag to move, right-click to split'
-      }`}
-      // Declared after `{...listeners}`, so it replaces dnd-kit's own `onPointerDown` — the
-      // handler that starts a drag. It has to be called from here, or no block on the calendar
-      // can be dragged at all.
-      onPointerDown={(event) => {
-        pressedAt.current = { x: event.clientX, y: event.clientY }
-        if (!locked) listeners?.onPointerDown?.(event)
-      }}
-      onClick={(event) => {
-        const start = pressedAt.current
-        pressedAt.current = null
-        if (!onSelectTask || !start) return
-        const moved = Math.hypot(event.clientX - start.x, event.clientY - start.y)
-        if (moved < CLICK_SLOP) onSelectTask(segment.workItemId, segment.blockId)
-      }}
-      onContextMenu={(event) => {
-        if (locked) return
-        event.stopPropagation()
-        if (isReported) onReportedContextMenu?.(segment.workItemId, event, label)
-        else onBlockContextMenu(segment.blockId, event, label)
-      }}
-    >
-      {(segment.pinned || (isReported && isReportedPinned)) && !segment.continued && (
-        <span className="pin-dot" aria-hidden="true" />
-      )}
-      {warning && (
-        <span className="seg-warn" aria-label={warning}>
-          <WarningIcon size={11} />
-        </span>
-      )}
-      <span className="seg-id">#{segment.workItemId}</span>
-      {width > 92 && <span className="seg-title">{title}</span>}
-    </div>
-  )
-},
-/*
- * Compared by value, not by identity. Every hop of a drag re-flows the whole sprint, and the
- * layout hands back a fresh `Segment` object for every block — including the hundred that did
- * not move. The default shallow comparison sees a new object each time and re-renders them all,
- * which is precisely the work this component was memoised to avoid.
- */
-function samePlacement(before: SegmentProps, after: SegmentProps): boolean {
-  const a = before.segment
-  const b = after.segment
-  return (
-    a.blockId === b.blockId &&
-    a.workItemId === b.workItemId &&
-    a.date === b.date &&
-    a.startHour === b.startHour &&
-    a.hours === b.hours &&
-    a.continued === b.continued &&
-    a.continues === b.continues &&
-    a.pinned === b.pinned &&
-    a.fromHistory === b.fromHistory &&
-    a.isDone === b.isDone &&
-    a.doneOverflow === b.doneOverflow &&
-    before.title === after.title &&
-    before.dragId === after.dragId &&
-    before.left === after.left &&
-    before.width === after.width &&
-    before.isHighlighted === after.isHighlighted &&
-    before.isSelected === after.isSelected &&
-    before.isPreview === after.isPreview &&
-    before.isChanged === after.isChanged &&
-    before.isReportedPinned === after.isReportedPinned &&
-    before.warning === after.warning &&
-    before.readOnly === after.readOnly &&
-    before.isLocked === after.isLocked &&
-    before.onBlockContextMenu === after.onBlockContextMenu &&
-    before.onReportedContextMenu === after.onReportedContextMenu &&
-    before.onSelectTask === after.onSelectTask
-  )
-})
+    return (
+      <div
+        ref={setNodeRef}
+        {...(locked ? {} : listeners)}
+        {...attributes}
+        className={cx(
+          'seg',
+          toneFor(segment.workItemId),
+          isPast && 'is-past',
+          segment.isDone && 'is-done',
+          (segment.pinned || (isReported && isReportedPinned)) && 'is-pinned',
+          segment.continued && 'is-continued',
+          segment.continues && 'is-continues',
+          isHighlighted && 'is-highlighted',
+          isSelected && 'is-selected',
+          isPreview && 'is-preview',
+          isChanged && 'is-changed',
+          isLocked && 'is-day-locked',
+          warning !== undefined && 'has-warning',
+          !locked && 'is-draggable'
+        )}
+        style={{ left, width }}
+        title={`${warning ? `⚠ ${warning}\n` : ''}${label} — ${hours(segment.hours)}${
+          segment.continues ? ' (continues next day)' : ''
+        }${segment.pinned ? '\nPinned to this slot' : ''}${isLocked ? '\nDay is locked' : ''}${
+          isReported
+            ? `\nReported in TFS as done${
+                segment.doneOverflow
+                  ? `\n${hours(segment.doneOverflow)} more was reported than fits before the sprint`
+                  : ''
+              }\n${
+                isReportedPinned
+                  ? 'Placed by hand · drag to move, right-click to reset'
+                  : 'Drag to say when it was worked'
+              }`
+            : segment.fromHistory
+              ? '\nFrom an earlier refresh · drag to move'
+              : '\nDrag to move, right-click to split'
+        }`}
+        // Declared after `{...listeners}`, so it replaces dnd-kit's own `onPointerDown` — the
+        // handler that starts a drag. It has to be called from here, or no block on the calendar
+        // can be dragged at all.
+        onPointerDown={(event) => {
+          pressedAt.current = { x: event.clientX, y: event.clientY }
+          if (!locked) listeners?.onPointerDown?.(event)
+        }}
+        onClick={(event) => {
+          const start = pressedAt.current
+          pressedAt.current = null
+          if (!onSelectTask || !start) return
+          const moved = Math.hypot(event.clientX - start.x, event.clientY - start.y)
+          if (moved < CLICK_SLOP) onSelectTask(segment.workItemId, segment.blockId)
+        }}
+        onContextMenu={(event) => {
+          if (locked) return
+          event.stopPropagation()
+          if (isReported) onReportedContextMenu?.(segment.workItemId, event, label)
+          else onBlockContextMenu(segment.blockId, event, label)
+        }}
+      >
+        {(segment.pinned || (isReported && isReportedPinned)) && !segment.continued && (
+          <span className="pin-dot" aria-hidden="true" />
+        )}
+        {warning && (
+          <span className="seg-warn" aria-label={warning}>
+            <WarningIcon size={11} />
+          </span>
+        )}
+        <span className="seg-id">#{segment.workItemId}</span>
+        {width > 92 && <span className="seg-title">{title}</span>}
+      </div>
+    )
+  },
+  /*
+   * Compared by value, not by identity. Every hop of a drag re-flows the whole sprint, and the
+   * layout hands back a fresh `Segment` object for every block — including the hundred that did
+   * not move. The default shallow comparison sees a new object each time and re-renders them all,
+   * which is precisely the work this component was memoised to avoid.
+   */
+  function samePlacement(before: SegmentProps, after: SegmentProps): boolean {
+    const a = before.segment
+    const b = after.segment
+    return (
+      a.blockId === b.blockId &&
+      a.workItemId === b.workItemId &&
+      a.date === b.date &&
+      a.startHour === b.startHour &&
+      a.hours === b.hours &&
+      a.continued === b.continued &&
+      a.continues === b.continues &&
+      a.pinned === b.pinned &&
+      a.fromHistory === b.fromHistory &&
+      a.isDone === b.isDone &&
+      a.doneOverflow === b.doneOverflow &&
+      before.title === after.title &&
+      before.dragId === after.dragId &&
+      before.left === after.left &&
+      before.width === after.width &&
+      before.isHighlighted === after.isHighlighted &&
+      before.isSelected === after.isSelected &&
+      before.isPreview === after.isPreview &&
+      before.isChanged === after.isChanged &&
+      before.isReportedPinned === after.isReportedPinned &&
+      before.warning === after.warning &&
+      before.readOnly === after.readOnly &&
+      before.isLocked === after.isLocked &&
+      before.onBlockContextMenu === after.onBlockContextMenu &&
+      before.onReportedContextMenu === after.onReportedContextMenu &&
+      before.onSelectTask === after.onSelectTask
+    )
+  }
+)

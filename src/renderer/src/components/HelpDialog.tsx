@@ -30,7 +30,11 @@ export default function HelpDialog({ onClose }: Props): JSX.Element {
       wide
       footer={
         <>
-          <button type="button" disabled={index === 0} onClick={() => setCurrent(SECTIONS[index - 1].id)}>
+          <button
+            type="button"
+            disabled={index === 0}
+            onClick={() => setCurrent(SECTIONS[index - 1].id)}
+          >
             ← {index > 0 ? SECTIONS[index - 1].title : 'Previous'}
           </button>
           <span className="spacer" />
@@ -83,15 +87,15 @@ const SECTIONS: Section[] = [
       <>
         <p>
           Sprint Viewer turns a TFS query into a calendar for a sprint. Every person on the team
-          gets a row, every working day is a column cut into hours, and every task is a block
-          you can drag. It is where the team plans who does what and when, and afterwards sees
-          what actually happened.
+          gets a row, every working day is a column cut into hours, and every task is a block you
+          can drag. It is where the team plans who does what and when, and afterwards sees what
+          actually happened.
         </p>
         <p>
-          TFS stays the source of truth for the tasks themselves — titles, assignees, Remaining
-          and Completed Work. The app reads them, and writes back to TFS in exactly one place:
-          creating new tasks. Everything else — where blocks sit, notes, snapshots — is saved on
-          this computer.
+          TFS stays the source of truth for the tasks themselves — titles, assignees, Remaining and
+          Completed Work. The app reads them, and writes back to TFS in exactly one place: creating
+          new tasks. Everything else — where blocks sit, notes, snapshots — is saved on this
+          computer.
         </p>
         <h4>First time here</h4>
         <ol>
@@ -112,8 +116,8 @@ const SECTIONS: Section[] = [
           </li>
         </ol>
         <p className="hint">
-          Want to look around first? On the empty screen, <em>Load sample data</em> opens a
-          made-up sprint with everything in use. Nothing you do there is saved.
+          Want to look around first? On the empty screen, <em>Load sample data</em> opens a made-up
+          sprint with everything in use. Nothing you do there is saved.
         </p>
       </>
     )
@@ -124,23 +128,22 @@ const SECTIONS: Section[] = [
     body: (
       <>
         <p>
-          <strong>Start sprint</strong> asks for a name, the first day, the length in weeks and
-          a TFS URL. The URL can be a saved query or a sprint (iteration) page. Weekends are left
-          out unless you tick <em>Include weekends</em>.
+          <strong>Start sprint</strong> asks for a name, the first day, the length in weeks and a
+          TFS URL. The URL can be a saved query or a sprint (iteration) page. Weekends are left out
+          unless you tick <em>Include weekends</em>.
         </p>
         <p>
-          The app reads every work item the query returns. User Stories and Bugs are headings;
-          the Tasks under them are the work. Only child tasks in the same iteration as their
-          parent are brought in — this is a sprint viewer, so work planned for another sprint
-          stays out.
+          The app reads every work item the query returns. User Stories and Bugs are headings; the
+          Tasks under them are the work. Only child tasks in the same iteration as their parent are
+          brought in — this is a sprint viewer, so work planned for another sprint stays out.
         </p>
         <p>
-          Everything starts in the <strong>Backlog</strong> on the right. Nothing is placed on
-          the calendar until you drag it there or run Auto-assign.
+          Everything starts in the <strong>Backlog</strong> on the right. Nothing is placed on the
+          calendar until you drag it there or run Auto-assign.
         </p>
         <p>
-          You can also right-click a day header and choose <em>Start sprint here…</em> to start
-          the next sprint from that date.
+          You can also right-click a day header and choose <em>Start sprint here…</em> to start the
+          next sprint from that date.
         </p>
       </>
     )
@@ -165,20 +168,20 @@ const SECTIONS: Section[] = [
             <strong>Striped blocks</strong> left of today are hours reported in TFS as done.
           </li>
           <li>
-            Grey, shaded columns are days off. Right-click a day header to make a day off or a
-            half day for everyone, or for one person from their row.
+            Grey, shaded columns are days off. Right-click a day header to make a day off or a half
+            day for everyone, or for one person from their row.
           </li>
           <li>
-            The <strong>lock</strong> on a day header stops anything new being dropped on that
-            day — handy for a day that is already settled.
+            The <strong>lock</strong> on a day header stops anything new being dropped on that day —
+            handy for a day that is already settled.
           </li>
           <li>
-            A ⚠ next to a name means the person has more work than hours left in the sprint —
-            hover it to see by how much.
+            A ⚠ next to a name means the person has more work than hours left in the sprint — hover
+            it to see by how much.
           </li>
           <li>
-            A ⚠ on a block means something about where it sits is wrong — for example a VAL
-            task that starts before its DEV work ends. Hover it to see why.
+            A ⚠ on a block means something about where it sits is wrong — for example a VAL task
+            that starts before its DEV work ends. Hover it to see why.
           </li>
         </ul>
         <h4>Zoom</h4>
@@ -200,19 +203,17 @@ const SECTIONS: Section[] = [
         <p>
           Everything not yet on someone's calendar, grouped under its User Story or Bug. Use the
           search box and the tag chips (DEV, VAL, QA…) to filter. A card with an{' '}
-          <span className="help-swatch is-outsider">amber background</span> is assigned in TFS
-          to nobody on this squad — either nobody at all, or someone outside the team.
-          Auto-assign leaves those alone.
+          <span className="help-swatch is-outsider">amber background</span> is assigned in TFS to
+          nobody on this squad — either nobody at all, or someone outside the team. Auto-assign
+          leaves those alone.
         </p>
         <h4>Person</h4>
-        <p>
-          Click someone's name: their capacity, hours planned against it, and their notes.
-        </p>
+        <p>Click someone's name: their capacity, hours planned against it, and their notes.</p>
         <h4>Task</h4>
         <p>
-          Click a block on the calendar: its hours (estimate, completed, remaining), where it
-          is, the notes about it, and buttons for everything you can do with it. Clicking
-          anywhere else clears the selection.
+          Click a block on the calendar: its hours (estimate, completed, remaining), where it is,
+          the notes about it, and buttons for everything you can do with it. Clicking anywhere else
+          clears the selection.
         </p>
       </>
     )
@@ -224,21 +225,21 @@ const SECTIONS: Section[] = [
       <>
         <ul>
           <li>
-            <strong>Drag</strong> a card from the backlog onto a row and hour. Dropping on
-            someone other than the TFS assignee asks first.
+            <strong>Drag</strong> a card from the backlog onto a row and hour. Dropping on someone
+            other than the TFS assignee asks first.
           </li>
           <li>
-            A block you drop on a particular hour is <strong>pinned</strong> there — work after
-            it flows around it. Blocks that are not pinned flow one after another from today,
-            with no gaps.
+            A block you drop on a particular hour is <strong>pinned</strong> there — work after it
+            flows around it. Blocks that are not pinned flow one after another from today, with no
+            gaps.
           </li>
           <li>
-            Dropping into the middle of another task asks whether to go before it, after it,
-            or split it around the new one.
+            Dropping into the middle of another task asks whether to go before it, after it, or
+            split it around the new one.
           </li>
           <li>
-            <strong>Right-click a block</strong>: Split…, Set hours…, Add note…, Unpin, Return
-            to backlog.
+            <strong>Right-click a block</strong>: Split…, Set hours…, Add note…, Unpin, Return to
+            backlog.
           </li>
           <li>
             <strong>Select</strong> a block and press <Keys>Shift</Keys>+<Keys>←</Keys> /{' '}
@@ -248,14 +249,13 @@ const SECTIONS: Section[] = [
             <Keys>Ctrl</Keys>+<Keys>Z</Keys> or <strong>Back</strong> undoes the last change.
           </li>
           <li>
-            <strong>Clear</strong> sends every task back to the backlog (locked days keep
-            theirs).
+            <strong>Clear</strong> sends every task back to the backlog (locked days keep theirs).
           </li>
         </ul>
         <h4>Set hours</h4>
         <p>
-          Overrides the size TFS gives a task. The block shows a ✎ while a manual time is set,
-          and a refresh that disagrees with it asks you which to keep.
+          Overrides the size TFS gives a task. The block shows a ✎ while a manual time is set, and a
+          refresh that disagrees with it asks you which to keep.
         </p>
       </>
     )
@@ -265,37 +265,38 @@ const SECTIONS: Section[] = [
     title: 'How time is drawn',
     body: (
       <>
-        <p>A task is worth its Remaining Work plus its Completed Work, and the two are drawn apart:</p>
+        <p>
+          A task is worth its Remaining Work plus its Completed Work, and the two are drawn apart:
+        </p>
         <ul>
           <li>
             <strong>Remaining</strong> is drawn from today on — it is what is still to do.
           </li>
           <li>
-            <strong>Completed</strong> is drawn behind today, striped, on the days it was worked.
-            If the days behind today are full, it spills onto the start of today and today's
-            plan moves along to make room.
+            <strong>Completed</strong> is drawn behind today, striped, on the days it was worked. If
+            the days behind today are full, it spills onto the start of today and today's plan moves
+            along to make room.
           </li>
           <li>A task that is half done is drawn as two pieces, one either side of today.</li>
           <li>A closed task has no block ahead of today at all; its hours are all behind it.</li>
         </ul>
         <h4>The past is a record</h4>
         <p>
-          Once a refresh has drawn the days behind today, what is on them stays put. Later
-          refreshes only add the hours TFS reports on top, filling the <em>oldest</em> free
-          space first. If you refreshed on Wednesday and Tuesday showed 6 of 8 hours, then on
-          Thursday Tuesday keeps its 6 hours, the next new hours fill Tuesday's last 2, and the
-          rest go on Wednesday.
+          Once a refresh has drawn the days behind today, what is on them stays put. Later refreshes
+          only add the hours TFS reports on top, filling the <em>oldest</em> free space first. If
+          you refreshed on Wednesday and Tuesday showed 6 of 8 hours, then on Thursday Tuesday keeps
+          its 6 hours, the next new hours fill Tuesday's last 2, and the rest go on Wednesday.
         </p>
         <p>
-          If Completed Work goes <em>down</em> in TFS, the most recent recorded hours of that
-          task are taken off. Nothing else moves.
+          If Completed Work goes <em>down</em> in TFS, the most recent recorded hours of that task
+          are taken off. Nothing else moves.
         </p>
         <h4>Saying when work happened</h4>
         <p>
-          Drag a striped block to the day and hour it was really worked. Right-click it and
-          choose <em>Reset to automatic</em> to undo that. You can also drop a normal block on a
-          day that has passed; at the next refresh, the part of it TFS reports as done is
-          recorded there and the rest goes back to the plan from today.
+          Drag a striped block to the day and hour it was really worked. Right-click it and choose{' '}
+          <em>Reset to automatic</em> to undo that. You can also drop a normal block on a day that
+          has passed; at the next refresh, the part of it TFS reports as done is recorded there and
+          the rest goes back to the plan from today.
         </p>
         <p>
           Original Estimate is not drawn anywhere. It is only used in the sprint summary to spot
@@ -310,24 +311,27 @@ const SECTIONS: Section[] = [
     body: (
       <>
         <p>
-          <strong>Refresh</strong> reads the query again and brings the calendar in line with
-          TFS:
+          <strong>Refresh</strong> reads the query again and brings the calendar in line with TFS:
         </p>
         <ul>
           <li>
-            A task's blocks are resized to its new Remaining Work. Extra hours join the part
-            that comes first; hours taken away come off the part that comes last. Everything
-            behind it slides along.
+            A task's blocks are resized to its new Remaining Work. Extra hours join the part that
+            comes first; hours taken away come off the part that comes last. Everything behind it
+            slides along.
           </li>
           <li>A task with nothing left leaves the days ahead; its hours are drawn behind today.</li>
           <li>New tasks arrive in the backlog.</li>
-          <li>Tasks the query no longer returns are marked <em>not in query</em>, not deleted.</li>
           <li>
-            If a task has a manual time and TFS now says something different, the refresh stops
-            and asks you, task by task, which to keep.
+            Tasks the query no longer returns are marked <em>not in query</em>, not deleted.
+          </li>
+          <li>
+            If a task has a manual time and TFS now says something different, the refresh stops and
+            asks you, task by task, which to keep.
           </li>
         </ul>
-        <p>The toolbar says what changed, and <strong>Back</strong> undoes a refresh.</p>
+        <p>
+          The toolbar says what changed, and <strong>Back</strong> undoes a refresh.
+        </p>
       </>
     )
   },
@@ -337,8 +341,8 @@ const SECTIONS: Section[] = [
     body: (
       <>
         <p>
-          <strong>Auto-assign</strong> puts every backlog task on its TFS assignee's calendar,
-          in one go. It shows what it is about to do before anything moves.
+          <strong>Auto-assign</strong> puts every backlog task on its TFS assignee's calendar, in
+          one go. It shows what it is about to do before anything moves.
         </p>
         <h4>Order</h4>
         <ol>
@@ -352,12 +356,12 @@ const SECTIONS: Section[] = [
           <li>Nobody is put over their capacity. What does not fit stays in the backlog.</li>
           <li>Tasks assigned to nobody on the team stay in the backlog.</li>
           <li>
-            <strong>Meetings</strong> (a task titled just "Meeting" or "Meetings") are split
-            into 2–5 pieces and spread over the sprint, never on the first day.
+            <strong>Meetings</strong> (a task titled just "Meeting" or "Meetings") are split into
+            2–5 pieces and spread over the sprint, never on the first day.
           </li>
           <li>
-            A <strong>VAL</strong> task starts the hour its DEV task (under the same parent)
-            ends, whoever is doing each. If the DEV is still in the backlog, the VAL waits.
+            A <strong>VAL</strong> task starts the hour its DEV task (under the same parent) ends,
+            whoever is doing each. If the DEV is still in the backlog, the VAL waits.
           </li>
           <li>
             If the DEV ends too close to the end of the sprint for the VAL to follow it, the VAL
@@ -366,9 +370,9 @@ const SECTIONS: Section[] = [
         </ul>
         <h4>Keep my calendar fixed</h4>
         <p>
-          If following those rules would move or cut work already on a calendar, the dialog
-          lists what and why, and offers a second plan that moves nothing: VALs go after the
-          owner's existing work, and meetings only on days after it.
+          If following those rules would move or cut work already on a calendar, the dialog lists
+          what and why, and offers a second plan that moves nothing: VALs go after the owner's
+          existing work, and meetings only on days after it.
         </p>
       </>
     )
@@ -393,22 +397,22 @@ const SECTIONS: Section[] = [
             <code>DEV:: Story title</code>. Set your own in Settings.
           </li>
           <li>
-            <strong>+ DOC task</strong> and <strong>+ QA task</strong> fill in the owner chosen
-            in Settings.
+            <strong>+ DOC task</strong> and <strong>+ QA task</strong> fill in the owner chosen in
+            Settings.
           </li>
           <li>
-            <strong>Tags</strong>: keep the parent's, or choose <em>Custom tags</em> and type
-            your own, separated by commas. Area and iteration always come from the parent.
+            <strong>Tags</strong>: keep the parent's, or choose <em>Custom tags</em> and type your
+            own, separated by commas. Area and iteration always come from the parent.
           </li>
           <li>
             <strong>Owner</strong>: anyone on the team, or <em>Someone else…</em> and their TFS
-            login — <code>bsrocha</code> and <code>CMF\bsrocha</code> both work; the domain is
-            added if you leave it out.
+            login — <code>bsrocha</code> and <code>CMF\bsrocha</code> both work; the domain is added
+            if you leave it out.
           </li>
         </ul>
         <p>
-          If TFS refuses some of the tasks, the ones that went through are kept and only the
-          refused ones are offered again, with TFS's reason.
+          If TFS refuses some of the tasks, the ones that went through are kept and only the refused
+          ones are offered again, with TFS's reason.
         </p>
       </>
     )
@@ -419,8 +423,8 @@ const SECTIONS: Section[] = [
     body: (
       <>
         <p>
-          The team lives in <strong>Settings → Team</strong>. Each person has a name and,
-          ideally, their TFS identity — that is how tasks are matched to rows.
+          The team lives in <strong>Settings → Team</strong>. Each person has a name and, ideally,
+          their TFS identity — that is how tasks are matched to rows.
         </p>
         <p>
           <strong>Sync with TFS team…</strong> reads a team from TFS and proposes changes:
@@ -434,9 +438,9 @@ const SECTIONS: Section[] = [
           </li>
         </ul>
         <p>
-          Every section has <em>Select all</em> / <em>Unselect all</em>. Nothing changes until
-          you press <em>Apply to roster</em> and then Save. You can also choose to update the
-          open sprint's rows.
+          Every section has <em>Select all</em> / <em>Unselect all</em>. Nothing changes until you
+          press <em>Apply to roster</em> and then Save. You can also choose to update the open
+          sprint's rows.
         </p>
       </>
     )
@@ -447,8 +451,8 @@ const SECTIONS: Section[] = [
     body: (
       <>
         <p>
-          Right-click a name or a block and choose <em>Add note…</em>. A note belongs to a
-          person, can mention tasks, and can have one category:
+          Right-click a name or a block and choose <em>Add note…</em>. A note belongs to a person,
+          can mention tasks, and can have one category:
         </p>
         <p>
           {NOTE_CATEGORIES.map((category) => (
@@ -458,8 +462,8 @@ const SECTIONS: Section[] = [
           ))}
         </p>
         <p>
-          Notes show in the person's panel and in the task panel. The <strong>Notes</strong>{' '}
-          button in the toolbar exports them all to a Markdown file.
+          Notes show in the person's panel and in the task panel. The <strong>Notes</strong> button
+          in the toolbar exports them all to a Markdown file.
         </p>
       </>
     )
@@ -471,18 +475,17 @@ const SECTIONS: Section[] = [
       <>
         <h4>Snapshots</h4>
         <p>
-          <strong>Snapshot</strong> keeps a copy of the board as it stands, to open later in its
-          own read-only window. A <em>Sprint start</em> snapshot is taken automatically on the
-          sprint's first day and kept up to date until the day ends, so there is always a record
-          of the plan as it began.
+          <strong>Snapshot</strong> keeps a copy of the board as it stands, to open later in its own
+          read-only window. A <em>Sprint start</em> snapshot is taken automatically on the sprint's
+          first day and kept up to date until the day ends, so there is always a record of the plan
+          as it began.
         </p>
         <h4>Sprint summary</h4>
         <p>
-          <strong>Summary</strong> saves a Markdown file meant for an AI agent to write the
-          sprint up from: the board at the start and at the end, planned against actual hours
-          per person, every work item with flags (off track, added mid-sprint, reassigned, not
-          finished, slipped, removed), and the notes by category. Pick which snapshot counts as
-          the start.
+          <strong>Summary</strong> saves a Markdown file meant for an AI agent to write the sprint
+          up from: the board at the start and at the end, planned against actual hours per person,
+          every work item with flags (off track, added mid-sprint, reassigned, not finished,
+          slipped, removed), and the notes by category. Pick which snapshot counts as the start.
         </p>
       </>
     )
@@ -494,26 +497,28 @@ const SECTIONS: Section[] = [
       <>
         <ul>
           <li>
-            <strong>Authentication</strong> — a Personal Access Token (stored encrypted, never
-            shown again) or your Windows sign-in. <em>Test</em> checks it against a URL.
+            <strong>Authentication</strong> — a Personal Access Token (stored encrypted, never shown
+            again) or your Windows sign-in. <em>Test</em> checks it against a URL.
           </li>
           <li>
-            <strong>Hours in a working day</strong> — also rescales the open sprint; days off
-            and half days stay off and half.
+            <strong>Hours in a working day</strong> — also rescales the open sprint; days off and
+            half days stay off and half.
           </li>
           <li>
             <strong>Team</strong> — the roster, and the TFS sync.
           </li>
           <li>
-            <strong>Creating tasks</strong> — who DOC and QA tasks go to (a team member or any
-            TFS login), and your templates.
+            <strong>Creating tasks</strong> — who DOC and QA tasks go to (a team member or any TFS
+            login), and your templates.
           </li>
           <li>
-            <strong>Import</strong> — how child tasks are found for a query, and the TFS API
-            version if your server needs a specific one.
+            <strong>Import</strong> — how child tasks are found for a query, and the TFS API version
+            if your server needs a specific one.
           </li>
         </ul>
-        <p className="hint">Sprints and settings are saved in the folder shown at the bottom of Settings.</p>
+        <p className="hint">
+          Sprints and settings are saved in the folder shown at the bottom of Settings.
+        </p>
       </>
     )
   },
@@ -526,8 +531,8 @@ const SECTIONS: Section[] = [
         <ul>
           <li>
             Each person has a <strong>queue</strong>: an ordered list of blocks. The calendar is
-            that queue flowed across the days from today, skipping days off, so changing one
-            block's hours moves everything after it.
+            that queue flowed across the days from today, skipping days off, so changing one block's
+            hours moves everything after it.
           </li>
           <li>
             A <strong>pinned</strong> block is placed first, at its hour; the rest flow around it.
@@ -537,16 +542,16 @@ const SECTIONS: Section[] = [
             the date. Nothing that is still to do is placed before it.
           </li>
           <li>
-            The <strong>past record</strong> is a copy of what each day behind today showed at
-            the last refresh. It is only ever added to (or trimmed if TFS lowers Completed Work).
+            The <strong>past record</strong> is a copy of what each day behind today showed at the
+            last refresh. It is only ever added to (or trimmed if TFS lowers Completed Work).
           </li>
           <li>
-            A block holds hours; the task it belongs to lives in TFS. That is why renaming a task
-            in TFS shows up after a refresh, and why deleting a block never touches TFS.
+            A block holds hours; the task it belongs to lives in TFS. That is why renaming a task in
+            TFS shows up after a refresh, and why deleting a block never touches TFS.
           </li>
           <li>
-            The app talks to TFS through its REST API, with the same permissions you have. It
-            only ever writes when you create tasks.
+            The app talks to TFS through its REST API, with the same permissions you have. It only
+            ever writes when you create tasks.
           </li>
         </ul>
       </>

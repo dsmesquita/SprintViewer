@@ -41,7 +41,9 @@ export interface TaskTemplate {
   prefixes: string[]
 }
 
-export const DEFAULT_TASK_TEMPLATES: TaskTemplate[] = [{ name: 'DEV + VAL', prefixes: ['DEV', 'VAL'] }]
+export const DEFAULT_TASK_TEMPLATES: TaskTemplate[] = [
+  { name: 'DEV + VAL', prefixes: ['DEV', 'VAL'] }
+]
 
 /** `DEV` and `Export service` make `DEV:: Export service` — the house style for task titles. */
 export function taggedTitle(prefix: string, title: string): string {
@@ -133,11 +135,7 @@ export function assigneeFor(member: Member | undefined): string | undefined {
  * that person's calendar it goes is a planning decision, and auto-assign is where those are
  * made.
  */
-export function addCreatedTasks(
-  sprint: Sprint,
-  items: WorkItem[],
-  newId: () => string
-): Sprint {
+export function addCreatedTasks(sprint: Sprint, items: WorkItem[], newId: () => string): Sprint {
   if (items.length === 0) return sprint
   const workItems = { ...sprint.workItems }
   const cards: Block[] = []

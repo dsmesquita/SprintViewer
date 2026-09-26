@@ -31,7 +31,9 @@ export default function SummaryDialog(): JSX.Element {
       setSnapshots(list)
       // The automatic Sprint start snapshot when there is one; otherwise the earliest, which is
       // the nearest thing to the plan. The list comes newest first.
-      setPlanId(list.find((meta) => meta.kind === 'baseline')?.id ?? list[list.length - 1]?.id ?? '')
+      setPlanId(
+        list.find((meta) => meta.kind === 'baseline')?.id ?? list[list.length - 1]?.id ?? ''
+      )
     })
   }, [sprint.id, available])
 
@@ -100,7 +102,9 @@ export default function SummaryDialog(): JSX.Element {
         </>
       }
     >
-      {message && <div className={`message ${message.ok ? 'is-ok' : 'is-error'}`}>{message.text}</div>}
+      {message && (
+        <div className={`message ${message.ok ? 'is-ok' : 'is-error'}`}>{message.text}</div>
+      )}
 
       {!available ? (
         <p className="hint" style={{ margin: 0 }}>
@@ -110,9 +114,9 @@ export default function SummaryDialog(): JSX.Element {
       ) : (
         <>
           <p style={{ margin: '0 0 12px' }}>
-            A Markdown file with the board at the start and at the end, planned against actual
-            hours for each person, every task, and everyone&rsquo;s notes — written to be turned
-            into a summary by an AI agent.
+            A Markdown file with the board at the start and at the end, planned against actual hours
+            for each person, every task, and everyone&rsquo;s notes — written to be turned into a
+            summary by an AI agent.
           </p>
 
           <div className="field">
@@ -126,7 +130,8 @@ export default function SummaryDialog(): JSX.Element {
               {(snapshots ?? []).map((meta) => (
                 <option key={meta.id} value={meta.id}>
                   {meta.name}
-                  {meta.kind === 'baseline' ? ' (automatic)' : ''} — {new Date(meta.takenAt).toLocaleString()}
+                  {meta.kind === 'baseline' ? ' (automatic)' : ''} —{' '}
+                  {new Date(meta.takenAt).toLocaleString()}
                 </option>
               ))}
               <option value="">No plan — just what happened</option>

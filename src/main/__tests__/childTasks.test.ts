@@ -2,7 +2,8 @@ import { checklist } from '../../../test/checklist'
 import { registerIpc } from '../ipc'
 import { handlers, json, setServer } from '../../../test/electron'
 
-const QUERY = 'https://tfs.example/tfs/Coll/Proj/_queries/query/11111111-2222-3333-4444-555555555555'
+const QUERY =
+  'https://tfs.example/tfs/Coll/Proj/_queries/query/11111111-2222-3333-4444-555555555555'
 const A = 'Proj\\Sprint A'
 const B = 'Proj\\Sprint B'
 
@@ -22,8 +23,7 @@ const items: Record<number, Item> = {
   41: { id: 41, type: 'Task', parent: 4, iteration: 'PROJ\\sprint b' }, // same path, other case
   42: { id: 42, type: 'Task', parent: 4, iteration: A } // story 4 is in B, this task in A
 }
-const childrenOf = (parent: number) =>
-  Object.values(items).filter((item) => item.parent === parent)
+const childrenOf = (parent: number) => Object.values(items).filter((item) => item.parent === parent)
 
 function raw(id: number) {
   const item = items[id]
@@ -48,20 +48,31 @@ function raw(id: number) {
 function serve(queryIds: number[], ignoreIteration = false) {
   const childQueries: Array<{ parents: number[]; iteration: string }> = []
   setServer((call: any) => {
-    if (call.url.includes('/_apis/connectionData')) return json(200, { authenticatedUser: { providerDisplayName: 'Test' } })
+    if (call.url.includes('/_apis/connectionData'))
+      return json(200, { authenticatedUser: { providerDisplayName: 'Test' } })
     if (call.url.includes('/wiql/')) return json(200, { workItems: queryIds.map((id) => ({ id })) })
     if (call.url.includes('/wiql?')) {
       const text = String(call.body.query)
-      const parents = text.match(/\[System\.Parent\] IN \(([^)]*)\)/)![1].split(',').map((s) => Number(s.trim()))
-      const iteration = text.match(/\[System\.IterationPath\] = '((?:[^']|'')*)'/)?.[1].replace(/''/g, "'") ?? '(none)'
+      const parents = text
+        .match(/\[System\.Parent\] IN \(([^)]*)\)/)![1]
+        .split(',')
+        .map((s) => Number(s.trim()))
+      const iteration =
+        text.match(/\[System\.IterationPath\] = '((?:[^']|'')*)'/)?.[1].replace(/''/g, "'") ??
+        '(none)'
       childQueries.push({ parents, iteration })
       const found = parents
         .flatMap(childrenOf)
-        .filter((child) => ignoreIteration || child.iteration.toLowerCase() === iteration.toLowerCase())
+        .filter(
+          (child) => ignoreIteration || child.iteration.toLowerCase() === iteration.toLowerCase()
+        )
       return json(200, { workItems: found.map((child) => ({ id: child.id })) })
     }
     if (call.url.includes('workitems?ids=')) {
-      const ids = decodeURIComponent(call.url).match(/ids=([\d,]+)/)![1].split(',').map(Number)
+      const ids = decodeURIComponent(call.url)
+        .match(/ids=([\d,]+)/)![1]
+        .split(',')
+        .map(Number)
       const url = decodeURIComponent(call.url)
       // A named-field request must ask for the iteration, or the client could not check it.
       if (url.includes('&fields=') && !url.includes('System.IterationPath')) {
@@ -78,10 +89,20 @@ const { check, report } = checklist()
 const call = (channel: string, ...args: unknown[]) => handlers.get(channel)!({}, ...args)
 const sorted = (ids: number[]) => JSON.stringify([...ids].sort((a, b) => a - b))
 
-async function start(mode: 'auto' | 'always' | 'never', queryIds: number[], ignoreIteration = false) {
+async function start(
+  mode: 'auto' | 'always' | 'never',
+  queryIds: number[],
+  ignoreIteration = false
+) {
   await call('settings:update', { childQueryMode: mode })
   const childQueries = serve(queryIds, ignoreIteration)
-  const result = await call('sprint:start', { name: 'T', startDate: '2026-09-14', weeks: 2, includeWeekends: false, queryUrl: QUERY })
+  const result = await call('sprint:start', {
+    name: 'T',
+    startDate: '2026-09-14',
+    weeks: 2,
+    includeWeekends: false,
+    queryUrl: QUERY
+  })
   if (!result.ok) throw new Error(result.message)
   return {
     childQueries,
@@ -100,7 +121,10 @@ async function refresh(mode: 'auto' | 'always' | 'never', queryIds: number[]) {
 
 async function run(): Promise<void> {
   registerIpc()
-  await call('settings:update', { authMode: 'windows', members: [{ id: 'm', name: 'M', order: 0 }] })
+  await call('settings:update', {
+    authMode: 'windows',
+    members: [{ id: 'm', name: 'M', order: 0 }]
+  })
 
   // Settings round trip — the original bug.
   for (const mode of ['never', 'always', 'auto'] as const) {
@@ -113,44 +137,103 @@ async function run(): Promise<void> {
 
   // Import: containers only, two parents in sprint A and one in sprint B.
   let r = await start('auto', [1, 2, 4])
-  check('import · auto → only tasks in their parent\'s iteration', sorted(r.backlog) === '[10,11,30,40,41]', r)
-  check('import · one child query per parent iteration',
+  check(
+    "import · auto → only tasks in their parent's iteration",
+    sorted(r.backlog) === '[10,11,30,40,41]',
+    r
+  )
+  check(
+    'import · one child query per parent iteration',
     r.childQueries.length === 2 &&
-    r.childQueries.some((q) => q.iteration === A && sorted(q.parents) === '[1,2]') &&
-    r.childQueries.some((q) => q.iteration === B && sorted(q.parents) === '[4]'), r.childQueries)
-  check('import · other-sprint tasks 12 and 42 excluded', !r.workItems.includes(12) && !r.workItems.includes(42), r.workItems)
-  check('import · iteration compared case-insensitively (41 kept)', r.backlog.includes(41), r.backlog)
+      r.childQueries.some((q) => q.iteration === A && sorted(q.parents) === '[1,2]') &&
+      r.childQueries.some((q) => q.iteration === B && sorted(q.parents) === '[4]'),
+    r.childQueries
+  )
+  check(
+    'import · other-sprint tasks 12 and 42 excluded',
+    !r.workItems.includes(12) && !r.workItems.includes(42),
+    r.workItems
+  )
+  check(
+    'import · iteration compared case-insensitively (41 kept)',
+    r.backlog.includes(41),
+    r.backlog
+  )
 
   r = await start('auto', [1, 2, 4], true)
-  check('import · server ignoring the iteration clause is still filtered', sorted(r.backlog) === '[10,11,30,40,41]', r)
+  check(
+    'import · server ignoring the iteration clause is still filtered',
+    sorted(r.backlog) === '[10,11,30,40,41]',
+    r
+  )
 
   r = await start('always', [1, 2, 4])
-  check('import · always, containers only → same as auto', sorted(r.backlog) === '[10,11,30,40,41]', r)
+  check(
+    'import · always, containers only → same as auto',
+    sorted(r.backlog) === '[10,11,30,40,41]',
+    r
+  )
   r = await start('never', [1, 2, 4])
-  check('import · never → nothing fetched', r.childQueries.length === 0 && r.backlog.length === 0, r)
+  check(
+    'import · never → nothing fetched',
+    r.childQueries.length === 0 && r.backlog.length === 0,
+    r
+  )
 
   // Import: a story, one of its tasks, and a task whose story the query did not return.
   r = await start('auto', [1, 10, 20])
-  check('mixed · auto → nothing fetched', r.childQueries.length === 0 && sorted(r.backlog) === '[10,20]', r)
+  check(
+    'mixed · auto → nothing fetched',
+    r.childQueries.length === 0 && sorted(r.backlog) === '[10,20]',
+    r
+  )
   r = await start('always', [1, 10, 20])
-  check('mixed · always → children of the returned story only',
-    r.childQueries.length === 1 && sorted(r.childQueries[0].parents) === '[1]' && sorted(r.backlog) === '[10,11,20]', r)
-  check('mixed · always → heading-only story 3 kept, its left-out task 21 not pulled in',
-    r.workItems.includes(3) && !r.workItems.includes(21), r.workItems)
+  check(
+    'mixed · always → children of the returned story only',
+    r.childQueries.length === 1 &&
+      sorted(r.childQueries[0].parents) === '[1]' &&
+      sorted(r.backlog) === '[10,11,20]',
+    r
+  )
+  check(
+    'mixed · always → heading-only story 3 kept, its left-out task 21 not pulled in',
+    r.workItems.includes(3) && !r.workItems.includes(21),
+    r.workItems
+  )
   r = await start('never', [1, 10, 20])
-  check('mixed · never → nothing fetched', r.childQueries.length === 0 && sorted(r.backlog) === '[10,20]', r)
+  check(
+    'mixed · never → nothing fetched',
+    r.childQueries.length === 0 && sorted(r.backlog) === '[10,20]',
+    r
+  )
   r = await start('always', [10, 20])
-  check('tasks only · always → nothing to fetch', r.childQueries.length === 0 && sorted(r.backlog) === '[10,20]', r)
+  check(
+    'tasks only · always → nothing to fetch',
+    r.childQueries.length === 0 && sorted(r.backlog) === '[10,20]',
+    r
+  )
 
   // Refresh follows the same setting.
   let f = await refresh('auto', [1, 2, 4])
-  check('refresh · auto → children included', [10, 11, 30, 40, 41].every((id) => f.ids.includes(id)) &&
-    !f.ids.includes(12) && !f.ids.includes(42), f.ids)
+  check(
+    'refresh · auto → children included',
+    [10, 11, 30, 40, 41].every((id) => f.ids.includes(id)) &&
+      !f.ids.includes(12) &&
+      !f.ids.includes(42),
+    f.ids
+  )
   f = await refresh('always', [1, 10, 20])
-  check('refresh · always → children of returned containers', f.ids.includes(11) && !f.ids.includes(21), f.ids)
+  check(
+    'refresh · always → children of returned containers',
+    f.ids.includes(11) && !f.ids.includes(21),
+    f.ids
+  )
   f = await refresh('never', [1, 2, 4])
-  check('refresh · never → query result only', f.childQueries.length === 0 && sorted(f.ids) === '[1,2,4]', f.ids)
-
+  check(
+    'refresh · never → query result only',
+    f.childQueries.length === 0 && sorted(f.ids) === '[1,2,4]',
+    f.ids
+  )
 }
 
 await run()

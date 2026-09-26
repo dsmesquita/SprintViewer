@@ -72,8 +72,8 @@ export default function HoursDialog(): JSX.Element | null {
         />
         <p className="hint">
           TFS says {fmt(plannedHours(item))}
-          {current !== undefined && ` · you have set ${fmt(current)}`}. Nothing is written back
-          to TFS — this only changes how much room the task takes here.
+          {current !== undefined && ` · you have set ${fmt(current)}`}. Nothing is written back to
+          TFS — this only changes how much room the task takes here.
         </p>
       </div>
     </Dialog>

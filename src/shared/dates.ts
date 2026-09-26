@@ -50,7 +50,20 @@ export function formatDayHeader(iso: ISODate): string {
 
 /** "31 Aug – 11 Sep" */
 export function formatRange(from: ISODate, to: ISODate): string {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ]
   const a = fromISO(from)
   const b = fromISO(to)
   return `${a.getDate()} ${months[a.getMonth()]} – ${b.getDate()} ${months[b.getMonth()]}`

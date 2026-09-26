@@ -46,7 +46,9 @@ export default function CreateTasksDialog(): JSX.Element | null {
   const parent = parentId === null ? undefined : sprint.workItems[parentId]
   const baseTitle = parent?.title ?? ''
   const members = [...sprint.members].sort((a, b) => a.order - b.order)
-  const templates = settings?.taskTemplates?.length ? settings.taskTemplates : DEFAULT_TASK_TEMPLATES
+  const templates = settings?.taskTemplates?.length
+    ? settings.taskTemplates
+    : DEFAULT_TASK_TEMPLATES
   // The parent's own assignee is the best first guess for a single task, and only for that:
   // a VAL or QA task is exactly the kind that belongs to someone else.
   const parentOwner = members.find(
@@ -93,7 +95,9 @@ export default function CreateTasksDialog(): JSX.Element | null {
   const valid =
     planned.length > 0 &&
     planned.every(
-      (r) => r.title.trim().length > 0 && (r.ownerId !== OTHER_OWNER || normaliseIdentity(r.other) !== null)
+      (r) =>
+        r.title.trim().length > 0 &&
+        (r.ownerId !== OTHER_OWNER || normaliseIdentity(r.other) !== null)
     )
   const totalHours = planned.reduce((sum, r) => sum + (r.estimate > 0 ? r.estimate : 0), 0)
 
@@ -357,7 +361,9 @@ export default function CreateTasksDialog(): JSX.Element | null {
             <button
               type="button"
               onClick={() =>
-                addRows([{ ...row(taggedTitle('DOC', baseTitle), ''), ...savedOwner(settings?.docOwner) }])
+                addRows([
+                  { ...row(taggedTitle('DOC', baseTitle), ''), ...savedOwner(settings?.docOwner) }
+                ])
               }
             >
               + DOC task
@@ -365,7 +371,9 @@ export default function CreateTasksDialog(): JSX.Element | null {
             <button
               type="button"
               onClick={() =>
-                addRows([{ ...row(taggedTitle('QA', baseTitle), ''), ...savedOwner(settings?.qaOwner) }])
+                addRows([
+                  { ...row(taggedTitle('QA', baseTitle), ''), ...savedOwner(settings?.qaOwner) }
+                ])
               }
             >
               + QA task

@@ -352,7 +352,8 @@ export function valWarnings(
         // Ending on the sprint's last hour means auto-assign put it as late as it could go.
         const last = sprintEnd(sprint, memberId, anchor)
         const ends = lastEnd(layout, blockId)
-        const atEnd = last !== null && ends !== null && ends.date === last.date && ends.hour >= last.hour - 1e-9
+        const atEnd =
+          last !== null && ends !== null && ends.date === last.date && ends.hour >= last.hour - 1e-9
         warnings.set(
           blockId,
           `Starts before its DEV work ends (${formatDayHeader(end.date)}, hour ${Math.ceil(end.hour)})` +
@@ -388,7 +389,11 @@ function placementsOf(
   for (const [memberId, layout] of Object.entries(layoutSprint(sprint, anchor))) {
     for (const segment of layout.segments) {
       if (!ids.has(segment.blockId) || segment.fromHistory || segment.isDone) continue
-      const entry = out.get(segment.blockId) ?? { memberId, workItemId: segment.workItemId, parts: [] }
+      const entry = out.get(segment.blockId) ?? {
+        memberId,
+        workItemId: segment.workItemId,
+        parts: []
+      }
       entry.parts.push(`${segment.date}@${segment.startHour}+${segment.hours}`)
       out.set(segment.blockId, entry)
     }
@@ -480,7 +485,8 @@ export function planAutoAssign(
     const layout = baseLayouts[memberId]
     let room = round((layout?.availableHours ?? 0) - (layout?.queuedHours ?? 0))
     const ordered = [...candidates].sort(
-      (a, b) => kindOrder[a.kind] - kindOrder[b.kind] || compareForAssignment(sprint, a.block, b.block)
+      (a, b) =>
+        kindOrder[a.kind] - kindOrder[b.kind] || compareForAssignment(sprint, a.block, b.block)
     )
     for (const candidate of ordered) {
       if (candidate.block.hours > room) {
@@ -535,7 +541,12 @@ export function planAutoAssign(
   // was already there, so it needs no checking.
   const append = (candidate: Candidate): void => {
     const queue = next.queues[candidate.memberId] ?? []
-    next = moveBlock(next, candidate.block.id, { kind: 'member', memberId: candidate.memberId }, queue.length)
+    next = moveBlock(
+      next,
+      candidate.block.id,
+      { kind: 'member', memberId: candidate.memberId },
+      queue.length
+    )
     receivers.add(candidate.memberId)
     summary.placed++
   }
@@ -567,7 +578,13 @@ export function planAutoAssign(
     for (const { candidate, start } of order) {
       const current = pins.get(candidate.block.id)
       if (current && current.date === start.date && current.hour === start.hour) continue
-      const pinned = pinBlockAt(next, candidate.block.id, candidate.memberId, start.date, start.hour)
+      const pinned = pinBlockAt(
+        next,
+        candidate.block.id,
+        candidate.memberId,
+        start.date,
+        start.hour
+      )
       if (keepBase && disturbs(pinned)) {
         // The rule gives way to the calendar: the VAL joins the end of its owner's work. One
         // already pinned by an earlier pass is on the calendar and counted, so it is only
@@ -576,7 +593,12 @@ export function planAutoAssign(
         pins.delete(candidate.block.id)
         if (current) {
           const queue = next.queues[candidate.memberId] ?? []
-          next = moveBlock(next, candidate.block.id, { kind: 'member', memberId: candidate.memberId }, queue.length)
+          next = moveBlock(
+            next,
+            candidate.block.id,
+            { kind: 'member', memberId: candidate.memberId },
+            queue.length
+          )
         } else {
           append(candidate)
         }
@@ -600,7 +622,11 @@ export function planAutoAssign(
   const late = new Set<string>()
   for (const blockId of [...pins.keys()]) {
     const candidate = vals.find((c) => c.block.id === blockId)!
-    if (drawnHours(layoutSprint(next, anchor), candidate.memberId, blockId) >= candidate.block.hours - 1e-9) continue
+    if (
+      drawnHours(layoutSprint(next, anchor), candidate.memberId, blockId) >=
+      candidate.block.hours - 1e-9
+    )
+      continue
 
     const fallback = latestFit(next, anchor, candidate, keepBase ? disturbs : () => false)
     if (fallback) {
@@ -618,7 +644,11 @@ export function planAutoAssign(
   summary.valsChained = pins.size - late.size
   for (const blockId of pins.keys()) {
     const candidate = vals.find((c) => c.block.id === blockId)!
-    pinnedNew.push({ memberId: candidate.memberId, workItemId: candidate.item.id, rule: late.has(blockId) ? 'late-val' : 'val' })
+    pinnedNew.push({
+      memberId: candidate.memberId,
+      workItemId: candidate.item.id,
+      rule: late.has(blockId) ? 'late-val' : 'val'
+    })
   }
 
   // 4. Room given back — a VAL still waiting, one that did not fit — goes to the work that was
@@ -652,7 +682,9 @@ export function planAutoAssign(
       memberId: was.memberId,
       kind: now.pieces > was.pieces ? 'split' : 'moved',
       causes: pinnedNew
-        .filter((p) => p.memberId === was.memberId && !seen.has(p.workItemId) && seen.add(p.workItemId))
+        .filter(
+          (p) => p.memberId === was.memberId && !seen.has(p.workItemId) && seen.add(p.workItemId)
+        )
         .map(({ workItemId, rule }) => ({ workItemId, rule }))
     })
   }
@@ -676,14 +708,22 @@ function lastBaseDay(
 }
 
 /** How many of a block's hours the layout manages to draw ahead of the anchor. */
-function drawnHours(layouts: Record<string, MemberLayout>, memberId: string, blockId: string): number {
+function drawnHours(
+  layouts: Record<string, MemberLayout>,
+  memberId: string,
+  blockId: string
+): number {
   return (layouts[memberId]?.segments ?? [])
     .filter((s) => s.blockId === blockId && !s.fromHistory && !s.isDone)
     .reduce((sum, s) => sum + s.hours, 0)
 }
 
 /** The days a person can have work pinned to from the anchor on: working, and not locked. */
-function workingDaysFrom(sprint: Sprint, memberId: string, anchor: ISODate): Array<{ date: ISODate; capacity: number }> {
+function workingDaysFrom(
+  sprint: Sprint,
+  memberId: string,
+  anchor: ISODate
+): Array<{ date: ISODate; capacity: number }> {
   const locked = new Set(sprint.lockedDays ?? [])
   return sprint.days
     .filter((day) => day.date >= anchor && !locked.has(day.date))
@@ -728,7 +768,10 @@ function latestFit(
   const taken = new Map<ISODate, Array<{ start: number; end: number }>>()
   for (const s of baseLayouts[memberId]?.segments ?? []) {
     if (s.fromHistory || !(s.pinned || s.isDone)) continue
-    taken.set(s.date, [...(taken.get(s.date) ?? []), { start: s.startHour, end: round(s.startHour + s.hours) }])
+    taken.set(s.date, [
+      ...(taken.get(s.date) ?? []),
+      { start: s.startHour, end: round(s.startHour + s.hours) }
+    ])
   }
 
   const days = workingDaysFrom(sprint, memberId, anchor)
@@ -782,7 +825,10 @@ function pinnedPlacements(layouts: Record<string, MemberLayout>, except?: string
 }
 
 /** The stretches of a day of `capacity` hours that none of `taken` covers, earliest first. */
-function freeGaps(capacity: number, taken: Array<{ start: number; end: number }>): Array<{ start: number; end: number }> {
+function freeGaps(
+  capacity: number,
+  taken: Array<{ start: number; end: number }>
+): Array<{ start: number; end: number }> {
   const gaps: Array<{ start: number; end: number }> = []
   let cursor = 0
   for (const t of [...taken].sort((a, b) => a.start - b.start)) {

@@ -14,7 +14,6 @@ export interface FakeRequest {
   url: string
   method?: string
   contentType?: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   body?: any
 }
 
@@ -23,7 +22,6 @@ type Server = (request: FakeRequest) => Response | Promise<Response>
 const userData = mkdtempSync(join(tmpdir(), 'sprint-viewer-test-'))
 
 // A route answers with whatever that route returns; tests read the fields they expect.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Handler = (event: unknown, ...args: any[]) => any
 export const handlers = new Map<string, Handler>()
 export const requests: FakeRequest[] = []

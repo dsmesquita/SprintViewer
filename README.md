@@ -8,29 +8,29 @@ traffic the app makes is the requests to your TFS server.
 
 ## Current state
 
-| What it does |
-| --- |
-| Calendar grid with spillover warnings |
-| A back button, undoing any change to the board |
-| Manual hours for a task, overruling what TFS says |
-| Snapshots of the board, to restore or compare against |
-| Drag and drop, with a live preview of exactly where the task will land |
-| Pinning: drop onto a day already past to record what was worked |
-| Refresh: re-read remaining hours from TFS and re-flow the sprint |
-| Backlog search by number, title or assignee, accent-insensitive |
+| What it does                                                                |
+| --------------------------------------------------------------------------- |
+| Calendar grid with spillover warnings                                       |
+| A back button, undoing any change to the board                              |
+| Manual hours for a task, overruling what TFS says                           |
+| Snapshots of the board, to restore or compare against                       |
+| Drag and drop, with a live preview of exactly where the task will land      |
+| Pinning: drop onto a day already past to record what was worked             |
+| Refresh: re-read remaining hours from TFS and re-flow the sprint            |
+| Backlog search by number, title or assignee, accent-insensitive             |
 | Tasks grouped under their parent User Story or Bug, expand and collapse all |
-| Filter the backlog by the tag in a task's title |
-| The TFS assignee shown on tasks, and a check before a contradicting drop |
-| Tasks sized by estimate, with reported hours drawn before today |
-| A warning when reported hours will not fit in the days that have passed |
-| Auto-assign: fill the calendar from the backlog, by assignee and priority |
-| Splitting a task, with the remainder returning to the backlog |
-| Clear sprint: send everything back to the backlog and start again |
-| Dropping into the middle of a task asks how to make room |
-| Days off and half days, per person and team-wide |
-| Notes on people and tasks: write, edit, link, delete |
-| Settings: team roster, encrypted PAT, connection test |
-| Start sprint: import work items from a TFS query |
+| Filter the backlog by the tag in a task's title                             |
+| The TFS assignee shown on tasks, and a check before a contradicting drop    |
+| Tasks sized by estimate, with reported hours drawn before today             |
+| A warning when reported hours will not fit in the days that have passed     |
+| Auto-assign: fill the calendar from the backlog, by assignee and priority   |
+| Splitting a task, with the remainder returning to the backlog               |
+| Clear sprint: send everything back to the backlog and start again           |
+| Dropping into the middle of a task asks how to make room                    |
+| Days off and half days, per person and team-wide                            |
+| Notes on people and tasks: write, edit, link, delete                        |
+| Settings: team roster, encrypted PAT, connection test                       |
+| Start sprint: import work items from a TFS query                            |
 
 **Going back.** Every change to the board can be undone, one step at a time, fifty deep: a
 drag, a split, auto-assign, clear, a restored snapshot, a refresh. The button names what it
@@ -39,7 +39,7 @@ memory, so closing the app starts a fresh one. The tag filter is deliberately no
 it is a view preference stored with the sprint, and going back a step should not change what
 you are looking at.
 
-**Manual hours.** Right-click a task and *Set hours…* to overrule TFS about its size; the card
+**Manual hours.** Right-click a task and _Set hours…_ to overrule TFS about its size; the card
 and its blocks are marked, with the real figure in the tooltip. The number is kept with the
 sprint rather than with the work item, so a refresh cannot quietly wipe it. When a refresh does
 bring a different figure, the whole refresh waits and asks, task by task: keep yours, take the
@@ -47,8 +47,8 @@ one from TFS, or type a fresh number having seen both — with a single click to
 the first two to every task at once. Cancelling leaves the board exactly as it was.
 
 **Snapshots.** Take one when the plan is agreed and it is stored with the sprint, named and
-dated. Later, *Open* puts it in its own read-only window to sit beside the live board, *Restore*
-puts the board back to it, and *Export* writes it to a file. The compare window has a toggle,
+dated. Later, _Open_ puts it in its own read-only window to sit beside the live board, _Restore_
+puts the board back to it, and _Export_ writes it to a file. The compare window has a toggle,
 off by default, that marks every work item that has changed since — moved to somebody else,
 slipped or pulled to a different day, grown, shrunk, gone, or added — and lists them. Comparison
 is per work item, so a task split in two is still one task rather than two problems. Restoring
@@ -82,7 +82,7 @@ work nobody has broken down yet is exactly what you want to notice, not to have 
 
 **Sizing.** A task is not sized by what is left of it, which would make it shrink as it gets
 done and leave a busy sprint looking empty. Before anything is reported it takes the space of
-its Original Estimate. Once hours are reported against it, those hours are drawn *before*
+its Original Estimate. Once hours are reported against it, those hours are drawn _before_
 today, hatched and immovable, and Remaining Work is drawn after — so a task reported at ten
 hours against an eight hour estimate visibly spans thirteen when three remain. Reported hours
 never consume capacity ahead of today, and are not drawn at all where the same work has
@@ -119,7 +119,7 @@ changes.
 carries a discipline tag, and a row of chips above the backlog switches each one on or off.
 Only the first seven characters are read, so a bracket or a pair of colons in the middle of a
 sentence is not mistaken for a tag; the space in `E2E ::` is ignored, and case is folded, so
-one tag never appears twice in the row. Anything with no prefix is *Others*. What is hidden
+one tag never appears twice in the row. Anything with no prefix is _Others_. What is hidden
 is stored with the sprint rather than what is shown, so a tag arriving at a later refresh is
 visible by default instead of being filtered out by a list written before it existed.
 
@@ -127,7 +127,7 @@ visible by default instead of being filtered out by a list written before it exi
 somebody else asks first — names are compared with accents and case stripped, on the full
 name, then the first, then the last, against both the roster name and the configured TFS
 identity, so `Vítor Andrade` and `Vitor` are the same person. A task nobody is assigned to is
-not a contradiction and never asks. Answering *yes* changes only this app: nothing is ever
+not a contradiction and never asks. Answering _yes_ changes only this app: nothing is ever
 written back to TFS.
 
 **Dropping into the middle.** The first hour of a task plainly means "before this one" and the
@@ -142,27 +142,27 @@ record of past days — a completely empty calendar. Parts of a task that were s
 one card. It asks first, and says how many tasks and how many recorded days are going, because
 it cannot be undone. Nothing is written to TFS.
 
-**Notes.** Right-click a person's name or any task to write one, or use *Add note* in the
+**Notes.** Right-click a person's name or any task to write one, or use _Add note_ in the
 person panel. A note always belongs to a person, since that is where it is read, and may point
 at any number of work items — or none, for a remark about someone's week rather than a task.
 A note stays with the person it was written for even if a task it mentions is later given to
 somebody else.
 
 **Refresh.** Re-reads the scheduling fields for every item in the sprint's query. The rule it
-rests on: a work item's *schedulable* blocks should add up to the hours it still needs. Blocks pinned to
+rests on: a work item's _schedulable_ blocks should add up to the hours it still needs. Blocks pinned to
 a day that has already passed are hours already spent, so they are excluded from that sum and
 never altered. A task that drops from eight hours to three keeps its place in the queue and
 simply gets shorter, and everything behind it slides to suit. When a split task grows, the
-extra joins the part that comes *first* on the calendar — the work grew where it is being
+extra joins the part that comes _first_ on the calendar — the work grew where it is being
 done; when it shrinks, the hours come off the last part backwards. Either way the parts always
 sum to what one unsplit task would have been. Finished tasks leave the calendar but keep their
 history, and items that vanish from the query are marked rather than deleted.
 
-**Planned versus recorded work.** Dropping a task on a day at or *before* today pins it to
+**Planned versus recorded work.** Dropping a task on a day at or _before_ today pins it to
 that exact hour — that is how a sprint already in progress gets its history entered. Dropping
-it on a *later* day adds it to that person's queue, which flows forward with no gaps, so a
+it on a _later_ day adds it to that person's queue, which flows forward with no gaps, so a
 refresh can push everything right when hours change. Dragging a pinned task somewhere else, or
-using *Unpin* on its right-click menu, hands it back to the queue.
+using _Unpin_ on its right-click menu, hands it back to the queue.
 
 Ideas raised but not asked for are in [ROADMAP.md](ROADMAP.md).
 

@@ -19,7 +19,13 @@ interface Props {
  * already on a calendar, it says what and why, and offers the run that leaves it all alone —
  * so assigning the rest of the backlog never quietly rearranges what the user planned.
  */
-export default function AutoAssignDialog({ sprint, allow, keep, onApply, onClose }: Props): JSX.Element {
+export default function AutoAssignDialog({
+  sprint,
+  allow,
+  keep,
+  onApply,
+  onClose
+}: Props): JSX.Element {
   const changes = allow.baseChanges
   const conflicted = changes.length > 0 && keep !== null
   const title = (id: number): string => `#${id} ${sprint.workItems[id]?.title ?? ''}`
@@ -70,11 +76,10 @@ export default function AutoAssignDialog({ sprint, allow, keep, onApply, onClose
   const lostSpread = allow.summary.meetingsSplit - keep.summary.meetingsSplit
   // Meetings kept spread can still be spread differently — only over days the existing work
   // does not reach — and the counts alone would hide that.
-  const movedSpread = meetingDates(allow.sprint)
-    .filter(([id, dates]) => {
-      const other = meetingDates(keep.sprint).find(([otherId]) => otherId === id)?.[1]
-      return other !== undefined && other !== dates
-    }).length
+  const movedSpread = meetingDates(allow.sprint).filter(([id, dates]) => {
+    const other = meetingDates(keep.sprint).find(([otherId]) => otherId === id)?.[1]
+    return other !== undefined && other !== dates
+  }).length
 
   return (
     <Dialog
@@ -103,7 +108,8 @@ export default function AutoAssignDialog({ sprint, allow, keep, onApply, onClose
         {changes.map((change) => (
           <li key={change.blockId}>
             <strong>{title(change.workItemId)}</strong> on {nameOf(change.memberId)}&rsquo;s
-            calendar {change.kind === 'split' ? 'is split' : 'moves later'} — {because(change, title)}
+            calendar {change.kind === 'split' ? 'is split' : 'moves later'} —{' '}
+            {because(change, title)}
           </li>
         ))}
       </ul>
@@ -133,11 +139,18 @@ export default function AutoAssignDialog({ sprint, allow, keep, onApply, onClose
 }
 
 function because(change: BaseChange, title: (id: number) => string): string {
-  const vals = change.causes.filter((cause) => cause.rule === 'val').map((cause) => title(cause.workItemId))
-  const meetings = change.causes.filter((cause) => cause.rule === 'meeting').map((cause) => title(cause.workItemId))
-  const late = change.causes.filter((cause) => cause.rule === 'late-val').map((cause) => title(cause.workItemId))
+  const vals = change.causes
+    .filter((cause) => cause.rule === 'val')
+    .map((cause) => title(cause.workItemId))
+  const meetings = change.causes
+    .filter((cause) => cause.rule === 'meeting')
+    .map((cause) => title(cause.workItemId))
+  const late = change.causes
+    .filter((cause) => cause.rule === 'late-val')
+    .map((cause) => title(cause.workItemId))
   const reasons = [
-    vals.length > 0 && `to start ${vals.join(', ')} right after ${vals.length === 1 ? 'its' : 'their'} DEV`,
+    vals.length > 0 &&
+      `to start ${vals.join(', ')} right after ${vals.length === 1 ? 'its' : 'their'} DEV`,
     late.length > 0 && `to fit ${late.join(', ')} in before the sprint ends`,
     meetings.length > 0 && `to spread ${meetings.join(', ')} over the sprint`
   ].filter(Boolean)
@@ -146,13 +159,34 @@ function because(change: BaseChange, title: (id: number) => string): string {
 
 function Summary({ summary }: { summary: AssignSummary }): JSX.Element {
   const lines: Array<[number, string]> = [
-    [summary.meetingsSplit, `${one(summary.meetingsSplit, 'meeting allowance is', 'meeting allowances are')} spread over several days`],
-    [summary.valsChained, `${one(summary.valsChained, 'VAL task starts', 'VAL tasks start')} straight after ${one(summary.valsChained, 'its', 'their')} DEV`],
-    [summary.valsLate, `${one(summary.valsLate, 'VAL task goes', 'VAL tasks go')} as late as the sprint allows — ${one(summary.valsLate, 'its', 'their')} DEV ends too close to the end to follow it`],
-    [summary.waitingForDev, `${one(summary.waitingForDev, 'VAL task stays', 'VAL tasks stay')} in the backlog until ${one(summary.waitingForDev, 'its', 'their')} DEV is planned`],
-    [summary.unattributed, `${one(summary.unattributed, 'stays', 'stay')} in the backlog — TFS names nobody on this team against ${one(summary.unattributed, 'it', 'them')}`],
-    [summary.tooBig, `${one(summary.tooBig, 'does', 'do')} not fit in the hours ${one(summary.tooBig, 'its', 'their')} person has left`],
-    [summary.unsized, `${one(summary.unsized, 'has', 'have')} no hours against ${one(summary.unsized, 'it', 'them')} in TFS at all`]
+    [
+      summary.meetingsSplit,
+      `${one(summary.meetingsSplit, 'meeting allowance is', 'meeting allowances are')} spread over several days`
+    ],
+    [
+      summary.valsChained,
+      `${one(summary.valsChained, 'VAL task starts', 'VAL tasks start')} straight after ${one(summary.valsChained, 'its', 'their')} DEV`
+    ],
+    [
+      summary.valsLate,
+      `${one(summary.valsLate, 'VAL task goes', 'VAL tasks go')} as late as the sprint allows — ${one(summary.valsLate, 'its', 'their')} DEV ends too close to the end to follow it`
+    ],
+    [
+      summary.waitingForDev,
+      `${one(summary.waitingForDev, 'VAL task stays', 'VAL tasks stay')} in the backlog until ${one(summary.waitingForDev, 'its', 'their')} DEV is planned`
+    ],
+    [
+      summary.unattributed,
+      `${one(summary.unattributed, 'stays', 'stay')} in the backlog — TFS names nobody on this team against ${one(summary.unattributed, 'it', 'them')}`
+    ],
+    [
+      summary.tooBig,
+      `${one(summary.tooBig, 'does', 'do')} not fit in the hours ${one(summary.tooBig, 'its', 'their')} person has left`
+    ],
+    [
+      summary.unsized,
+      `${one(summary.unsized, 'has', 'have')} no hours against ${one(summary.unsized, 'it', 'them')} in TFS at all`
+    ]
   ]
   return (
     <>

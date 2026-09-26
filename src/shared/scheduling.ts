@@ -88,7 +88,8 @@ export function layoutMember(
   }
 
   const today = sprint.days.find((day) => day.date >= anchor)?.date
-  const taken = today === undefined ? 0 : Math.min(reportedToday, effectiveCapacity(sprint, memberId, today))
+  const taken =
+    today === undefined ? 0 : Math.min(reportedToday, effectiveCapacity(sprint, memberId, today))
   if (today !== undefined && taken > 0) claim(occupied, today, { start: 0, end: taken })
 
   let availableHours = 0
@@ -228,7 +229,8 @@ function freeIntervals(capacity: number, taken: Interval[] | undefined): Interva
   const gaps: Interval[] = []
   let cursor = 0
   for (const interval of [...taken].sort((a, b) => a.start - b.start)) {
-    if (interval.start > cursor) gaps.push({ start: cursor, end: Math.min(interval.start, capacity) })
+    if (interval.start > cursor)
+      gaps.push({ start: cursor, end: Math.min(interval.start, capacity) })
     cursor = Math.max(cursor, interval.end)
     if (cursor >= capacity) break
   }
@@ -295,7 +297,10 @@ export function layoutSprint(sprint: Sprint, anchor: ISODate): Record<string, Me
  * TFS itself: when Completed Work goes *down* — a typo corrected — the record cannot go on
  * showing hours nobody reports, so the most recent of them are dropped. Nothing else moves.
  */
-export function liveRecord(sprint: Sprint, anchor: ISODate): Record<string, Record<ISODate, Segment[]>> {
+export function liveRecord(
+  sprint: Sprint,
+  anchor: ISODate
+): Record<string, Record<ISODate, Segment[]>> {
   if (!sprint.pastRecord) return {}
   const all: Array<{ memberId: string; piece: Segment }> = []
   for (const [memberId, byDate] of Object.entries(sprint.pastRecord)) {
@@ -304,7 +309,9 @@ export function liveRecord(sprint: Sprint, anchor: ISODate): Record<string, Reco
       for (const piece of pieces) all.push({ memberId, piece })
     }
   }
-  all.sort((a, b) => a.piece.date.localeCompare(b.piece.date) || a.piece.startHour - b.piece.startHour)
+  all.sort(
+    (a, b) => a.piece.date.localeCompare(b.piece.date) || a.piece.startHour - b.piece.startHour
+  )
 
   const used = new Map<number, number>()
   const out: Record<string, Record<ISODate, Segment[]>> = {}
@@ -329,7 +336,10 @@ export function liveRecord(sprint: Sprint, anchor: ISODate): Record<string, Reco
  * The reported hours drawn on each day before the anchor, per person — what a refresh stores
  * as {@link Sprint.pastRecord}. Pieces that ran onto today are left out: today is not over.
  */
-export function recordPast(sprint: Sprint, anchor: ISODate): Record<string, Record<ISODate, Segment[]>> {
+export function recordPast(
+  sprint: Sprint,
+  anchor: ISODate
+): Record<string, Record<ISODate, Segment[]>> {
   const record: Record<string, Record<ISODate, Segment[]>> = {}
   for (const [memberId, layout] of Object.entries(layoutSprint(sprint, anchor))) {
     const byDate: Record<ISODate, Segment[]> = {}
@@ -376,9 +386,16 @@ function withReportedHours(
     for (const segment of layout.segments) {
       if (segment.fromHistory || segment.isDone) continue
       const best = earliest.get(segment.workItemId)
-      if (!best || segment.date < best.date ||
-        (segment.date === best.date && segment.startHour < best.startHour)) {
-        earliest.set(segment.workItemId, { memberId, date: segment.date, startHour: segment.startHour })
+      if (
+        !best ||
+        segment.date < best.date ||
+        (segment.date === best.date && segment.startHour < best.startHour)
+      ) {
+        earliest.set(segment.workItemId, {
+          memberId,
+          date: segment.date,
+          startHour: segment.startHour
+        })
       }
     }
   }
@@ -390,7 +407,11 @@ function withReportedHours(
   // scheduled, so a pinned item is drawn even with no block left anywhere.
   const targets = new Map<number, Placement>()
   for (const [workItemId, position] of earliest) {
-    targets.set(workItemId, { memberId: position.memberId, date: position.date, hour: position.startHour })
+    targets.set(workItemId, {
+      memberId: position.memberId,
+      date: position.date,
+      hour: position.startHour
+    })
   }
   // A task with nothing left has no block to be found by, and one that was finished before
   // anybody scheduled it never had one. TFS still says whose it was, and those hours happened:
@@ -404,7 +425,12 @@ function withReportedHours(
   }
   for (const [key, pin] of Object.entries(sprint.reportedPins ?? {})) {
     if (!layouts[pin.memberId]) continue
-    targets.set(Number(key), { memberId: pin.memberId, date: pin.date, hour: pin.startHour, pinned: true })
+    targets.set(Number(key), {
+      memberId: pin.memberId,
+      date: pin.date,
+      hour: pin.startHour,
+      pinned: true
+    })
   }
 
   const owned = new Map<string, Array<{ workItemId: number; hours: number; pinned: boolean }>>()
@@ -452,7 +478,8 @@ function withReportedHours(
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
       const leftRecord = firstRecorded.get(a.workItemId)
       const rightRecord = firstRecorded.get(b.workItemId)
-      if ((leftRecord === undefined) !== (rightRecord === undefined)) return leftRecord === undefined ? 1 : -1
+      if ((leftRecord === undefined) !== (rightRecord === undefined))
+        return leftRecord === undefined ? 1 : -1
       if (leftRecord !== undefined && rightRecord !== undefined && leftRecord !== rightRecord) {
         return leftRecord < rightRecord ? -1 : 1
       }
@@ -468,7 +495,8 @@ function withReportedHours(
     // cannot be planned into them.
     let todayUsed = 0
     const todayDate = sprint.days[anchorIndex]?.date
-    const todayCapacity = todayDate === undefined ? 0 : effectiveCapacity(sprint, memberId, todayDate)
+    const todayCapacity =
+      todayDate === undefined ? 0 : effectiveCapacity(sprint, memberId, todayDate)
 
     for (const { workItemId, hours, pinned } of ordered) {
       const target = targets.get(workItemId)!
@@ -723,7 +751,8 @@ export function occupantAt(
     .filter(
       (segment) =>
         segment.blockId === hit.blockId &&
-        (segment.date < hit.date || (segment.date === hit.date && segment.startHour < hit.startHour))
+        (segment.date < hit.date ||
+          (segment.date === hit.date && segment.startHour < hit.startHour))
     )
     .reduce((sum, segment) => sum + segment.hours, 0)
 

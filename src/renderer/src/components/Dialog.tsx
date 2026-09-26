@@ -21,7 +21,12 @@ export default function Dialog({ title, onClose, children, footer, wide }: Props
 
   return (
     <div className="backdrop">
-      <div className={wide ? 'dialog is-wide' : 'dialog'} role="dialog" aria-modal="true" aria-label={title}>
+      <div
+        className={wide ? 'dialog is-wide' : 'dialog'}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
         <div className="dialog-head">
           <h2>{title}</h2>
           <button type="button" className="ghost" onClick={onClose} aria-label="Close">

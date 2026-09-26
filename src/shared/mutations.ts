@@ -19,7 +19,11 @@ export interface BlockPosition {
 export function findBlock(sprint: Sprint, blockId: string): BlockPosition | null {
   const backlogIndex = sprint.backlog.findIndex((block) => block.id === blockId)
   if (backlogIndex >= 0) {
-    return { location: { kind: 'backlog' }, index: backlogIndex, block: sprint.backlog[backlogIndex] }
+    return {
+      location: { kind: 'backlog' },
+      index: backlogIndex,
+      block: sprint.backlog[backlogIndex]
+    }
   }
   for (const [memberId, queue] of Object.entries(sprint.queues)) {
     const index = queue.findIndex((block) => block.id === blockId)
@@ -171,7 +175,12 @@ export function splitIntoN(
  * locked/unlocked boundary are split at that boundary first, leaving each piece in the
  * locked or unlocked zone rather than spanning it.
  */
-export function lockDay(sprint: Sprint, date: ISODate, anchor: ISODate, newId: () => string): Sprint {
+export function lockDay(
+  sprint: Sprint,
+  date: ISODate,
+  anchor: ISODate,
+  newId: () => string
+): Sprint {
   const lockedDays = [...(sprint.lockedDays ?? []), date].filter(
     (d, i, arr) => arr.indexOf(d) === i
   )
@@ -253,7 +262,11 @@ export function setHoursPerDay(sprint: Sprint, hoursPerDay: number): Sprint {
   if (next === previous || previous <= 0) return sprint
 
   const scale = (capacity: number): number =>
-    capacity <= 0 ? 0 : capacity >= previous ? next : clamp(round(capacity * (next / previous)), 0, next)
+    capacity <= 0
+      ? 0
+      : capacity >= previous
+        ? next
+        : clamp(round(capacity * (next / previous)), 0, next)
 
   const capacityOverrides: Sprint['capacityOverrides'] = {}
   for (const [memberId, byDate] of Object.entries(sprint.capacityOverrides)) {
@@ -284,7 +297,7 @@ export function setHoursPerDay(sprint: Sprint, hoursPerDay: number): Sprint {
   const trim = (frozen: Sprint['history']): Sprint['history'] => {
     const out: Sprint['history'] = {}
     for (const [memberId, byDate] of Object.entries(frozen)) {
-      const days: Record<ISODate, typeof byDate[string]> = {}
+      const days: Record<ISODate, (typeof byDate)[string]> = {}
       for (const [date, segments] of Object.entries(byDate)) {
         days[date] = segments
           .filter((segment) => segment.startHour < next)
@@ -317,7 +330,10 @@ export function setHoursPerDay(sprint: Sprint, hoursPerDay: number): Sprint {
 export function clearCalendarCost(sprint: Sprint): { blocks: number; recordedDays: number } {
   const blocks = Object.values(sprint.queues).reduce((sum, queue) => sum + queue.length, 0)
   const days = new Set<ISODate>()
-  for (const byDate of [...Object.values(sprint.history), ...Object.values(sprint.pastRecord ?? {})]) {
+  for (const byDate of [
+    ...Object.values(sprint.history),
+    ...Object.values(sprint.pastRecord ?? {})
+  ]) {
     for (const [date, segments] of Object.entries(byDate)) {
       if (segments.length > 0) days.add(date)
     }
@@ -356,9 +372,7 @@ export function setDayCapacity(
   return {
     ...sprint,
     days: sprint.days.map((day) =>
-      day.date === date
-        ? { ...day, capacity: clamp(capacity, 0, sprint.hoursPerDay), label }
-        : day
+      day.date === date ? { ...day, capacity: clamp(capacity, 0, sprint.hoursPerDay), label } : day
     )
   }
 }

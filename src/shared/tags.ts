@@ -86,7 +86,9 @@ export function tagCounts(sprint: Sprint, blocks: Block[]): TagCount[] {
     counts.set(tag, entry)
   }
 
-  const ordered = [...counts.values()].sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+  const ordered = [...counts.values()].sort(
+    (a, b) => b.count - a.count || a.tag.localeCompare(b.tag)
+  )
   return [
     ...ordered.filter((entry) => entry.tag !== UNTAGGED),
     ...ordered.filter((entry) => entry.tag === UNTAGGED)
@@ -111,15 +113,11 @@ export function toggleTag(sprint: Sprint, tag: string): Sprint {
   const hidden = sprint.hiddenTags ?? []
   return {
     ...sprint,
-    hiddenTags: hidden.includes(tag)
-      ? hidden.filter((other) => other !== tag)
-      : [...hidden, tag]
+    hiddenTags: hidden.includes(tag) ? hidden.filter((other) => other !== tag) : [...hidden, tag]
   }
 }
 
 /** Clears the filter. */
 export function showAllTags(sprint: Sprint): Sprint {
-  return sprint.hiddenTags && sprint.hiddenTags.length > 0
-    ? { ...sprint, hiddenTags: [] }
-    : sprint
+  return sprint.hiddenTags && sprint.hiddenTags.length > 0 ? { ...sprint, hiddenTags: [] } : sprint
 }

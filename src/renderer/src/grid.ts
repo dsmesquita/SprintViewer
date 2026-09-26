@@ -23,8 +23,11 @@ export function zoomPercent(hourWidth: number): number {
 
 /** The nearest zoom stop `steps` away from `hourWidth`. */
 export function stepZoom(hourWidth: number, steps: number): number {
-  const nearest = HOUR_W_STEPS.reduce((best, width, index) =>
-    Math.abs(width - hourWidth) < Math.abs(HOUR_W_STEPS[best] - hourWidth) ? index : best, 0)
+  const nearest = HOUR_W_STEPS.reduce(
+    (best, width, index) =>
+      Math.abs(width - hourWidth) < Math.abs(HOUR_W_STEPS[best] - hourWidth) ? index : best,
+    0
+  )
   return HOUR_W_STEPS[Math.min(Math.max(nearest + steps, 0), HOUR_W_STEPS.length - 1)]
 }
 

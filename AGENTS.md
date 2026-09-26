@@ -18,14 +18,14 @@ User-facing documentation lives **in the app**: `src/renderer/src/components/Hel
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `npm install` | Dependencies (Node 18+) |
-| `npm run dev` | The real Electron app with hot reload |
-| `npm run dev:web` | Renderer only, in a browser at **http://localhost:5178** (`.claude/launch.json` → `sprint-viewer-web`). `window.api` is absent, so anything that needs TFS or disk is inert — click **Load sample data** to get a full mid-sprint board (`src/shared/mock.ts`). |
-| `npm run typecheck` | `tsc` over both projects (`tsconfig.node.json`, `tsconfig.web.json`) |
-| `npm run build` | typecheck + `electron-vite build` into `out/` |
-| `npm run dist` | build + `electron-builder --win` → `release/Sprint Viewer <version> Setup.exe` (unsigned; SmartScreen warns) |
+| Command             | What it does                                                                                                                                                                                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm install`       | Dependencies (Node 18+)                                                                                                                                                                                                                                         |
+| `npm run dev`       | The real Electron app with hot reload                                                                                                                                                                                                                           |
+| `npm run dev:web`   | Renderer only, in a browser at **http://localhost:5178** (`.claude/launch.json` → `sprint-viewer-web`). `window.api` is absent, so anything that needs TFS or disk is inert — click **Load sample data** to get a full mid-sprint board (`src/shared/mock.ts`). |
+| `npm run typecheck` | `tsc` over both projects (`tsconfig.node.json`, `tsconfig.web.json`)                                                                                                                                                                                            |
+| `npm run build`     | typecheck + `electron-vite build` into `out/`                                                                                                                                                                                                                   |
+| `npm run dist`      | build + `electron-builder --win` → `release/Sprint Viewer <version> Setup.exe` (unsigned; SmartScreen warns)                                                                                                                                                    |
 
 A release is: bump `version` in `package.json`, `npm run dist`. Version bumps are the owner's call.
 

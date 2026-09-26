@@ -63,7 +63,10 @@ export function SettingsIcon(props: IconProps): JSX.Element {
   )
 }
 
-export function ChevronIcon({ direction, ...props }: IconProps & { direction: 'left' | 'right' }): JSX.Element {
+export function ChevronIcon({
+  direction,
+  ...props
+}: IconProps & { direction: 'left' | 'right' }): JSX.Element {
   return (
     <svg {...svgProps(props)}>
       {props.title && <title>{props.title}</title>}
@@ -167,11 +170,7 @@ export function LockIcon({ locked, ...props }: IconProps & { locked: boolean }):
     <svg {...svgProps(props)}>
       {props.title && <title>{props.title}</title>}
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      {locked ? (
-        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-      ) : (
-        <path d="M7 11V7a5 5 0 0 1 9.9-1" />
-      )}
+      {locked ? <path d="M7 11V7a5 5 0 0 1 10 0v4" /> : <path d="M7 11V7a5 5 0 0 1 9.9-1" />}
     </svg>
   )
 }

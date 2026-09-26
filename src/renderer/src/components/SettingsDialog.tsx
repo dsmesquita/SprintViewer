@@ -33,11 +33,15 @@ export default function SettingsDialog(): JSX.Element {
   const [hoursPerDay, setHoursPerDay] = useState(settings?.hoursPerDay ?? 8)
   const [authMode, setAuthMode] = useState<AuthMode>(settings?.authMode ?? 'pat')
   const [trustedHosts, setTrustedHosts] = useState((settings?.trustedHosts ?? []).join(', '))
-  const [childQueryMode, setChildQueryMode] = useState<ChildQueryMode>(settings?.childQueryMode ?? 'auto')
+  const [childQueryMode, setChildQueryMode] = useState<ChildQueryMode>(
+    settings?.childQueryMode ?? 'auto'
+  )
   // A saved owner is a team member's id or, for someone off the team, their TFS account.
   const [docOwner, setDocOwner] = useState(ownerChoice(settings?.docOwner))
   const [qaOwner, setQaOwner] = useState(ownerChoice(settings?.qaOwner))
-  const [docOther, setDocOther] = useState(isIdentity(settings?.docOwner) ? settings!.docOwner! : '')
+  const [docOther, setDocOther] = useState(
+    isIdentity(settings?.docOwner) ? settings!.docOwner! : ''
+  )
   const [qaOther, setQaOther] = useState(isIdentity(settings?.qaOwner) ? settings!.qaOwner! : '')
   // Prefixes are edited as the text the user types, and only split into a list on save, so a
   // half-typed "DEV, " does not lose its trailing comma under the cursor.
@@ -67,7 +71,10 @@ export default function SettingsDialog(): JSX.Element {
   }, [])
 
   const addMember = (): void =>
-    setMembers((current) => [...current, { id: uniqueId('member', current), name: '', order: current.length }])
+    setMembers((current) => [
+      ...current,
+      { id: uniqueId('member', current), name: '', order: current.length }
+    ])
 
   const updateMember = (index: number, patch: Partial<Member>): void =>
     setMembers((current) => current.map((m, i) => (i === index ? { ...m, ...patch } : m)))
@@ -228,15 +235,19 @@ export default function SettingsDialog(): JSX.Element {
                 onChange={(event) => setToken(event.target.value)}
                 autoComplete="off"
               />
-              <button type="button" disabled={busy || !token.trim()} onClick={() => void saveToken()}>
+              <button
+                type="button"
+                disabled={busy || !token.trim()}
+                onClick={() => void saveToken()}
+              >
                 Save token
               </button>
             </div>
           )}
           <div className="hint">
             Needs Work Items (Read), or Read &amp; Write to create tasks from the backlog. Stored
-            encrypted with Windows DPAPI — only this account on
-            this machine can decrypt it, and it is never shown again after saving.
+            encrypted with Windows DPAPI — only this account on this machine can decrypt it, and it
+            is never shown again after saving.
           </div>
         </div>
       )}
@@ -271,9 +282,9 @@ export default function SettingsDialog(): JSX.Element {
           style={{ width: 180 }}
         />
         <div className="hint">
-          Filled in by Test. Only set it by hand if your server rejects every version the app
-          tries — the error names the one it wants, and some older servers need the preview
-          form, like 3.0-preview. Clear the box to go back to negotiating.
+          Filled in by Test. Only set it by hand if your server rejects every version the app tries
+          — the error names the one it wants, and some older servers need the preview form, like
+          3.0-preview. Clear the box to go back to negotiating.
         </div>
       </div>
 
@@ -310,8 +321,8 @@ export default function SettingsDialog(): JSX.Element {
         {sprint && hoursPerDay !== sprint.hoursPerDay && (
           <div className="hint">
             Saving rescales <strong>{sprint.name}</strong> from {sprint.hoursPerDay} to{' '}
-            {hoursPerDay} hours a day. Days set to off stay off and half days stay half. Undo
-            puts it back.
+            {hoursPerDay} hours a day. Days set to off stay off and half days stay half. Undo puts
+            it back.
           </div>
         )}
       </div>
@@ -331,13 +342,28 @@ export default function SettingsDialog(): JSX.Element {
             placeholder="TFS display name (optional)"
             onChange={(event) => updateMember(index, { tfsIdentity: event.target.value })}
           />
-          <button type="button" className="ghost" onClick={() => moveMember(index, -1)} aria-label="Move up">
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => moveMember(index, -1)}
+            aria-label="Move up"
+          >
             ↑
           </button>
-          <button type="button" className="ghost" onClick={() => moveMember(index, 1)} aria-label="Move down">
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => moveMember(index, 1)}
+            aria-label="Move down"
+          >
             ↓
           </button>
-          <button type="button" className="ghost" onClick={() => removeMember(index)} aria-label="Remove">
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => removeMember(index)}
+            aria-label="Remove"
+          >
             ✕
           </button>
         </div>
@@ -397,7 +423,9 @@ export default function SettingsDialog(): JSX.Element {
           [
             ['doc-owner', 'DOC tasks go to', docOwner, setDocOwner, docOther, setDocOther],
             ['qa-owner', 'QA tasks go to', qaOwner, setQaOwner, qaOther, setQaOther]
-          ] as Array<[string, string, string, (value: string) => void, string, (value: string) => void]>
+          ] as Array<
+            [string, string, string, (value: string) => void, string, (value: string) => void]
+          >
         ).map(([id, label, value, change, other, changeOther]) => {
           const resolved = normaliseIdentity(other)
           return (
@@ -502,10 +530,10 @@ export default function SettingsDialog(): JSX.Element {
           <option value="never">Never fetch child tasks</option>
         </select>
         <div className="hint">
-          When a TFS query returns only User Stories or Bugs, automatically fetch their child
-          tasks so the backlog is immediately usable. Always does it for every User Story or Bug
-          the query returns, even when it returns tasks as well. Only tasks in the same iteration
-          as their User Story or Bug are fetched, at import and at every refresh.
+          When a TFS query returns only User Stories or Bugs, automatically fetch their child tasks
+          so the backlog is immediately usable. Always does it for every User Story or Bug the query
+          returns, even when it returns tasks as well. Only tasks in the same iteration as their
+          User Story or Bug are fetched, at import and at every refresh.
         </div>
       </div>
 

@@ -32,7 +32,12 @@ import {
   type CustomChoice,
   type CustomConflict
 } from '@shared/customHours'
-import type { AppSettings, SprintSummary, StartSprintRequest, WritableSettings } from '@shared/settings'
+import type {
+  AppSettings,
+  SprintSummary,
+  StartSprintRequest,
+  WritableSettings
+} from '@shared/settings'
 import type { ISODate, Member, Sprint } from '@shared/types'
 import { DEFAULT_HOUR_W, HOUR_W_STEPS, stepZoom } from './grid'
 
@@ -233,7 +238,14 @@ export const useApp = create<AppState>((set) => ({
       ? await window.api.loadSprint(settings.activeSprintId)
       : null
     const sprintList = await window.api.listSprints()
-    set({ settings, sprint: opened(sprint), sprintList, isSample: false, loading: false, undoStack: [] })
+    set({
+      settings,
+      sprint: opened(sprint),
+      sprintList,
+      isSample: false,
+      loading: false,
+      undoStack: []
+    })
     scheduleBaseline()
   },
 
@@ -405,7 +417,13 @@ export const useApp = create<AppState>((set) => ({
     set({ pendingRefresh: null, refreshStatus: { ok: true, text: 'Refresh cancelled' } }),
 
   loadSample: () =>
-    set({ sprint: createMockSprint(), isSample: true, dialog: 'none', loading: false, undoStack: [] }),
+    set({
+      sprint: createMockSprint(),
+      isSample: true,
+      dialog: 'none',
+      loading: false,
+      undoStack: []
+    }),
 
   saveNote: (draft, noteId) =>
     mutate(
@@ -443,8 +461,7 @@ export const useApp = create<AppState>((set) => ({
     mutate((sprint) => unpinReported(sprint, workItemId), 'reported hours'),
   setHoursPerDay: (hoursPerDay) =>
     mutate((sprint) => setHoursPerDay(sprint, hoursPerDay), 'hours in a day'),
-  syncSprintMembers: (roster) =>
-    mutate((sprint) => syncSprintMembers(sprint, roster), 'team sync'),
+  syncSprintMembers: (roster) => mutate((sprint) => syncSprintMembers(sprint, roster), 'team sync'),
   setCustomHours: (workItemId, hours) =>
     mutate(
       (sprint) =>
@@ -459,7 +476,10 @@ export const useApp = create<AppState>((set) => ({
   clearSprint: () => mutate(clearCalendar, 'clear sprint'),
   applySprint: (next, label = 'change') => mutate(() => next, label),
   splitBlock: (blockId, keepHours) =>
-    mutate((sprint) => splitAndReturn(sprint, blockId, keepHours, () => crypto.randomUUID()), 'split'),
+    mutate(
+      (sprint) => splitAndReturn(sprint, blockId, keepHours, () => crypto.randomUUID()),
+      'split'
+    ),
   splitIntoN: (blockId, parts) =>
     mutate((sprint) => splitIntoN(sprint, blockId, parts, () => crypto.randomUUID()), 'split'),
   setDayCapacity: (date, capacity, label) =>
@@ -564,8 +584,7 @@ function mutate(transform: (sprint: Sprint) => Sprint, label: string | null): vo
   if (next === sprint) return
   useApp.setState({
     sprint: next,
-    undoStack:
-      label === null ? undoStack : [...undoStack, { sprint, label }].slice(-UNDO_DEPTH)
+    undoStack: label === null ? undoStack : [...undoStack, { sprint, label }].slice(-UNDO_DEPTH)
   })
   void persistSprint()
 }

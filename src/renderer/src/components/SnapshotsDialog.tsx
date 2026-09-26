@@ -143,8 +143,8 @@ export default function SnapshotsDialog(): JSX.Element {
             </p>
           )}
           <p className="hint" style={{ marginBottom: 0 }}>
-            Restoring replaces the board, and the back button undoes it like any other change.
-            The automatic Sprint start snapshot is the plan the sprint summary compares against;
+            Restoring replaces the board, and the back button undoes it like any other change. The
+            automatic Sprint start snapshot is the plan the sprint summary compares against;
             deleted, it is taken again from the board as it is then.
           </p>
         </>

@@ -31,7 +31,17 @@ const ITEMS: Row[] = [
   // A person's meeting time for the sprint, which auto-assign spreads across the days.
   [4740, 'Meetings', 'Task', 8, 'New', 4720, 'Gilberto Sousa', 8, 0],
 
-  [4821, 'DEV:: Login fails after password reset', 'Task', 5, 'Active', 4700, 'Diogo Mesquita', 8, 3],
+  [
+    4821,
+    'DEV:: Login fails after password reset',
+    'Task',
+    5,
+    'Active',
+    4700,
+    'Diogo Mesquita',
+    8,
+    3
+  ],
   [4830, 'DEV::Add audit entry for role change', 'Task', 3, 'Active', 4700, 'Daniel Costa', 3, 0],
   [4907, 'DEV:: Export service refactor', 'Task', 12, 'Active', 4720, 'Diogo Mesquita', 12, 4],
   [4788, '[TEST] Migration scripts for 24.09', 'Task', 8, 'Active', 4710, 'Beatriz Lopes', 8, 4],
@@ -40,7 +50,17 @@ const ITEMS: Row[] = [
   // hours and the bug is only a group.
   [4855, 'E2E :: Flaky integration test on CI', 'Bug', 0, 'Active', 4720],
   [4856, 'E2E :: Stabilise the CI container', 'Task', 4, 'Active', 4855, 'Daniel Costa', 4, 6],
-  [4912, 'DEV:: Cache invalidation on tenant switch', 'Task', 4, 'New', 4700, 'Vítor Andrade', 4, 0],
+  [
+    4912,
+    'DEV:: Cache invalidation on tenant switch',
+    'Task',
+    4,
+    'New',
+    4700,
+    'Vítor Andrade',
+    4,
+    0
+  ],
   // Hours reported in TFS that the calendar has no record of: nothing pinned, nothing frozen.
   // These are the ones drawn as done on the days before today.
   [4913, 'DEV:: Tenant switch telemetry', 'Task', 4, 'Active', 4700, 'Vítor Andrade', 6, 2],
@@ -52,7 +72,17 @@ const ITEMS: Row[] = [
   [4951, 'Document deployment runbook', 'Task', 3, 'New', 4710, 'Sofia Marques', 3, 1],
   [4962, 'E2E:: Fix timezone drift in scheduler', 'Task', 5, 'Active', 4720, undefined, 5, 0],
   [4977, '[TEST] Bulk import performance', 'Task', 10, 'New', 4710, undefined, 10, 3],
-  [4983, 'DEV:: Retry policy for outbound webhooks', 'Task', 6, 'New', 4720, 'Gilberto Sousa', 6, 0],
+  [
+    4983,
+    'DEV:: Retry policy for outbound webhooks',
+    'Task',
+    6,
+    'New',
+    4720,
+    'Gilberto Sousa',
+    6,
+    0
+  ],
   [4990, 'DEV:: Tenant onboarding wizard', 'Task', 9, 'New', 4700, undefined, 9, 0],
   // Backlogs here are written in a mix of English and Portuguese, so the sample carries an
   // accented title: searching for "validacao" has to find it.

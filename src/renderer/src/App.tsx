@@ -61,7 +61,17 @@ import {
 } from './icons'
 // ExportIcon inline - a simple download arrow
 const ExportIcon = (): JSX.Element => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+  >
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
     <polyline points="7 10 12 15 17 10" />
     <line x1="12" y1="15" x2="12" y2="3" />
@@ -156,9 +166,10 @@ export default function App(): JSX.Element {
   const [confirmClear, setConfirmClear] = useState(false)
   // The plan with every rule applied, and — only when that would move work already on the
   // calendar — the same run with the calendar held fixed, so the dialog can offer both.
-  const [assignPlan, setAssignPlan] = useState<{ allow: AssignPlan; keep: AssignPlan | null } | null>(
-    null
-  )
+  const [assignPlan, setAssignPlan] = useState<{
+    allow: AssignPlan
+    keep: AssignPlan | null
+  } | null>(null)
   const [showPastFit, setShowPastFit] = useState(false)
   // A drop that landed inside another task, waiting to be told how to make room.
   const [pendingSplit, setPendingSplit] = useState<{
@@ -325,16 +336,14 @@ export default function App(): JSX.Element {
   // VAL tasks left starting before their DEV ends — auto-assign links them once, and a DEV that
   // grows or moves afterwards does not take its VAL along.
   const warnings = useMemo(
-    () => (shownSprint ? valWarnings(shownSprint, shownLayouts, anchor) : new Map<string, string>()),
+    () =>
+      shownSprint ? valWarnings(shownSprint, shownLayouts, anchor) : new Map<string, string>(),
     [shownSprint, shownLayouts, anchor]
   )
 
   // Reported hours that will not fit in the days that have passed. Worth surfacing rather
   // than leaving to be noticed: the calendar is understating what was done until it is fixed.
-  const conflicts = useMemo(
-    () => (sprint ? pastConflicts(sprint, anchor) : []),
-    [sprint, anchor]
-  )
+  const conflicts = useMemo(() => (sprint ? pastConflicts(sprint, anchor) : []), [sprint, anchor])
   const clearCost = sprint ? clearCalendarCost(sprint) : { blocks: 0, recordedDays: 0 }
   const spillover = Object.values(shownLayouts).reduce((sum, layout) => sum + layout.spillover, 0)
   const first = sprint?.days[0]?.date
@@ -436,120 +445,132 @@ export default function App(): JSX.Element {
 
   // Wrapped so the memoised rows and blocks in SprintGrid see the same functions on every hop
   // of a drag. `sprint` itself does not change until the drop, so these stay stable throughout.
-  const onDayContextMenu = useCallback((date: ISODate, event: React.MouseEvent, memberId?: string): void => {
-    event.preventDefault()
-    if (!sprint) return
-    setMenu({
-      x: event.clientX,
-      y: event.clientY,
-      label: formatDayHeader(date),
-      items: dayMenuItems(sprint, date, memberId, {
-        openDialog,
-        setDayCapacity,
-        setMemberCapacity
+  const onDayContextMenu = useCallback(
+    (date: ISODate, event: React.MouseEvent, memberId?: string): void => {
+      event.preventDefault()
+      if (!sprint) return
+      setMenu({
+        x: event.clientX,
+        y: event.clientY,
+        label: formatDayHeader(date),
+        items: dayMenuItems(sprint, date, memberId, {
+          openDialog,
+          setDayCapacity,
+          setMemberCapacity
+        })
       })
-    })
-  }, [sprint, openDialog, setDayCapacity, setMemberCapacity])
+    },
+    [sprint, openDialog, setDayCapacity, setMemberCapacity]
+  )
 
-  const onMemberContextMenu = useCallback((memberId: string, event: React.MouseEvent): void => {
-    event.preventDefault()
-    if (!sprint) return
-    const member = sprint.members.find((m) => m.id === memberId)
-    setMenu({
-      x: event.clientX,
-      y: event.clientY,
-      label: member?.name,
-      items: [{ label: 'Add note…', onSelect: () => openNote({ memberId }) }]
-    })
-  }, [sprint, openNote])
+  const onMemberContextMenu = useCallback(
+    (memberId: string, event: React.MouseEvent): void => {
+      event.preventDefault()
+      if (!sprint) return
+      const member = sprint.members.find((m) => m.id === memberId)
+      setMenu({
+        x: event.clientX,
+        y: event.clientY,
+        label: member?.name,
+        items: [{ label: 'Add note…', onSelect: () => openNote({ memberId }) }]
+      })
+    },
+    [sprint, openNote]
+  )
 
-  const onReportedContextMenu = useCallback((
-    workItemId: number,
-    event: React.MouseEvent,
-    label: string
-  ): void => {
-    event.preventDefault()
-    if (!sprint) return
-    setMenu({
-      x: event.clientX,
-      y: event.clientY,
-      label,
-      items: [
-        {
-          label: 'Reset to automatic',
-          onSelect: () => unpinReported(workItemId),
-          disabled: sprint.reportedPins?.[workItemId] === undefined
-        },
-        { label: 'Add note…', onSelect: () => openNote({ taskId: workItemId }) }
-      ]
-    })
-  }, [sprint, openNote, unpinReported])
+  const onReportedContextMenu = useCallback(
+    (workItemId: number, event: React.MouseEvent, label: string): void => {
+      event.preventDefault()
+      if (!sprint) return
+      setMenu({
+        x: event.clientX,
+        y: event.clientY,
+        label,
+        items: [
+          {
+            label: 'Reset to automatic',
+            onSelect: () => unpinReported(workItemId),
+            disabled: sprint.reportedPins?.[workItemId] === undefined
+          },
+          { label: 'Add note…', onSelect: () => openNote({ taskId: workItemId }) }
+        ]
+      })
+    },
+    [sprint, openNote, unpinReported]
+  )
 
   const openCreateTasks = useApp((s) => s.openCreateTasks)
 
-  const onGroupContextMenu = useCallback((parentId: number, event: React.MouseEvent): void => {
-    event.preventDefault()
-    if (!sprint) return
-    const parent = sprint.workItems[parentId]
-    // Writing needs somewhere to write to: a sprint that came from TFS, in the desktop app.
-    const unavailable = !sprint.queryUrl
-      ? 'Only a sprint imported from TFS'
-      : !window.api
-        ? 'Only in the desktop app'
-        : null
-    setMenu({
-      x: event.clientX,
-      y: event.clientY,
-      label: `#${parentId} ${parent?.title ?? ''}`,
-      items: [
-        {
-          label: unavailable ? `Create tasks… (${unavailable})` : 'Create tasks…',
-          onSelect: () => openCreateTasks(parentId),
-          disabled: unavailable !== null
-        }
-      ]
-    })
-  }, [sprint, openCreateTasks])
-
-  const onBlockContextMenu = useCallback((blockId: string, event: React.MouseEvent, label: string): void => {
-    event.preventDefault()
-    if (!sprint) return
-    setMenu({
-      x: event.clientX,
-      y: event.clientY,
-      label,
-      items: [
-        {
-          label: 'Split…',
-          onSelect: () => openSplit(blockId),
-          // Nothing to divide when the whole block is a single hour or less.
-          disabled: (findBlock(sprint, blockId)?.block.hours ?? 0) <= 1
-        },
-        {
-          label: 'Set hours…',
-          onSelect: () => {
-            const workItemId = findBlock(sprint, blockId)?.block.workItemId
-            if (workItemId !== undefined) openHours(workItemId)
+  const onGroupContextMenu = useCallback(
+    (parentId: number, event: React.MouseEvent): void => {
+      event.preventDefault()
+      if (!sprint) return
+      const parent = sprint.workItems[parentId]
+      // Writing needs somewhere to write to: a sprint that came from TFS, in the desktop app.
+      const unavailable = !sprint.queryUrl
+        ? 'Only a sprint imported from TFS'
+        : !window.api
+          ? 'Only in the desktop app'
+          : null
+      setMenu({
+        x: event.clientX,
+        y: event.clientY,
+        label: `#${parentId} ${parent?.title ?? ''}`,
+        items: [
+          {
+            label: unavailable ? `Create tasks… (${unavailable})` : 'Create tasks…',
+            onSelect: () => openCreateTasks(parentId),
+            disabled: unavailable !== null
           }
-        },
-        {
-          label: 'Add note…',
-          onSelect: () => openNote({ taskId: findBlock(sprint, blockId)?.block.workItemId })
-        },
-        ...(findBlock(sprint, blockId)?.block.pin
-          ? [{ label: 'Unpin — let it flow again', onSelect: () => unpinBlock(blockId) }]
-          : []),
-        ...(findBlock(sprint, blockId)?.location.kind === 'member'
-          ? [
-              {
-                label: 'Return to backlog',
-                onSelect: () => moveBlock(blockId, { kind: 'backlog' } as Location, sprint.backlog.length)
-              }
-            ]
-          : [])
-      ]
-    })
-  }, [sprint, openSplit, openHours, openNote, unpinBlock, moveBlock])
+        ]
+      })
+    },
+    [sprint, openCreateTasks]
+  )
+
+  const onBlockContextMenu = useCallback(
+    (blockId: string, event: React.MouseEvent, label: string): void => {
+      event.preventDefault()
+      if (!sprint) return
+      setMenu({
+        x: event.clientX,
+        y: event.clientY,
+        label,
+        items: [
+          {
+            label: 'Split…',
+            onSelect: () => openSplit(blockId),
+            // Nothing to divide when the whole block is a single hour or less.
+            disabled: (findBlock(sprint, blockId)?.block.hours ?? 0) <= 1
+          },
+          {
+            label: 'Set hours…',
+            onSelect: () => {
+              const workItemId = findBlock(sprint, blockId)?.block.workItemId
+              if (workItemId !== undefined) openHours(workItemId)
+            }
+          },
+          {
+            label: 'Add note…',
+            onSelect: () => openNote({ taskId: findBlock(sprint, blockId)?.block.workItemId })
+          },
+          ...(findBlock(sprint, blockId)?.block.pin
+            ? [{ label: 'Unpin — let it flow again', onSelect: () => unpinBlock(blockId) }]
+            : []),
+          ...(findBlock(sprint, blockId)?.location.kind === 'member'
+            ? [
+                {
+                  label: 'Return to backlog',
+                  onSelect: () =>
+                    moveBlock(blockId, { kind: 'backlog' } as Location, sprint.backlog.length)
+                }
+              ]
+            : [])
+        ]
+      })
+    },
+    [sprint, openSplit, openHours, openNote, unpinBlock, moveBlock]
+  )
 
   return (
     <DndContext
@@ -590,9 +611,8 @@ export default function App(): JSX.Element {
               onClick={() => setShowPastFit(true)}
               title="Reported hours have nowhere to go before today"
             >
-              <WarningIcon size={13} />{' '}
-              {hours(conflicts.reduce((sum, c) => sum + c.missing, 0))} of reported work is not
-              shown
+              <WarningIcon size={13} /> {hours(conflicts.reduce((sum, c) => sum + c.missing, 0))} of
+              reported work is not shown
             </button>
           )}
           {spillover > 0 && (
@@ -800,8 +820,8 @@ export default function App(): JSX.Element {
             }
           >
             <p style={{ margin: '0 0 10px' }}>
-              Work that has hours reported against it in TFS happened on days that have passed,
-              so that is where it belongs. These people have tasks holding space back there that
+              Work that has hours reported against it in TFS happened on days that have passed, so
+              that is where it belongs. These people have tasks holding space back there that
               nothing was reported against.
             </p>
             {conflicts.map((conflict) => (
@@ -831,9 +851,9 @@ export default function App(): JSX.Element {
                           conflict.missing
                         )} needed. `
                       : 'Nothing back there can be moved — every hour before today is already accounted for by work that was reported. '}
-                    More hours are reported against {conflict.memberName} than the days that
-                    have passed can hold, so the rest cannot be drawn wherever things are put.
-                    Check the Completed Work on {conflict.memberName}&rsquo;s tasks in TFS.
+                    More hours are reported against {conflict.memberName} than the days that have
+                    passed can hold, so the rest cannot be drawn wherever things are put. Check the
+                    Completed Work on {conflict.memberName}&rsquo;s tasks in TFS.
                   </p>
                 )}
               </div>
@@ -883,8 +903,7 @@ export default function App(): JSX.Element {
                 <>
                   , and the recorded work on{' '}
                   <strong>
-                    {clearCost.recordedDays} past{' '}
-                    {clearCost.recordedDays === 1 ? 'day' : 'days'}
+                    {clearCost.recordedDays} past {clearCost.recordedDays === 1 ? 'day' : 'days'}
                   </strong>{' '}
                   is discarded
                 </>
@@ -1052,11 +1071,13 @@ function dayMenuItems(
           label: 'Enable day for everyone',
           onSelect: () => actions.setDayCapacity(date, sprint.hoursPerDay, undefined)
         },
-    { label: 'Half day for everyone', onSelect: () => actions.setDayCapacity(date, half, 'Half day') }
+    {
+      label: 'Half day for everyone',
+      onSelect: () => actions.setDayCapacity(date, half, 'Half day')
+    }
   )
   return items
 }
-
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)

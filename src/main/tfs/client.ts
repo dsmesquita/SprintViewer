@@ -559,7 +559,7 @@ export class TfsClient {
       throw new TfsError(
         method !== 'GET' && response.status === 403
           ? 'TFS did not allow this change (403). Creating tasks needs a token with Work Items ' +
-            '(Read & Write), and permission to add work items in this project.'
+              '(Read & Write), and permission to add work items in this project.'
           : this.credentials.mode === 'pat'
             ? 'TFS rejected the personal access token (401). Check that it has not expired and ' +
               'that it grants Work Items (Read), or Read & Write to create tasks.'

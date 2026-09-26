@@ -96,9 +96,7 @@ export function nudgeReported(
   // still something the hours cannot slide over.
   const taken = layout.segments.some(
     (s) =>
-      !(s.isDone && s.workItemId === workItemId) &&
-      s.date === probe.date &&
-      covers(s, probe.hour)
+      !(s.isDone && s.workItemId === workItemId) && s.date === probe.date && covers(s, probe.hour)
   )
   if (taken) return sprint
 
@@ -169,7 +167,8 @@ function probePoint(
   if (direction === 1) {
     let hour = edge.hour
     while (index < days.length) {
-      if (hour < capacity(sprint, memberId, index) - EPSILON) return { date: days[index].date, hour }
+      if (hour < capacity(sprint, memberId, index) - EPSILON)
+        return { date: days[index].date, hour }
       index++
       hour = 0
     }
@@ -234,8 +233,7 @@ function capacity(sprint: Sprint, memberId: string, index: number): number {
 function covers(segment: Segment, hour: number): boolean {
   const tolerance = 1e-9
   return (
-    hour >= segment.startHour - tolerance &&
-    hour < segment.startHour + segment.hours - tolerance
+    hour >= segment.startHour - tolerance && hour < segment.startHour + segment.hours - tolerance
   )
 }
 

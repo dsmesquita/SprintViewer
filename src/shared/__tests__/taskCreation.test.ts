@@ -25,11 +25,16 @@ for (const [input, expected] of cases) {
   const got = normaliseIdentity(input)
   check(`${JSON.stringify(input)} → ${JSON.stringify(expected)}`, got === expected, got)
 }
-check('an account is recognised as one',
-  isIdentity(`CMF${B}bsrocha`) && !isIdentity('member-3') && !isIdentity(undefined))
-check('tags: commas and semicolons, trimmed, once each',
-  JSON.stringify(parseTags(' Release 24.10; backend, Backend ,, UI ')) === JSON.stringify(['Release 24.10', 'backend', 'UI']),
-  parseTags(' Release 24.10; backend, Backend ,, UI '))
+check(
+  'an account is recognised as one',
+  isIdentity(`CMF${B}bsrocha`) && !isIdentity('member-3') && !isIdentity(undefined)
+)
+check(
+  'tags: commas and semicolons, trimmed, once each',
+  JSON.stringify(parseTags(' Release 24.10; backend, Backend ,, UI ')) ===
+    JSON.stringify(['Release 24.10', 'backend', 'UI']),
+  parseTags(' Release 24.10; backend, Backend ,, UI ')
+)
 check('tags: empty text is no tags', parseTags('  ').length === 0)
 
 report()

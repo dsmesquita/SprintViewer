@@ -73,7 +73,8 @@ async function writeJson(path: string, value: unknown): Promise<void> {
 let cache: StoredSettings | null = null
 
 async function stored(): Promise<StoredSettings> {
-  if (!cache) cache = { ...DEFAULT_STORED, ...((await readJson<StoredSettings>(settingsPath())) ?? {}) }
+  if (!cache)
+    cache = { ...DEFAULT_STORED, ...((await readJson<StoredSettings>(settingsPath())) ?? {}) }
   return cache
 }
 

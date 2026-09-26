@@ -96,13 +96,19 @@ const UNCATEGORISED = 'Uncategorised'
  * Kept apart from the writing so it can be checked on its own: a wrong number in a summary is
  * the thing that matters, and it is far easier to see in data than in prose.
  */
-export function sprintMetrics(sprint: Sprint, plan: Snapshot | null, today: ISODate): SprintMetrics {
+export function sprintMetrics(
+  sprint: Sprint,
+  plan: Snapshot | null,
+  today: ISODate
+): SprintMetrics {
   const planSprint = plan?.sprint
   const nowAnchor = anchorFor(sprint, today)
   const nowLayouts = layoutSprint(sprint, nowAnchor)
   const planLayouts = planSprint ? layoutSprint(planSprint, planAnchor(plan!)) : {}
 
-  const tracksCompleted = Object.values(sprint.workItems).some((item) => item.completedWork !== undefined)
+  const tracksCompleted = Object.values(sprint.workItems).some(
+    (item) => item.completedWork !== undefined
+  )
   const plannedHours = planSprint ? hoursByItem(planSprint) : new Map<number, number>()
   const planHolders = planSprint ? holders(planSprint) : new Map<number, string>()
   const nowHolders = holders(sprint)
@@ -139,7 +145,8 @@ export function sprintMetrics(sprint: Sprint, plan: Snapshot | null, today: ISOD
 
     // Only things that were part of this sprint: planned, on a calendar now, waiting in the
     // backlog, or worked on. A work item the query happens to carry and nobody touched is not.
-    const relevant = inPlan || onCalendar || (inBacklog.has(id) && !finished) || (done ?? 0) > 0 || removed
+    const relevant =
+      inPlan || onCalendar || (inBacklog.has(id) && !finished) || (done ?? 0) > 0 || removed
     if (!relevant) continue
 
     const flags: ItemFlag[] = []
@@ -154,7 +161,10 @@ export function sprintMetrics(sprint: Sprint, plan: Snapshot | null, today: ISOD
     if (removed) flags.push('removed')
     if (!onCalendar && inBacklog.has(id) && !finished) flags.push('in backlog')
 
-    const parent = item.parentId !== undefined ? (sprint.workItems[item.parentId] ?? planSprint?.workItems[item.parentId]) : undefined
+    const parent =
+      item.parentId !== undefined
+        ? (sprint.workItems[item.parentId] ?? planSprint?.workItems[item.parentId])
+        : undefined
     items.push({
       id,
       title: item.title,
@@ -171,7 +181,9 @@ export function sprintMetrics(sprint: Sprint, plan: Snapshot | null, today: ISOD
       remaining,
       estimate: now?.originalEstimate ?? then?.originalEstimate,
       growth:
-        inPlan && done !== undefined && remaining !== undefined ? round(done + remaining - planned) : undefined,
+        inPlan && done !== undefined && remaining !== undefined
+          ? round(done + remaining - planned)
+          : undefined,
       finished,
       flags
     })
@@ -192,7 +204,9 @@ export function sprintMetrics(sprint: Sprint, plan: Snapshot | null, today: ISOD
         memberId: member.id,
         name: member.name,
         identity: member.tfsIdentity,
-        available: round(sum(sprint.days.map((day) => effectiveCapacity(sprint, member.id, day.date)))),
+        available: round(
+          sum(sprint.days.map((day) => effectiveCapacity(sprint, member.id, day.date)))
+        ),
         reducedDays: sprint.days
           .filter((day) => effectiveCapacity(sprint, member.id, day.date) < sprint.hoursPerDay)
           .map((day) => {
@@ -202,7 +216,9 @@ export function sprintMetrics(sprint: Sprint, plan: Snapshot | null, today: ISOD
         planned: round(sum(started.map((item) => item.planned))),
         done: round(sum(ended.map((item) => item.done ?? 0))),
         doneEstimated: !tracksCompleted,
-        remaining: round(sum(ended.filter((item) => !item.finished).map((item) => item.remaining ?? 0))),
+        remaining: round(
+          sum(ended.filter((item) => !item.finished).map((item) => item.remaining ?? 0))
+        ),
         extraUnplanned: plan
           ? round(sum(ended.filter((item) => !item.inPlan).map((item) => item.done ?? 0)))
           : 0,
@@ -238,7 +254,8 @@ function planAnchor(plan: Snapshot): ISODate {
 function hoursByItem(sprint: Sprint): Map<number, number> {
   const hours = new Map<number, number>()
   for (const queue of Object.values(sprint.queues)) {
-    for (const block of queue) hours.set(block.workItemId, (hours.get(block.workItemId) ?? 0) + block.hours)
+    for (const block of queue)
+      hours.set(block.workItemId, (hours.get(block.workItemId) ?? 0) + block.hours)
   }
   return hours
 }
@@ -298,7 +315,11 @@ export interface SummaryInput {
 export function buildSprintSummary({ sprint, plan, today, generatedAt }: SummaryInput): string {
   const metrics = sprintMetrics(sprint, plan, today)
   const nameOf = (id: string | undefined): string =>
-    id ? (sprint.members.find((m) => m.id === id)?.name ?? plan?.sprint.members.find((m) => m.id === id)?.name ?? id) : '—'
+    id
+      ? (sprint.members.find((m) => m.id === id)?.name ??
+        plan?.sprint.members.find((m) => m.id === id)?.name ??
+        id)
+      : '—'
   const first = sprint.days[0]?.date ?? ''
   const last = sprint.days[sprint.days.length - 1]?.date ?? ''
   const out: string[] = []
@@ -326,7 +347,9 @@ export function buildSprintSummary({ sprint, plan, today, generatedAt }: Summary
   line()
   line(
     `${first} to ${last}. ${
-      metrics.finished ? 'The sprint has ended.' : `Written on ${metrics.asOf}, before the sprint ended — figures are as of that day.`
+      metrics.finished
+        ? 'The sprint has ended.'
+        : `Written on ${metrics.asOf}, before the sprint ended — figures are as of that day.`
     }`
   )
   line()
@@ -334,14 +357,16 @@ export function buildSprintSummary({ sprint, plan, today, generatedAt }: Summary
   // How to read
   line('## How to read this file')
   line()
-  line('All hours are plain numbers of hours. Dates are YYYY-MM-DD. People are named as on the planning board.')
+  line(
+    'All hours are plain numbers of hours. Dates are YYYY-MM-DD. People are named as on the planning board.'
+  )
   line()
   line(
     plan
       ? `- **Plan**: the board in the snapshot "${plan.name}", taken ${plan.takenAt}. Everything "planned" is measured against it.`
       : '- **Plan**: no plan snapshot was available, so nothing below is compared against a plan, and the planned, extra-work and delay figures are not given.'
   )
-  line('- **Planned**: hours of a task that were on someone\'s calendar in the plan.')
+  line("- **Planned**: hours of a task that were on someone's calendar in the plan.")
   line(
     metrics.tracksCompleted
       ? '- **Done**: hours reported against the task in TFS (Completed Work) during the sprint — reported at the end minus reported in the plan, so hours from earlier sprints are not counted.'
@@ -351,12 +376,22 @@ export function buildSprintSummary({ sprint, plan, today, generatedAt }: Summary
   line(
     `- **Estimate** is Original Estimate in TFS. It is not used to size anything — a task is worth its remaining plus completed work — and appears only here. **Off track** marks a task whose completed work is more than ${Math.round((OFF_TRACK_RATIO - 1) * 100)}% above its estimate, which is worth asking about.`
   )
-  line('- **Growth**: done + remaining − planned, for planned tasks. Positive means the task took, or still needs, more than planned.')
-  line('- **Extra work**: hours done on tasks that were not in the plan, plus the positive growth of planned tasks.')
-  line('- **Delay**: planned tasks not finished — how many, and the hours still remaining on them. **Slipped** counts planned tasks now due to end on a later day than planned.')
+  line(
+    '- **Growth**: done + remaining − planned, for planned tasks. Positive means the task took, or still needs, more than planned.'
+  )
+  line(
+    '- **Extra work**: hours done on tasks that were not in the plan, plus the positive growth of planned tasks.'
+  )
+  line(
+    '- **Delay**: planned tasks not finished — how many, and the hours still remaining on them. **Slipped** counts planned tasks now due to end on a later day than planned.'
+  )
   line('- **Spillover**: hours a person has planned that do not fit in what is left of the sprint.')
-  line('- Planned figures belong to whoever had the task in the plan; done and remaining belong to whoever has it at the end.')
-  line('- On the boards: *[reported]* is time reported in TFS and drawn on past days, *[recorded]* is how a past day was planned at the time, *[pinned]* is a task fixed to a slot by hand.')
+  line(
+    '- Planned figures belong to whoever had the task in the plan; done and remaining belong to whoever has it at the end.'
+  )
+  line(
+    '- On the boards: *[reported]* is time reported in TFS and drawn on past days, *[recorded]* is how a past day was planned at the time, *[pinned]* is a task fixed to a slot by hand.'
+  )
   line()
 
   // Sprint and team
@@ -367,7 +402,10 @@ export function buildSprintSummary({ sprint, plan, today, generatedAt }: Summary
   if (reducedTeamDays.length > 0) {
     line(
       `- Days reduced for everyone: ${reducedTeamDays
-        .map((day) => `${day.date} (${day.capacity === 0 ? 'off' : `${day.capacity}h`}${day.label ? `, ${day.label}` : ''})`)
+        .map(
+          (day) =>
+            `${day.date} (${day.capacity === 0 ? 'off' : `${day.capacity}h`}${day.label ? `, ${day.label}` : ''})`
+        )
         .join('; ')}.`
     )
   }
@@ -375,7 +413,12 @@ export function buildSprintSummary({ sprint, plan, today, generatedAt }: Summary
   line(
     table(
       ['Person', 'TFS identity', 'Available (h)', 'Days off or part days'],
-      metrics.people.map((p) => [p.name, p.identity ?? '—', num(p.available), p.reducedDays.join('; ') || '—'])
+      metrics.people.map((p) => [
+        p.name,
+        p.identity ?? '—',
+        num(p.available),
+        p.reducedDays.join('; ') || '—'
+      ])
     )
   )
   line()
@@ -397,22 +440,52 @@ export function buildSprintSummary({ sprint, plan, today, generatedAt }: Summary
   line(
     plan
       ? table(
-          ['Person', 'Available', 'Planned', `Done${estimated}`, 'Remaining', 'Extra work', 'Delayed tasks', 'Delayed hours', 'Slipped', 'Off track', 'Spillover'],
+          [
+            'Person',
+            'Available',
+            'Planned',
+            `Done${estimated}`,
+            'Remaining',
+            'Extra work',
+            'Delayed tasks',
+            'Delayed hours',
+            'Slipped',
+            'Off track',
+            'Spillover'
+          ],
           metrics.people.map((p) => [
-            p.name, num(p.available), num(p.planned), num(p.done), num(p.remaining),
-            num(round(p.extraUnplanned + p.extraGrowth)), String(p.delayCount), num(p.delayHours), String(p.slipped), String(p.offTrack), num(p.spillover)
+            p.name,
+            num(p.available),
+            num(p.planned),
+            num(p.done),
+            num(p.remaining),
+            num(round(p.extraUnplanned + p.extraGrowth)),
+            String(p.delayCount),
+            num(p.delayHours),
+            String(p.slipped),
+            String(p.offTrack),
+            num(p.spillover)
           ])
         )
       : table(
           ['Person', 'Available', `Done${estimated}`, 'Remaining', 'Off track', 'Spillover'],
-          metrics.people.map((p) => [p.name, num(p.available), num(p.done), num(p.remaining), String(p.offTrack), num(p.spillover)])
+          metrics.people.map((p) => [
+            p.name,
+            num(p.available),
+            num(p.done),
+            num(p.remaining),
+            String(p.offTrack),
+            num(p.spillover)
+          ])
         )
   )
   line()
   for (const person of metrics.people) {
     line(`### ${person.name}`)
     line()
-    const mine = metrics.items.filter((item) => item.ownerStart === person.memberId || item.ownerEnd === person.memberId)
+    const mine = metrics.items.filter(
+      (item) => item.ownerStart === person.memberId || item.ownerEnd === person.memberId
+    )
     if (plan) {
       line(
         `- Planned ${num(person.planned)}h of ${num(person.available)}h available; done ${num(person.done)}h${estimated}; ${num(person.remaining)}h remaining at the end.`
@@ -429,11 +502,15 @@ export function buildSprintSummary({ sprint, plan, today, generatedAt }: Summary
         `- Off track: ${person.offTrack} ${person.offTrack === 1 ? 'task' : 'tasks'} took more than a quarter longer than the estimate.`
       )
     } else {
-      line(`- Done ${num(person.done)}h${estimated}; ${num(person.remaining)}h remaining at the end.`)
+      line(
+        `- Done ${num(person.done)}h${estimated}; ${num(person.remaining)}h remaining at the end.`
+      )
     }
     const flagged = mine.filter((item) => item.flags.length > 0)
     if (flagged.length > 0) {
-      line(`- Tasks to note: ${flagged.map((item) => `#${item.id} (${item.flags.join(', ')})`).join('; ')}.`)
+      line(
+        `- Tasks to note: ${flagged.map((item) => `#${item.id} (${item.flags.join(', ')})`).join('; ')}.`
+      )
     }
     line()
   }
@@ -468,7 +545,9 @@ export function buildSprintSummary({ sprint, plan, today, generatedAt }: Summary
   // Notes
   line('## Notes')
   line()
-  const noted = metrics.people.filter((p) => sprint.notes.some((note) => note.memberId === p.memberId))
+  const noted = metrics.people.filter((p) =>
+    sprint.notes.some((note) => note.memberId === p.memberId)
+  )
   if (noted.length === 0) {
     line('No notes were written during this sprint.')
     line()
@@ -516,7 +595,12 @@ export function buildSprintSummary({ sprint, plan, today, generatedAt }: Summary
  * Each person's board, day by day. `marker` names the day the board was looked at from: days
  * before it hold what was recorded, days from it on what was planned.
  */
-function board(sprint: Sprint, anchor: ISODate, marker: string, line: (text?: string) => void): void {
+function board(
+  sprint: Sprint,
+  anchor: ISODate,
+  marker: string,
+  line: (text?: string) => void
+): void {
   const layouts = layoutSprint(sprint, anchor)
   for (const member of [...sprint.members].sort((a, b) => a.order - b.order)) {
     line(`### ${member.name}`)
@@ -526,7 +610,11 @@ function board(sprint: Sprint, anchor: ISODate, marker: string, line: (text?: st
       const capacity = effectiveCapacity(sprint, member.id, day.date)
       const byItem = new Map<number, { hours: number; start: number; kinds: Set<string> }>()
       for (const segment of segments.filter((s) => s.date === day.date)) {
-        const entry = byItem.get(segment.workItemId) ?? { hours: 0, start: segment.startHour, kinds: new Set<string>() }
+        const entry = byItem.get(segment.workItemId) ?? {
+          hours: 0,
+          start: segment.startHour,
+          kinds: new Set<string>()
+        }
         entry.hours = round(entry.hours + segment.hours)
         entry.start = Math.min(entry.start, segment.startHour)
         if (segment.isDone) entry.kinds.add('reported')

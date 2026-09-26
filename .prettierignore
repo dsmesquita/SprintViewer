@@ -1,0 +1,6 @@
+out/
+release/
+coverage/
+node_modules/
+package-lock.json
+*.out.mjs

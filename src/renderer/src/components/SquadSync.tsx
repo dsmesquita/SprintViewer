@@ -52,7 +52,9 @@ export default function SquadSync({ url, roster, onApply, onClose }: Props): JSX
 
   useEffect(() => {
     if (!url) {
-      setError('Enter a query or sprint URL under Connection first — the team is read from its project.')
+      setError(
+        'Enter a query or sprint URL under Connection first — the team is read from its project.'
+      )
       return
     }
     let cancelled = false
@@ -128,7 +130,11 @@ export default function SquadSync({ url, roster, onApply, onClose }: Props): JSX
             {row.kind === 'linked' ? (
               <span className="sync-check">✓</span>
             ) : (
-              <input type="checkbox" checked={chosen.has(row.key)} onChange={() => toggle(row.key)} />
+              <input
+                type="checkbox"
+                checked={chosen.has(row.key)}
+                onChange={() => toggle(row.key)}
+              />
             )}
             <span className="sync-text">{describe(row)}</span>
           </label>
@@ -179,7 +185,10 @@ export default function SquadSync({ url, roster, onApply, onClose }: Props): JSX
 
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 10 }}>
         <span className="hint" style={{ marginTop: 0, marginRight: 'auto' }}>
-          {rows && (changes === 0 ? 'Nothing to change.' : `${changes} ${changes === 1 ? 'change' : 'changes'}`)}
+          {rows &&
+            (changes === 0
+              ? 'Nothing to change.'
+              : `${changes} ${changes === 1 ? 'change' : 'changes'}`)}
         </span>
         <button type="button" onClick={onClose}>
           Cancel

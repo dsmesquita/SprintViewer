@@ -233,7 +233,10 @@ function Backlog({
                   aria-expanded={!isCollapsed}
                   title={group.parent ? `#${group.parent.id} ${group.parent.title}` : undefined}
                 >
-                  <span className={cx('group-caret', isCollapsed && 'is-collapsed')} aria-hidden="true">
+                  <span
+                    className={cx('group-caret', isCollapsed && 'is-collapsed')}
+                    aria-hidden="true"
+                  >
                     ▾
                   </span>
                   <span className="group-title">
@@ -367,8 +370,14 @@ function TaskCard({
             : 'Nobody is assigned to it in TFS'
           : undefined
       }
-      onMouseEnter={() => { onHover(block.workItemId); setShowTimeInfo(true) }}
-      onMouseLeave={() => { onHover(null); setShowTimeInfo(false) }}
+      onMouseEnter={() => {
+        onHover(block.workItemId)
+        setShowTimeInfo(true)
+      }}
+      onMouseLeave={() => {
+        onHover(null)
+        setShowTimeInfo(false)
+      }}
       onContextMenu={(event) =>
         onBlockContextMenu(block.id, event, `#${block.workItemId} ${item?.title ?? ''}`)
       }
@@ -385,9 +394,7 @@ function TaskCard({
         <span className={cx('day-off-pill', toneFor(block.workItemId))} style={{ margin: 0 }}>
           {item?.type ?? 'Task'}
         </span>
-        <span className="task-type">
-          {item?.missingFromQuery ? 'not in query' : item?.state}
-        </span>
+        <span className="task-type">{item?.missingFromQuery ? 'not in query' : item?.state}</span>
       </div>
       <div className="task-title">{item?.title ?? 'Unknown work item'}</div>
       <div className="task-meta">

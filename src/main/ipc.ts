@@ -63,11 +63,13 @@ export function registerIpc(): void {
   )
   // The one route that writes to TFS. It needs the sprint's own URL only to know which server
   // and project to talk to; the parent is named by id and read afresh there.
-  ipcMain.handle('tfs:createTasks', (_event, queryUrl: string, parentId: number, drafts: TaskDraft[]) =>
-    guard(async () => {
-      const { client } = await clientFor(queryUrl)
-      return client.createTasks(Number(parentId), sanitiseDrafts(drafts))
-    })
+  ipcMain.handle(
+    'tfs:createTasks',
+    (_event, queryUrl: string, parentId: number, drafts: TaskDraft[]) =>
+      guard(async () => {
+        const { client } = await clientFor(queryUrl)
+        return client.createTasks(Number(parentId), sanitiseDrafts(drafts))
+      })
   )
   // Reading the team for the roster sync. Keyed by whatever URL Settings has, since the project
   // is all that is needed from it.
@@ -177,7 +179,11 @@ function writable(patch: WritableSettings): WritableSettings {
   if (typeof patch.businessOrderField === 'string') {
     allowed.businessOrderField = patch.businessOrderField || undefined
   }
-  if (patch.childQueryMode === 'auto' || patch.childQueryMode === 'always' || patch.childQueryMode === 'never') {
+  if (
+    patch.childQueryMode === 'auto' ||
+    patch.childQueryMode === 'always' ||
+    patch.childQueryMode === 'never'
+  ) {
     allowed.childQueryMode = patch.childQueryMode
   }
   // An empty string clears the owner, so the tasks are created unassigned.
@@ -235,7 +241,8 @@ function messageFor(error: unknown): string {
 async function rememberBusinessOrderField(client: TfsClient): Promise<void> {
   const field = client.businessOrderField
   const settings = await getSettings()
-  if (field && field !== settings.businessOrderField) await updateSettings({ businessOrderField: field })
+  if (field && field !== settings.businessOrderField)
+    await updateSettings({ businessOrderField: field })
 }
 
 async function clientFor(url: string): Promise<{ client: TfsClient; target: ParsedTfsUrl }> {

@@ -96,7 +96,11 @@ export function applyRefresh(
       // its hours are drawn on the days they were worked, and a card for it would be an empty
       // one asking to be planned.
       if (!wasKnown(sprint, item.id) && !isContainerType(item.type) && !isReportedOnly(item)) {
-        next = appendToBacklog(next, { id: newId(), workItemId: item.id, hours: plannedHours(item) })
+        next = appendToBacklog(next, {
+          id: newId(),
+          workItemId: item.id,
+          hours: plannedHours(item)
+        })
         summary.added++
       }
       continue
@@ -109,7 +113,10 @@ export function applyRefresh(
     if (current === target) continue
 
     if (target <= 0) {
-      next = removeBlocks(next, parts.map((part) => part.block.id))
+      next = removeBlocks(
+        next,
+        parts.map((part) => part.block.id)
+      )
       summary.completed++
       continue
     }
@@ -147,7 +154,9 @@ export function settlePastPins(sprint: Sprint, anchor: ISODate): Sprint {
 
   const record: NonNullable<Sprint['pastRecord']> = {}
   for (const [memberId, byDate] of Object.entries(sprint.pastRecord ?? {})) {
-    record[memberId] = Object.fromEntries(Object.entries(byDate).map(([date, pieces]) => [date, [...pieces]]))
+    record[memberId] = Object.fromEntries(
+      Object.entries(byDate).map(([date, pieces]) => [date, [...pieces]])
+    )
   }
   const queues: Record<string, Block[]> = {}
 
@@ -196,7 +205,10 @@ export function settlePastPins(sprint: Sprint, anchor: ISODate): Sprint {
  * Runs at every refresh, and once over a sprint as it is loaded, which is what brings boards
  * built before this rule into line with it.
  */
-export function alignReportedOnly(sprint: Sprint, anchor: ISODate): { sprint: Sprint; removed: number } {
+export function alignReportedOnly(
+  sprint: Sprint,
+  anchor: ISODate
+): { sprint: Sprint; removed: number } {
   let next = sprint
   let removed = 0
 
@@ -214,12 +226,27 @@ export function alignReportedOnly(sprint: Sprint, anchor: ISODate): { sprint: Sp
     if (blocks.length === 0) continue
 
     const recorded = blocks
-      .filter((entry) => entry.memberId !== null && entry.block.pin && entry.block.pin.date < anchor)
-      .sort((a, b) => a.block.pin!.date.localeCompare(b.block.pin!.date) || a.block.pin!.startHour - b.block.pin!.startHour)[0]
+      .filter(
+        (entry) => entry.memberId !== null && entry.block.pin && entry.block.pin.date < anchor
+      )
+      .sort(
+        (a, b) =>
+          a.block.pin!.date.localeCompare(b.block.pin!.date) ||
+          a.block.pin!.startHour - b.block.pin!.startHour
+      )[0]
     if (recorded && next.reportedPins?.[item.id] === undefined) {
-      next = pinReportedAt(next, item.id, recorded.memberId!, recorded.block.pin!.date, recorded.block.pin!.startHour)
+      next = pinReportedAt(
+        next,
+        item.id,
+        recorded.memberId!,
+        recorded.block.pin!.date,
+        recorded.block.pin!.startHour
+      )
     }
-    next = removeBlocks(next, blocks.map((entry) => entry.block.id))
+    next = removeBlocks(
+      next,
+      blocks.map((entry) => entry.block.id)
+    )
     removed++
   }
 
@@ -243,8 +270,19 @@ export function resizeItemTo(
   const parts = schedulable(sprint, workItemId, blockPositions(sprint, anchor))
   const current = round(parts.reduce((sum, part) => sum + part.block.hours, 0))
   if (current === round(target)) return sprint
-  if (target <= 0) return removeBlocks(sprint, parts.map((part) => part.block.id))
-  return resize(sprint, workItemId, parts, round(target) - current, recordOwner(sprint, workItemId), newId)
+  if (target <= 0)
+    return removeBlocks(
+      sprint,
+      parts.map((part) => part.block.id)
+    )
+  return resize(
+    sprint,
+    workItemId,
+    parts,
+    round(target) - current,
+    recordOwner(sprint, workItemId),
+    newId
+  )
 }
 
 interface Part {
@@ -296,8 +334,11 @@ function blockPositions(sprint: Sprint, anchor: ISODate): Map<string, Position> 
     for (const segment of layout.segments) {
       if (segment.fromHistory || segment.isDone) continue
       const best = positions.get(segment.blockId)
-      if (!best || segment.date < best.date ||
-        (segment.date === best.date && segment.startHour < best.startHour)) {
+      if (
+        !best ||
+        segment.date < best.date ||
+        (segment.date === best.date && segment.startHour < best.startHour)
+      ) {
         positions.set(segment.blockId, { date: segment.date, startHour: segment.startHour })
       }
     }
@@ -319,7 +360,10 @@ function resize(
       // whoever was doing it rather than dropping it into the backlog for someone to find.
       const block: Block = { id: newId(), workItemId, hours: round(delta) }
       return owner
-        ? { ...sprint, queues: { ...sprint.queues, [owner]: [...(sprint.queues[owner] ?? []), block] } }
+        ? {
+            ...sprint,
+            queues: { ...sprint.queues, [owner]: [...(sprint.queues[owner] ?? []), block] }
+          }
         : appendToBacklog(sprint, block)
     }
     // Extra hours join the part that comes first on the calendar: the work grew, and it grows
