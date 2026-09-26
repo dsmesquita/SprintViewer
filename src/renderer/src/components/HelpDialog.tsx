@@ -173,7 +173,8 @@ const SECTIONS: Section[] = [
           </li>
           <li>
             The <strong>lock</strong> on a day header stops anything new being dropped on that day —
-            handy for a day that is already settled.
+            handy for a day that is already settled. A task running into that day from the day
+            before is cut where the day starts, and the rest goes back to the backlog.
           </li>
           <li>
             A ⚠ next to a name means the person has more work than hours left in the sprint — hover

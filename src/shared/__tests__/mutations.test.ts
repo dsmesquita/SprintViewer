@@ -195,18 +195,47 @@ describe('locking days', () => {
     expect(locked.backlog).toEqual([block('n1', 1, 4)])
   })
 
-  // Known bug, found by the end-to-end drag tests (see ROADMAP.md): lockDay cuts every block
-  // that runs from one day into the next, wherever the locked day is. `it.fails` passes while
-  // the bug is there; when it is fixed, this test fails — then turn it into a plain `it`.
-  it.fails('a block that does not reach the locked day is left whole', () => {
+  it('a block that does not reach the locked day is left whole', () => {
     // 12h from Monday: Monday 8h, Tuesday 4h. Locking Thursday touches neither.
     const s = sprint({
       items: [item(1, { remainingWork: 12 })],
       queues: { diogo: [block('a', 1, 12)] }
     })
-    const locked = lockDay(s, THU, MON, ids())
-    expect(findBlock(locked, 'a')?.block.hours).toBe(12)
-    expect(locked.backlog).toEqual([])
+    expect(lockDay(s, THU, MON, ids())).toEqual({ ...s, lockedDays: [THU] })
+  })
+
+  it('a block over several days keeps every day before the locked one', () => {
+    // 20h from Monday: Monday 8h, Tuesday 8h, Wednesday 4h. Locking Wednesday keeps 16.
+    const s = sprint({
+      items: [item(1, { remainingWork: 20 })],
+      queues: { diogo: [block('a', 1, 20)] }
+    })
+    const locked = lockDay(s, WED, MON, ids())
+    expect(findBlock(locked, 'a')?.block.hours).toBe(16)
+    expect(locked.backlog).toEqual([block('n1', 1, 4)])
+  })
+
+  it('a block that starts on the locked day stays where it is', () => {
+    // A (8h) fills Monday, so B starts on Tuesday: locking Tuesday leaves both whole.
+    const s = sprint({
+      items: [item(1, { remainingWork: 8 }), item(2, { remainingWork: 4 })],
+      queues: { diogo: [block('a', 1, 8), block('b', 2, 4)] }
+    })
+    expect(lockDay(s, TUE, MON, ids())).toEqual({ ...s, lockedDays: [TUE] })
+  })
+
+  it('only the blocks running into the locked day are cut, on every row', () => {
+    const s = sprint({
+      items: [item(1, { remainingWork: 12 }), item(2, { remainingWork: 10 })],
+      queues: { diogo: [block('a', 1, 12)], sofia: [block('b', 2, 10)] }
+    })
+    const locked = lockDay(s, TUE, MON, ids())
+    expect(findBlock(locked, 'a')?.block.hours).toBe(8)
+    expect(findBlock(locked, 'b')?.block.hours).toBe(8)
+    expect(locked.backlog.map((x) => [x.workItemId, x.hours])).toEqual([
+      [1, 4],
+      [2, 2]
+    ])
   })
 
   it('unlockDay removes it', () => {

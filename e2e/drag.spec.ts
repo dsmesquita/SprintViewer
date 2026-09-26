@@ -282,17 +282,20 @@ test('reported hours are dragged to when they were really worked, and handed bac
   await expect.poll(async () => (await saved(dataDir)).reportedPins?.[DEV]).toBeUndefined()
 })
 
-test('a locked day refuses drops', async ({ launch, dataDir }) => {
+test('locking a day leaves the board alone, and the day refuses drops', async ({
+  launch,
+  dataDir
+}) => {
   const page = await openBoard(launch)
+  const before = await saved(dataDir)
+  // Nothing runs into Friday: DEV ends on Thursday, so locking it cuts nothing.
   await page.locator('.cal-head .day-lock').nth(DAYS.indexOf(FRI)).click({ force: true })
   await expect.poll(async () => (await saved(dataDir)).lockedDays).toEqual([FRI])
-  // Locking also splits blocks it should not (see ROADMAP.md), so compare with the board as
-  // the lock left it rather than as seeded.
-  const locked = await saved(dataDir)
+  expect(await saved(dataDir)).toEqual({ ...before, lockedDays: [FRI] })
 
   await drag(page, card(page, 'DOC:: Export service'), await slot(page, 'Sofia', FRI, 3))
   await expect(card(page, 'DOC:: Export service')).toBeVisible()
-  expect(await saved(dataDir)).toEqual(locked)
+  expect(await saved(dataDir)).toEqual({ ...before, lockedDays: [FRI] })
 })
 
 test('clicking and right-clicking a block still work: dragging does not swallow them', async ({

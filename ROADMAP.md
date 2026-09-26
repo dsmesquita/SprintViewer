@@ -28,11 +28,8 @@ decision for later, not a bug fix slipped in.
   names; wrong for one with two Diogos. See `src/shared/__tests__/people.test.ts`.
 - **A pin on a day that left the sprint keeps its hour.** Pinned at 17:00 on a day no longer
   in the sprint, a block lands at 17:00 on the next sprint day, not at its start.
-- **Locking a day splits blocks that never reach it.** `lockDay` is meant to cut a block where
-  it runs _into_ the locked day, but it never checks which day that is: locking Friday cuts a
-  block that runs Wednesday into Thursday, and sends the Thursday part to the backlog. Found by
-  the end-to-end drag tests; pinned as a known failure (`it.fails`) in
-  `src/shared/__tests__/mutations.test.ts`. A bug to fix, not a decision.
+- ~~Locking a day split blocks that never reached it~~ — found by the end-to-end drag tests,
+  fixed after 1.3.1: only a block running into the locked day is cut, where that day starts.
 - ~~`sizing.totalHours` unused~~ — removed in the refactor.
 - ~~Three React hook-dependency warnings~~ — fixed or marked deliberate in the refactor; lint
   now fails on any warning.

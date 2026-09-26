@@ -156,9 +156,8 @@ export function splitIntoN(
 }
 
 /**
- * Locks a day so drops are rejected and clear/refresh skip it. Blocks that straddle the
- * locked/unlocked boundary are split at that boundary first, leaving each piece in the
- * locked or unlocked zone rather than spanning it.
+ * Locks a day so drops are rejected and clear/refresh skip it. A block that runs into the
+ * locked day from the days before is split where that day starts, so no block spans it.
  */
 export function lockDay(
   sprint: Sprint,
@@ -171,27 +170,22 @@ export function lockDay(
   )
   let next: Sprint = { ...sprint, lockedDays }
 
-  // Split any block that straddles the start of the locked day across all members.
+  // A block still running when the locked day starts is cut there: what it covers before that
+  // day stays, the rest goes to the backlog. Only a piece that *continues* onto the locked day
+  // counts — one that starts on it was placed there before the lock, and is left alone.
   for (const member of sprint.members) {
-    const layout = layoutMember(next, member.id, anchor)
-    for (const segment of layout.segments) {
-      if (segment.fromHistory || segment.isDone) continue
-      // A continued segment started on a previous day — if that day is the locked one, the
-      // block was placed before the lock request arrived; leave it alone. We only split blocks
-      // that START on a non-locked day and CONTINUE into the locked day.
-      if (segment.continues && !segment.continued) {
-        // This segment starts before the locked day and continues into it. Split at the boundary.
-        const hoursBeforeLock = segment.hours
-        const nextSegments = layout.segments.filter(
-          (s) => s.blockId === segment.blockId && s.continued
+    const { segments } = layoutMember(next, member.id, anchor)
+    const running = segments.filter(
+      (segment) =>
+        segment.date === date && segment.continued && !segment.isDone && !segment.fromHistory
+    )
+    for (const segment of running) {
+      const before = segments
+        .filter(
+          (s) => s.blockId === segment.blockId && s.date < date && !s.isDone && !s.fromHistory
         )
-        if (nextSegments.length > 0) {
-          const hoursInLocked = nextSegments.reduce((sum, s) => sum + s.hours, 0)
-          if (hoursInLocked > 0 && hoursBeforeLock > 0) {
-            next = splitAndReturn(next, segment.blockId, hoursBeforeLock, newId)
-          }
-        }
-      }
+        .reduce((sum, s) => sum + s.hours, 0)
+      next = splitAndReturn(next, segment.blockId, before, newId)
     }
   }
 
