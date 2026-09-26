@@ -1,6 +1,7 @@
 # Roadmap
 
-Everything asked for so far is built. See the table in [README.md](README.md).
+Everything asked for so far is built; what the app does is described in its Read me (Settings →
+Read me).
 
 Ideas raised but not asked for, kept so they are not lost:
 
@@ -33,3 +34,21 @@ decision for later, not a bug fix slipped in.
 - ~~`sizing.totalHours` unused~~ — removed in the refactor.
 - ~~Three React hook-dependency warnings~~ — fixed or marked deliberate in the refactor; lint
   now fails on any warning.
+
+## Gaps in the tests
+
+Known and accepted for now; each says what closing it would take.
+
+- **`MeasuringStrategy.Always` is not proven necessary.** It was the fix for drags sticking to
+  the row they started on. With the rows memoised, switching back to `WhileDragging` breaks no
+  test — including a mid-drag scroll tried on purpose. Keep it (it is harmless); if the old bug
+  comes back, reproduce it in `e2e/drag.spec.ts` first.
+- **Clicking a work item link.** Links open through `shell.openExternal` in the preload, which a
+  test cannot replace, so a click would open the real browser. Only the main process's handler
+  for new windows is tested (`e2e/window.spec.ts`). Routing links through an IPC call to main
+  would make them testable.
+- **The trusted-certificate setting.** `installCertificatePolicy` in `src/main/index.ts` has no
+  test: it needs an HTTPS fake TFS with a certificate Windows does not trust.
+- **Dates in the non-drag end-to-end tests** follow the real clock, so they check what is
+  drawn, not where. Placement against fixed dates is covered by the unit tests and by
+  `e2e/drag.spec.ts`, which fixes the clock.
