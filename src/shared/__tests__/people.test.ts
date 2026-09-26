@@ -16,7 +16,8 @@ import {
   holderOf,
   NOTE_CATEGORIES,
   updateNote,
-  validCategory
+  validCategory,
+  type NoteDraft
 } from '@shared/notes'
 import { addCreatedTasks, assigneeFor, taggedTitle } from '@shared/taskCreation'
 import { block, DIOGO, ids, item, MON, sprint } from '../../../test/fixtures'
@@ -101,7 +102,7 @@ describe('dates', () => {
 })
 
 describe('notes', () => {
-  const draft = {
+  const draft: NoteDraft = {
     memberId: 'diogo',
     text: '  Great demo  ',
     taskIds: [1, 1, 2],
@@ -120,7 +121,7 @@ describe('notes', () => {
   })
 
   it('an unknown category is dropped, never stored', () => {
-    const s = addNote(sprint(), { ...draft, category: 'Made up' }, ids())
+    const s = addNote(sprint(), { ...draft, category: 'Made up' } as unknown as NoteDraft, ids())
     expect('category' in s.notes[0]).toBe(false)
     expect(validCategory('Innovation')).toBe('Innovation')
     expect(validCategory(3)).toBeUndefined()
