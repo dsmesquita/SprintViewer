@@ -59,30 +59,42 @@ owner's call.
 ## Map
 
 ```
-src/main/          Electron main process
-  index.ts           windows (main + read-only snapshot windows)
-  ipc.ts             every ipcMain.handle route, input sanitising, startSprint, notes export
-  storage.ts         JSON files on disk, settings + encrypted PAT, snapshots, the auto baseline
-  tfs/client.ts      TFS REST client: WIQL, work item batches, child tasks, createTasks, teams
-  tfs/url.ts         parses a query / sprint URL into server, collection, project, team
-src/preload/       the ONLY bridge: exposes `window.api` (typed in index.ts / index.d.ts)
-src/shared/        pure domain logic — no React, no Electron, no DOM, no zustand
-  types.ts           Sprint, Block, WorkItem, Segment, Member, Note… (start here)
-  scheduling.ts      the layout engine: queues → segments, reported hours, past record
-  mutations.ts       pure (Sprint) → Sprint transforms used by the store
-  refresh.ts         reconciling a sprint with fresh TFS items
-  sizing.ts          how big a task is (Remaining + Completed), off-track rule
-  autoAssign.ts      auto-assign planner (ordering, meetings, VAL after DEV, late VAL)
-  sprintSummary.ts   Markdown sprint summary for an AI write-up
+src/main/            Electron main process
+  index.ts             windows (main + read-only snapshot windows)
+  ipc.ts               every ipcMain.handle route, one line each
+  handlers/            what the routes do: tfs.ts (client with the user's credentials, fetch,
+                       teams, createTasks), sprint.ts (start, switch), files.ts (Save dialogs)
+  validate.ts          checking what the renderer sends (settings patches, task drafts)
+  result.ts            guard(): failures become a Result with a message for the user
+  storage.ts           JSON files on disk, settings + sealed PAT, snapshots, the auto baseline
+  tfs/client.ts        TFS REST client: WIQL, batches, child tasks, createTasks, teams, versions
+  tfs/url.ts           a query / sprint URL → server, collection, project, team
+src/preload/         the ONLY bridge: exposes `window.api` (typed in index.ts / index.d.ts)
+src/shared/          pure domain logic — no React, no Electron, no DOM, no zustand (lint-enforced)
+  types.ts             Sprint, Block, WorkItem, Segment, Member, Note… (start here)
+  scheduling/          the layout engine — index.ts has the file map
+  autoAssign/          the auto-assign planner — kinds, ordering, meetings, valChain, plan
+  mutations.ts         pure (Sprint) → Sprint transforms the store runs
+  blocks.ts            finding / replacing / removing / inserting blocks
+  drop.ts              what a drop does (applyDrop), when it asks (questionFor), slotAt
+  refresh.ts           reconciling a sprint with fresh TFS items
+  sizing.ts            how big a task is (Remaining + Completed), the off-track rule
+  math.ts              round (to the hundredth) and clamp — use these, not local copies
+  sprintSummary.ts     Markdown sprint summary for an AI write-up
   snapshots.ts, baseline.ts, notes.ts, squad.ts, taskCreation.ts, tags.ts, grouping.ts,
   nudge.ts, customHours.ts, pastFit.ts, assignment.ts, dates.ts, text.ts, settings.ts
-  mock.ts            the sample sprint (also a handy test fixture)
-src/renderer/src/  React UI
-  App.tsx            composition root, toolbar, drag & drop (dnd-kit), context menus
-  store.ts           zustand store `useApp`: sprint, undo stack, dialogs, panel, zoom
-  components/        SprintGrid, SidePanel (Backlog/Person/Task tabs), dialogs, HelpDialog
-  grid.ts            drag data types and hour-width zoom steps
-  styles.css         all styles; colour tokens on :root with a dark-mode block
+  mock.ts              the sample sprint (also a handy test fixture)
+src/renderer/src/    React UI
+  App.tsx              composition root: toolbar, grid, panel, dialogs
+  store/               zustand `useApp`, in slices (index.ts has the map); persistence.ts has
+                       mutate (undo + save), persistSprint, the baseline timer, opened()
+  dnd/useSprintDnd.ts  dragging: sensors, live preview, drop, the two drop questions
+  menus.ts             right-click menus; shortcuts.ts: Ctrl+Z, Shift+arrows, click-away
+  components/          SprintGrid, Toolbar, dialogs, HelpDialog (the in-app Read me),
+                       panel/ (the side panel, one component per file)
+  grid.ts              drag data types and hour-width zoom steps
+  styles/              the stylesheet in cascade order; tokens on :root with a dark block
+test/                shared test helpers: electron fake, fakeApi, fixtures, checklist
 ```
 
 ## Core concepts (read before touching scheduling)
@@ -108,7 +120,8 @@ src/renderer/src/  React UI
   they were really worked; they overrule the record for that task.
 - **Custom hours** (`sprint.customHours`) = a manual size overruling TFS; a refresh that
   disagrees stops and asks (`RefreshHoursDialog`).
-- **Undo**: every board change goes through `mutate(transform, label)` in `store.ts`, which
+- **Undo**: every board change goes through `mutate(store, transform, label)` in
+  `store/persistence.ts` (slices call it via their actions), which
   pushes onto a 50-deep undo stack and persists. Don't `set({ sprint })` directly for board
   changes.
 - **Refresh** only fetches in main; reconciliation (`applyRefresh`) runs in the renderer.
@@ -141,16 +154,20 @@ src/renderer/src/  React UI
 - **dnd-kit**: spreading `{...listeners}` and then setting your own `onPointerDown` silently
   kills dragging — call `listeners.onPointerDown?.(event)` inside yours. Keep
   `MeasuringStrategy.Always` on the `DndContext` (WhileDragging caused a mis-measure bug).
-- **Preview == drop**: the drag preview and the drop both go through `applyDrop` in `App.tsx`;
+- **Preview == drop**: the drag preview and the drop both go through `applyDrop` in
+  `src/shared/drop.ts`;
   change one, you change both. Keep it that way.
 - **dev:web + HMR**: when poking the store from the browser console/tests, import the module
   URL the page actually loaded, or you get a second store instance.
+- **dev:web after moving files**: when a file becomes a folder (`x.ts` → `x/index.ts`) or is
+  deleted, the running Vite server keeps the old path and the page goes blank with a 404.
+  Restart `npm run dev:web`; it is not a code problem.
 - **Windows shells** mangle backslashes in heredocs (`CMF\bsrocha` → `CMFbsrocha`). Write files
   with an editor/tool, not `cat <<EOF`, when they contain backslashes.
 - TFS identities look like `Display Name <DOMAIN\user>`; `taskCreation.normaliseIdentity`
   accepts `user`, `DOMAIN\user`, `<DOMAIN\user>` and the full form (default domain `CMF`).
 - Old sprint files must keep loading: new `Sprint` fields are optional, and migrations run
-  when a sprint is opened (`opened()` in `store.ts`).
+  when a sprint is opened (`opened()` in `store/persistence.ts`).
 
 ## Verifying a change
 
@@ -158,13 +175,15 @@ src/renderer/src/  React UI
 2. UI: `npm run dev:web` → **Load sample data** → exercise the change → no console errors.
 3. Anything behind `window.api` (TFS, files, snapshots windows): `npm run dev`.
 
-## Planned refactor
+## Structure rules
 
-A behaviour-preserving cleanup is under way. Done: git, Vitest with the old suites, ESLint +
-Prettier, and tests for everything that was not covered (logic, main process, store,
-components — ~500 tests; `src/shared` and `src/main` above 85% line coverage). Next: splitting
-`scheduling.ts`, `autoAssign.ts`, `App.tsx`, `SidePanel.tsx`, `store.ts` and `styles.css` into
-folders, de-duplicating helpers (`round`/`clamp`, block-list helpers), and retiring the legacy
-`history` drawing path. Behaviour the tests pinned down but that may deserve a decision is
-listed at the end of `ROADMAP.md`. If the folders above have already moved, trust the
-tree over this file — and fix this file.
+Kept by the 2026-09 refactor; keep them:
+
+- One home per concept. Rounding is `math.round`, block-list edits are `blocks.ts`, what a drop
+  does is `drop.ts` — reuse them rather than writing a local copy.
+- A folder's `index.ts` is its public API and has a map of its files. Import from the folder
+  (`@shared/scheduling`), not from a file inside it.
+- No import cycles. Where two modules need each other, one of them only needs a type — use
+  `import type`.
+- Behaviour the tests pinned down but that may deserve a decision is listed at the end of
+  `ROADMAP.md`. Change it on purpose, with its test, not as part of a refactor.

@@ -28,7 +28,6 @@ decision for later, not a bug fix slipped in.
   names; wrong for one with two Diogos. See `src/shared/__tests__/people.test.ts`.
 - **A pin on a day that left the sprint keeps its hour.** Pinned at 17:00 on a day no longer
   in the sprint, a block lands at 17:00 on the next sprint day, not at its start.
-- **`sizing.totalHours` is unused.** Exported, never called — removed in the refactor.
-- **Three React hook-dependency warnings** (`App.tsx`, `SnapshotsDialog.tsx`,
-  `SquadSync.tsx`). Two are commented as deliberate; all three are revisited when those files
-  are split up.
+- ~~`sizing.totalHours` unused~~ — removed in the refactor.
+- ~~Three React hook-dependency warnings~~ — fixed or marked deliberate in the refactor; lint
+  now fails on any warning.
