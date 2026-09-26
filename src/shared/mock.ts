@@ -1,5 +1,5 @@
 import { buildSprintDays, startOfWeek, todayISO } from './dates'
-import { freezeHistoryBefore } from './scheduling'
+import { freezeHistoryBefore, recordPast } from './scheduling'
 import { DEFAULT_HOURS_PER_DAY, type Block, type Member, type Sprint, type WorkItem } from './types'
 
 /**
@@ -221,6 +221,11 @@ export function createMockSprint(): Sprint {
     sofia: [block(4951, 7)],
     vitor: [block(4934, 4)]
   }
-  sprint.history = freezeHistoryBefore({ ...sprint, queues: worked, history: {} }, today)
-  return sprint
+  // The past is drawn once from those, then kept as the sample's record, the way a real sprint
+  // keeps it after a refresh.
+  const withHistory = {
+    ...sprint,
+    history: freezeHistoryBefore({ ...sprint, queues: worked, history: {} }, today)
+  }
+  return { ...withHistory, pastRecord: recordPast(withHistory, today) }
 }

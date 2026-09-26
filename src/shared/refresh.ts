@@ -1,7 +1,7 @@
 import { isContainerType } from './grouping'
 import { appendToBacklog, removeBlocks, setBlockHours } from './blocks'
 import { pinReportedAt } from './mutations'
-import { freezeHistoryBefore, layoutSprint, liveRecord, recordPast } from './scheduling'
+import { layoutSprint, liveRecord, recordPast } from './scheduling'
 import { completedHours, isReportedOnly, plannedHours, reportedHours } from './sizing'
 import type { Block, ISODate, Segment, Sprint, WorkItem } from './types'
 import { round } from './math'
@@ -44,14 +44,9 @@ export function applyRefresh(
 ): RefreshResult {
   const summary: RefreshSummary = { updated: 0, completed: 0, added: 0, missing: 0 }
 
-  // Snapshot the days that have passed before anything moves. A sprint refreshed for the first
-  // time under the record rule starts its record from exactly what it shows now, so nothing
-  // already on screen jumps.
-  let next: Sprint = {
-    ...sprint,
-    history: freezeHistoryBefore(sprint, anchor),
-    pastRecord: sprint.pastRecord ?? recordPast(sprint, anchor)
-  }
+  // A sprint refreshed for the first time under the record rule starts its record from exactly
+  // what it shows now, so nothing already on screen jumps.
+  let next: Sprint = { ...sprint, pastRecord: sprint.pastRecord ?? recordPast(sprint, anchor) }
 
   const incoming = new Map(items.map((item) => [item.id, item]))
   const workItems: Record<number, WorkItem> = {}

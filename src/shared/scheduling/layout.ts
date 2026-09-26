@@ -96,31 +96,11 @@ export function layoutMember(
     if (end) cursor = end
   }
 
-  const pinnedDays = new Set(pinned.map((block) => block.pin!.date))
-  // A sprint with a recorded past draws the past from that record alone. The plan snapshots
-  // are what made days already shown reshape themselves as Completed Work grew.
-  const history = sprint.pastRecord ? {} : (sprint.history[memberId] ?? {})
-  // A snapshot says what the plan was on a day that has since passed. Where it disagrees with
-  // what TFS says was actually completed, it gives way: a task nobody reported an hour
-  // against did not happen, whatever Monday's plan claimed, and it must not hold Monday's
-  // space against work that did. A server with no Completed Work field cannot be judged, so
-  // its snapshots are replayed whole.
-  const justified = new Map<number, number>()
-  for (const day of sprint.days) {
-    if (day.date >= anchor || pinnedDays.has(day.date)) continue
-    for (const segment of history[day.date] ?? []) {
-      const allowed = completedHours(sprint.workItems[segment.workItemId])
-      if (allowed === undefined) {
-        segments.push({ ...segment, fromHistory: true })
-        continue
-      }
-      const used = justified.get(segment.workItemId) ?? 0
-      const room = round(allowed - used)
-      if (room <= 0) continue
-      const hours = Math.min(segment.hours, room)
-      justified.set(segment.workItemId, round(used + hours))
-      segments.push({ ...segment, hours, fromHistory: true })
-    }
+  // Sprints with a recorded past draw it above, from `record`. Only one saved before that rule
+  // existed, still being opened for the first time, falls back to its old plan snapshots.
+  if (!sprint.pastRecord) {
+    const pinnedDays = new Set(pinned.map((block) => block.pin!.date))
+    segments.push(...replayLegacySnapshots(sprint, memberId, anchor, pinnedDays))
   }
 
   const usedHours = segments
@@ -208,6 +188,45 @@ function byPin(a: Block, b: Block): number {
   const left = a.pin!
   const right = b.pin!
   return left.date.localeCompare(right.date) || left.startHour - right.startHour
+}
+
+/**
+ * The past as the plan snapshots (`sprint.history`) had it, before past days became a fixed
+ * record. Used only to draw a sprint saved by an older version, once, so that its record can
+ * be taken from exactly what it showed — see `opened()` in the store and `applyRefresh`.
+ *
+ * A snapshot says what the plan was on a day that has since passed. Where it disagrees with
+ * what TFS says was actually completed, it gives way: a task nobody reported an hour against
+ * did not happen, whatever Monday's plan claimed, and it must not hold Monday's space against
+ * work that did. A server with no Completed Work field cannot be judged, so its snapshots are
+ * replayed whole. Days with a block pinned by hand are left to the pin.
+ */
+function replayLegacySnapshots(
+  sprint: Sprint,
+  memberId: string,
+  anchor: ISODate,
+  pinnedDays: Set<ISODate>
+): Segment[] {
+  const history = sprint.history[memberId] ?? {}
+  const segments: Segment[] = []
+  const justified = new Map<number, number>()
+  for (const day of sprint.days) {
+    if (day.date >= anchor || pinnedDays.has(day.date)) continue
+    for (const segment of history[day.date] ?? []) {
+      const allowed = completedHours(sprint.workItems[segment.workItemId])
+      if (allowed === undefined) {
+        segments.push({ ...segment, fromHistory: true })
+        continue
+      }
+      const used = justified.get(segment.workItemId) ?? 0
+      const room = round(allowed - used)
+      if (room <= 0) continue
+      const hours = Math.min(segment.hours, room)
+      justified.set(segment.workItemId, round(used + hours))
+      segments.push({ ...segment, hours, fromHistory: true })
+    }
+  }
+  return segments
 }
 
 /**
