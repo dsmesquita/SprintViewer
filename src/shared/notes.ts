@@ -83,3 +83,24 @@ export function holderOf(sprint: Sprint, workItemId: number): string | undefined
   }
   return undefined
 }
+
+/** Every note in the sprint as Markdown, grouped by person, with links to the tasks they mention. */
+export function notesMarkdown(sprint: Sprint): string {
+  const lines: string[] = [`# ${sprint.name} — Notes\n`]
+  for (const member of sprint.members) {
+    const memberNotes = sprint.notes.filter((note: Note) => note.memberId === member.id)
+    if (memberNotes.length === 0) continue
+    lines.push(`## ${member.name}\n`)
+    for (const note of memberNotes) {
+      const taskRefs = note.taskIds.map((id) => {
+        const item = sprint.workItems[id]
+        return item ? `[#${id} ${item.title}](${item.url})` : `#${id}`
+      })
+      if (note.category) lines.push(`**Category:** ${note.category}  `)
+      if (taskRefs.length > 0) lines.push(`**Tasks:** ${taskRefs.join(', ')}  `)
+      lines.push(note.text)
+      lines.push('')
+    }
+  }
+  return lines.join('\n')
+}
