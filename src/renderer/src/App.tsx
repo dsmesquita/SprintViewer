@@ -1,42 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  DndContext,
-  DragOverlay,
-  MeasuringStrategy,
-  PointerSensor,
-  pointerWithin,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragMoveEvent,
-  type DragStartEvent
-} from '@dnd-kit/core'
-import { checkAssignment, type AssignmentMismatch } from '@shared/assignment'
+import { DndContext, DragOverlay } from '@dnd-kit/core'
 import { planAutoAssign, valWarnings, type AssignPlan } from '@shared/autoAssign'
 import { freePastSpace, pastConflicts } from '@shared/pastFit'
 import { formatDayHeader, formatRange } from '@shared/dates'
-import {
-  clearCalendarCost,
-  findBlock,
-  moveBlock as moveBlockIn,
-  pinBlockAt,
-  pinReportedAt,
-  splitInPlace,
-  type Location
-} from '@shared/mutations'
-import {
-  anchorFor,
-  insertionIndex,
-  landsInside,
-  layoutSprint,
-  occupantAt,
-  type Occupant
-} from '@shared/scheduling'
+import { clearCalendarCost, findBlock } from '@shared/mutations'
+import { anchorFor, layoutSprint } from '@shared/scheduling'
 import type { ISODate, Sprint } from '@shared/types'
 import AutoAssignDialog from './components/AutoAssignDialog'
 import ContextMenu, { type MenuItem, type MenuState } from './components/ContextMenu'
 import CreateTasksDialog from './components/CreateTasksDialog'
 import Dialog from './components/Dialog'
+import { MismatchDialog, SplitQuestionDialog } from './components/DropDialogs'
 import HoursDialog from './components/HoursDialog'
 import NoteDialog from './components/NoteDialog'
 import RefreshHoursDialog from './components/RefreshHoursDialog'
@@ -49,7 +23,6 @@ import SplitDialog from './components/SplitDialog'
 import SprintGrid from './components/SprintGrid'
 import StartSprintDialog from './components/StartSprintDialog'
 import { cx, hours, toneFor } from './format'
-import { BACKLOG_DROP_ID, MEMBER_DROP_PREFIX, type DragData } from './grid'
 import {
   AssignIcon,
   CameraIcon,
@@ -59,7 +32,6 @@ import {
   UndoIcon,
   WarningIcon
 } from './icons'
-import { clamp } from '@shared/math'
 // ExportIcon inline - a simple download arrow
 const ExportIcon = (): JSX.Element => (
   <svg
@@ -79,29 +51,7 @@ const ExportIcon = (): JSX.Element => (
   </svg>
 )
 import { useApp } from './store'
-
-/** A slot on the calendar: whose row, which day, which hour. */
-interface DropTarget {
-  memberId: string
-  date: ISODate
-  hour: number
-}
-
-/**
- * What to do about the task already in that slot. `auto` is the ordinary case — an empty
- * slot, or one whose first or last hour says plainly enough which side is meant.
- */
-type DropChoice = 'auto' | 'split' | 'after' | 'before'
-
-/**
- * What is being dragged, as the id the grid draws it under.
- *
- * Reported hours have no block, so the layout gives their segments a synthetic `done:<id>`
- * blockId — matching it here is what lets the preview outline them like anything else.
- */
-function keyOf(data: DragData): string {
-  return data.kind === 'block' ? data.blockId : `done:${data.workItemId}`
-}
+import { useSprintDnd } from './dnd/useSprintDnd'
 
 /**
  * Places where a click does not mean "I am done looking at this task".
@@ -148,22 +98,11 @@ export default function App(): JSX.Element {
   const nudge = useApp((s) => s.nudge)
   const selectedWorkItemId = useApp((s) => s.selectedWorkItemId)
   const unpinReported = useApp((s) => s.unpinReported)
-  const hourWidth = useApp((s) => s.hourWidth)
   const sprintList = useApp((s) => s.sprintList)
   const switchSprint = useApp((s) => s.switchSprint)
   const [showSprintMenu, setShowSprintMenu] = useState(false)
 
   const [menu, setMenu] = useState<MenuState | null>(null)
-  const [dragging, setDragging] = useState<DragData | null>(null)
-  // A drop that contradicts TFS waits here for an answer. The placement is held as the
-  // closure that would have run, so confirming does exactly what the drop would have done.
-  const [pending, setPending] = useState<{
-    mismatch: AssignmentMismatch
-    place: () => void
-  } | null>(null)
-  // Where the block being dragged would land. Held as a slot rather than as pixels, so the
-  // preview is recomputed only when the cursor crosses into a new hour.
-  const [preview, setPreview] = useState<{ data: DragData; target: DropTarget } | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   // The plan with every rule applied, and — only when that would move work already on the
   // calendar — the same run with the calendar held fixed, so the dialog can offer both.
@@ -172,13 +111,6 @@ export default function App(): JSX.Element {
     keep: AssignPlan | null
   } | null>(null)
   const [showPastFit, setShowPastFit] = useState(false)
-  // A drop that landed inside another task, waiting to be told how to make room.
-  const [pendingSplit, setPendingSplit] = useState<{
-    data: DragData
-    target: DropTarget
-    occupant: Occupant
-  } | null>(null)
-
   useEffect(() => {
     void init()
   }, [init])
@@ -251,88 +183,13 @@ export default function App(): JSX.Element {
     }
   }, [selectedWorkItemId, clearTask])
 
-  // A few pixels of movement before a drag starts, so clicking and right-clicking a task
-  // still work normally.
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
-
   // The whole grid is derived: queues in, positions out. Nothing about a task's place on the
   // calendar is stored, which is what lets a refresh re-flow everything by changing hours.
   const anchor = useMemo(() => (sprint ? anchorFor(sprint, today) : today), [sprint, today])
   const layouts = useMemo(() => (sprint ? layoutSprint(sprint, anchor) : {}), [sprint, anchor])
 
-  /**
-   * Applies a drop to a sprint without touching the store. The drag preview and the drop
-   * itself both go through this, which is what makes "it lands exactly where the preview
-   * showed it" structural rather than something to keep in step by hand.
-   *
-   * Dropping on a day that has already happened is a statement about what was worked, so the
-   * block holds that exact slot. Dropping ahead of today is a plan, so it joins the queue and
-   * flows with everything else.
-   */
-  const applyDrop = (
-    from: Sprint,
-    data: DragData,
-    target: DropTarget,
-    choice: DropChoice = 'auto'
-  ): Sprint => {
-    if ((from.lockedDays ?? []).includes(target.date)) return from
-
-    // Reported hours are drawn only on the days that have passed, so a drop on the anchor or
-    // later has nothing to mean. Nothing changes rather than the hours quietly staying put
-    // somewhere else, which would look like the drag had been misread.
-    if (data.kind === 'reported') {
-      if (target.date >= anchor) return from
-      return pinReportedAt(from, data.workItemId, target.memberId, target.date, target.hour)
-    }
-
-    const blockId = data.blockId
-    if (target.date <= today) {
-      // A pin claims its exact hour and whatever is unpinned flows around it, which already
-      // parts a task in two where the pin lands. There is nothing to ask.
-      return pinBlockAt(from, blockId, target.memberId, target.date, target.hour)
-    }
-    const layout = layouts[target.memberId]
-    if (!layout) return from
-    const to: Location = { kind: 'member', memberId: target.memberId }
-    const occupant = occupantAt(from, layout, target.memberId, target.date, target.hour)
-
-    if (occupant && occupant.blockId !== blockId && choice !== 'auto') {
-      if (choice === 'split') {
-        const parted = splitInPlace(from, occupant.blockId, occupant.offset, () =>
-          crypto.randomUUID()
-        )
-        return moveBlockIn(parted, blockId, to, occupant.index + 1)
-      }
-      return moveBlockIn(from, blockId, to, occupant.index + (choice === 'after' ? 1 : 0))
-    }
-
-    const index = insertionIndex(from, layout, target.memberId, target.date, target.hour)
-    return moveBlockIn(from, blockId, to, index)
-  }
-
-  /** The occupant of a slot, when there is a real question to ask about it. */
-  const questionFor = (data: DragData, target: DropTarget): Occupant | null => {
-    // Reported hours never join a queue, so there is nothing to insert them into or beside.
-    if (!sprint || data.kind === 'reported' || target.date <= today) return null
-    const layout = layouts[target.memberId]
-    if (!layout) return null
-    const occupant = occupantAt(sprint, layout, target.memberId, target.date, target.hour)
-    if (!occupant || occupant.blockId === data.blockId || !landsInside(occupant)) return null
-    return occupant
-  }
-
-  // The sprint as it would be if the drag ended now. The store is untouched until the drop.
-  const shownSprint = useMemo(() => {
-    if (!sprint || !preview) return sprint
-    // Where the drop lands inside another task the preview shows it parted, which is both the
-    // literal reading of the gesture and the choice the dialog offers first.
-    const choice = questionFor(preview.data, preview.target) ? 'split' : 'auto'
-    return applyDrop(sprint, preview.data, preview.target, choice)
-  }, [sprint, preview, layouts, today, anchor])
-  const shownLayouts = useMemo(
-    () => (shownSprint === sprint ? layouts : shownSprint ? layoutSprint(shownSprint, anchor) : {}),
-    [shownSprint, sprint, layouts, anchor]
-  )
+  const drag = useSprintDnd({ sprint, layouts, anchor, today })
+  const { shownSprint, shownLayouts } = drag
 
   // VAL tasks left starting before their DEV ends — auto-assign links them once, and a DEV that
   // grows or moves afterwards does not take its VAL along.
@@ -349,100 +206,6 @@ export default function App(): JSX.Element {
   const spillover = Object.values(shownLayouts).reduce((sum, layout) => sum + layout.spillover, 0)
   const first = sprint?.days[0]?.date
   const last = sprint?.days[sprint.days.length - 1]?.date
-
-  const onDragStart = (event: DragStartEvent): void =>
-    setDragging((event.active.data.current as DragData | undefined) ?? null)
-
-  /** Which member, day and hour the pointer is currently over, if it is over the calendar. */
-  const targetFor = (event: DragMoveEvent | DragEndEvent): DropTarget | null => {
-    const { over } = event
-    if (!sprint || !over || typeof over.id !== 'string') return null
-    if (!over.id.startsWith(MEMBER_DROP_PREFIX)) return null
-
-    const memberId = over.id.slice(MEMBER_DROP_PREFIX.length)
-    if (!layouts[memberId]) return null
-
-    // Where the pointer finished, not where the dragged block's left edge is — the user
-    // grabbed the block somewhere in its middle and expects the drop to follow the cursor.
-    const pointer = (event.activatorEvent as MouseEvent | undefined)?.clientX
-    const x =
-      pointer === undefined
-        ? (event.active.rect.current.translated?.left ?? over.rect.left) - over.rect.left
-        : pointer + event.delta.x - over.rect.left
-
-    const dayWidth = sprint.hoursPerDay * hourWidth
-    const dayIndex = clamp(Math.floor(x / dayWidth), 0, sprint.days.length - 1)
-    const hour = clamp(Math.floor((x - dayIndex * dayWidth) / hourWidth), 0, sprint.hoursPerDay - 1)
-    return { memberId, date: sprint.days[dayIndex].date, hour }
-  }
-
-  /**
-   * Also wired to `onDragOver`, which fires the moment the row under the cursor changes.
-   * `onDragMove` alone reports the previous drop target on the event where it changes, so
-   * the preview would trail the cursor by one movement — invisible with a real mouse, but
-   * wrong for someone who stops moving and releases straight away.
-   */
-  const onDragMove = (event: DragMoveEvent): void => {
-    const data = event.active.data.current as DragData | undefined
-    const target = data ? targetFor(event) : null
-
-    // A preview survives `over` going momentarily null. Applying one re-renders the grid,
-    // which makes dnd-kit re-measure its drop targets, and for that tick nothing is under the
-    // cursor — clearing the preview then would put the block back, bring the target back, and
-    // set the preview again, flickering for the whole drag. Only an explicit move to the
-    // backlog takes the preview down.
-    if (!target && event.over?.id !== BACKLOG_DROP_ID) return
-
-    setPreview((current) => {
-      if (!target || !data) return current === null ? current : null
-      if (
-        current &&
-        keyOf(current.data) === keyOf(data) &&
-        current.target.memberId === target.memberId &&
-        current.target.date === target.date &&
-        current.target.hour === target.hour
-      ) {
-        return current
-      }
-      return { data, target }
-    })
-  }
-
-  const onDragEnd = (event: DragEndEvent): void => {
-    setDragging(null)
-    setPreview(null)
-    const data = event.active.data.current as DragData | undefined
-    if (!data || !sprint) return
-
-    if (event.over?.id === BACKLOG_DROP_ID) {
-      // Reported hours cannot be unscheduled — they happened. Dropping them here is read as
-      // "I no longer want to say when", which hands them back to the automatic placement.
-      if (data.kind === 'reported') unpinReported(data.workItemId)
-      else moveBlock(data.blockId, { kind: 'backlog' }, sprint.backlog.length)
-      return
-    }
-
-    // The cursor's own answer, falling back to the previewed one. Both are needed: dnd-kit
-    // can report no drop target on the tick after a re-render, which would swallow the drop
-    // entirely, while the preview can be a moment behind if the pointer stopped before the
-    // release. With a real mouse the two agree, and the preview is then literally what lands.
-    const previewed = preview && keyOf(preview.data) === keyOf(data) ? preview.target : null
-    const target = targetFor(event) ?? previewed
-    if (!target) return
-
-    const place = (): void => {
-      const occupant = questionFor(data, target)
-      if (occupant) setPendingSplit({ data, target, occupant })
-      else applySprint(applyDrop(sprint, data, target), 'move')
-    }
-
-    // TFS may already say who owns this. Disagreeing with it is allowed — plans change
-    // before the work item does — but it is worth asking, because the usual cause is a drop
-    // on the wrong row.
-    const mismatch = checkAssignment(sprint, data.workItemId, target.memberId)
-    if (mismatch) setPending({ mismatch, place })
-    else place()
-  }
 
   // Wrapped so the memoised rows and blocks in SprintGrid see the same functions on every hop
   // of a drag. `sprint` itself does not change until the drop, so these stay stable throughout.
@@ -562,8 +325,7 @@ export default function App(): JSX.Element {
             ? [
                 {
                   label: 'Return to backlog',
-                  onSelect: () =>
-                    moveBlock(blockId, { kind: 'backlog' } as Location, sprint.backlog.length)
+                  onSelect: () => moveBlock(blockId, { kind: 'backlog' }, sprint.backlog.length)
                 }
               ]
             : [])
@@ -574,28 +336,7 @@ export default function App(): JSX.Element {
   )
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={pointerWithin}
-      /*
-       * Drop targets are re-measured whenever the DOM changes, not just at drag start.
-       * Showing a live preview re-renders the grid mid-drag, and with the default strategy
-       * (`WhileDragging`) dnd-kit keeps its original measurements — so after the first preview
-       * it no longer knows which row the cursor is over, and the drag sticks to wherever it
-       * began. The cost of re-measuring is bounded by dnd-kit's default `Optimized` frequency,
-       * which coalesces to one measurement per frame; keeping the mutations themselves down is
-       * the job of the memoised rows and blocks in SprintGrid.
-       */
-      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-      onDragStart={onDragStart}
-      onDragMove={onDragMove}
-      onDragOver={onDragMove}
-      onDragEnd={onDragEnd}
-      onDragCancel={() => {
-        setDragging(null)
-        setPreview(null)
-      }}
-    >
+    <DndContext {...drag.dndProps}>
       <div className="app">
         <header className="toolbar">
           <span className="title">{sprint?.name ?? 'Sprint Viewer'}</span>
@@ -762,7 +503,7 @@ export default function App(): JSX.Element {
           <div className="body">
             <SprintGrid
               layouts={shownLayouts}
-              previewBlockId={preview ? keyOf(preview.data) : undefined}
+              previewBlockId={drag.previewBlockId}
               warnings={warnings}
               anchor={anchor}
               onDayContextMenu={onDayContextMenu}
@@ -916,88 +657,20 @@ export default function App(): JSX.Element {
             </p>
           </Dialog>
         )}
-        {pendingSplit && sprint && (
-          <Dialog
-            title={`#${pendingSplit.occupant.workItemId} is already here`}
-            onClose={() => setPendingSplit(null)}
-            footer={
-              <button type="button" onClick={() => setPendingSplit(null)}>
-                Cancel
-              </button>
-            }
-          >
-            <p style={{ margin: '0 0 10px' }}>
-              You dropped it {hours(pendingSplit.occupant.offset)} into{' '}
-              <strong>
-                #{pendingSplit.occupant.workItemId}{' '}
-                {sprint.workItems[pendingSplit.occupant.workItemId]?.title ?? ''}
-              </strong>
-              . Where should it go?
-            </p>
-            <div className="choice-list">
-              {(
-                [
-                  [
-                    'split',
-                    'Split it here',
-                    `${hours(pendingSplit.occupant.offset)} before, ${hours(
-                      pendingSplit.occupant.hours - pendingSplit.occupant.offset
-                    )} after`
-                  ],
-                  ['after', 'Keep it before', 'It stays whole, the dropped task follows it'],
-                  ['before', 'Keep it after', 'It stays whole, the dropped task goes first']
-                ] as Array<[DropChoice, string, string]>
-              ).map(([choice, label, detail]) => (
-                <button
-                  key={choice}
-                  type="button"
-                  className={cx('choice', choice === 'split' && 'is-primary')}
-                  onClick={() => {
-                    applySprint(
-                      applyDrop(sprint, pendingSplit.data, pendingSplit.target, choice),
-                      choice === 'split' ? 'split and move' : 'move'
-                    )
-                    setPendingSplit(null)
-                  }}
-                >
-                  <span className="choice-label">{label}</span>
-                  <span className="choice-detail">{detail}</span>
-                </button>
-              ))}
-            </div>
-          </Dialog>
+        {drag.splitQuestion && sprint && (
+          <SplitQuestionDialog
+            sprint={sprint}
+            question={drag.splitQuestion}
+            onAnswer={drag.answerSplit}
+            onClose={drag.dismissSplit}
+          />
         )}
-        {pending && (
-          <Dialog
-            title="Assigned to someone else"
-            onClose={() => setPending(null)}
-            footer={
-              <>
-                <button type="button" onClick={() => setPending(null)}>
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="primary"
-                  onClick={() => {
-                    pending.place()
-                    setPending(null)
-                  }}
-                >
-                  Put it there anyway
-                </button>
-              </>
-            }
-          >
-            <p style={{ margin: 0 }}>
-              #{pending.mismatch.workItemId} is assigned to{' '}
-              <strong>{pending.mismatch.assignee}</strong> in TFS. Put it on{' '}
-              <strong>{pending.mismatch.memberName}</strong>&rsquo;s calendar anyway?
-            </p>
-            <p className="hint" style={{ marginBottom: 0 }}>
-              The work item in TFS is not changed either way — this app only reads.
-            </p>
-          </Dialog>
+        {drag.mismatch && (
+          <MismatchDialog
+            mismatch={drag.mismatch}
+            onConfirm={drag.confirmMismatch}
+            onClose={drag.dismissMismatch}
+          />
         )}
         <ContextMenu menu={menu} onClose={() => setMenu(null)} />
       </div>
@@ -1009,13 +682,13 @@ export default function App(): JSX.Element {
           preview is the better one — but mounting and unmounting the ghost each time the
           preview came and went made it blink its way across the board.
         */}
-        {dragging && (
+        {drag.dragging && (
           <div
-            className={cx('seg', 'drag-ghost', toneFor(dragging.workItemId))}
-            style={{ opacity: preview ? 0 : 1 }}
+            className={cx('seg', 'drag-ghost', toneFor(drag.dragging.workItemId))}
+            style={{ opacity: drag.previewing ? 0 : 1 }}
           >
-            <span className="seg-id">#{dragging.workItemId}</span>
-            <span className="seg-title">{hours(dragging.hours)}</span>
+            <span className="seg-id">#{drag.dragging.workItemId}</span>
+            <span className="seg-title">{hours(drag.dragging.hours)}</span>
           </div>
         )}
       </DragOverlay>
