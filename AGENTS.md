@@ -70,6 +70,13 @@ owner's call.
   localhost, `e2e/fakeTfs.ts`: set `tfs.add(...)` / `tfs.queried`, read `tfs.requests`),
   `launch()` (returns `{ app, page, close }`; launch again after `close()` for a restart).
 - Any console error or uncaught exception in any window fails the test.
+- `e2e/data.ts` has the shared TFS data (a story with DEV and VAL tasks) and `sprintFor(tfs)`, a
+  saved sprint of it. Dates follow the real clock, so e2e tests don't assert which day a block
+  lands on — the unit tests do that against fixed dates.
+- Native things can't be clicked: replace them inside the main process with `app.evaluate`, e.g.
+  `dialog.showSaveDialog` (see `files.spec.ts`) or `shell.openExternal` (`window.spec.ts`). Work
+  item links go through `shell.openExternal` in the **preload**, which can't be replaced from a
+  test — clicking one would open the real browser, so no spec does.
 - Seed `authMode: 'windows'` to talk to the fake TFS without a token.
 - Use e2e for what needs the real window: real pointer drags, the preload bridge, files on disk,
   several windows. Everything else belongs in the Vitest suites, which are much faster.

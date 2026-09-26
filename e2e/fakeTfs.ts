@@ -23,6 +23,8 @@ export interface Recorded {
   method: string
   path: string
   body?: unknown
+  /** The Authorization header, when there was one. */
+  authorization?: string
 }
 
 export interface TeamMember {
@@ -148,7 +150,12 @@ export async function startFakeTfs(): Promise<FakeTfs> {
       } catch {
         body = raw
       }
-      requests.push({ method, path: url.pathname, body })
+      requests.push({
+        method,
+        path: url.pathname,
+        body,
+        authorization: request.headers.authorization
+      })
       const [status, json] = answer(url.pathname, method, url, body)
       response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' })
       response.end(JSON.stringify(json))
