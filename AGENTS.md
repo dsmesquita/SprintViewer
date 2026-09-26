@@ -49,7 +49,9 @@ owner's call.
   14 Sep 2026, `drawn()` to read a person's calendar as strings), `test/fakeApi.ts`
   (`installFakeApi()` puts typed `vi.fn` mocks on `window.api` for store and component tests).
 - Component tests (`*.test.tsx`) use Testing Library; wrap anything using dnd-kit hooks in a
-  `DndContext`. Drags themselves are not simulated — test the drop logic as a function.
+  `DndContext`. jsdom has no layout, so dnd-kit cannot be driven there: test what a drop does
+  with `applyDrop` (`drop.test.ts`), and the drag state machine by calling `useSprintDnd`'s
+  handlers with the events dnd-kit would send (`dnd/__tests__/useSprintDnd.test.tsx`).
 - Two styles. Standalone behaviour: plain `describe` / `it` / `expect`. Long step-by-step
   scenarios (refresh on Wednesday, then Thursday…): `checklist()` from `test/checklist.ts` —
   `check(name, ok, detail)` at each step, `report()` at the end turns each into a test. The
