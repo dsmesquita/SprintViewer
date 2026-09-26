@@ -83,7 +83,9 @@ owner's call.
   `dialog.showSaveDialog` (see `files.spec.ts`) or `shell.openExternal` (`stubBrowser` in
   `window.spec.ts`). Every link goes through main (`handlers/links.ts`), so stubbing it there
   catches them all.
-- Seed `authMode: 'windows'` to talk to the fake TFS without a token.
+- Seed `authMode: 'windows'` to talk to the fake TFS without a token. `startFakeTfs({ https:
+true })` serves HTTPS with a certificate nobody trusts (`e2e/certs/`, a test-only key), for
+  the "Trust certificates from" setting.
 - Use e2e for what needs the real window: real pointer drags, the preload bridge, files on disk,
   several windows. Everything else belongs in the Vitest suites, which are much faster.
 

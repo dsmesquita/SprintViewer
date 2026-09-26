@@ -1,5 +1,8 @@
+import { readFileSync } from 'node:fs'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import { createServer as createHttpsServer } from 'node:https'
 import type { AddressInfo } from 'node:net'
+import { join } from 'node:path'
 
 /**
  * A TFS stand-in on localhost for the end-to-end tests: just enough of the REST API for the
@@ -54,7 +57,17 @@ const COLLECTION = '/tfs/Coll'
 const PROJECT = `${COLLECTION}/Proj`
 export const ITERATION = 'Proj\\Sprint 1'
 
-export async function startFakeTfs(): Promise<FakeTfs> {
+/**
+ * A self-signed certificate for 127.0.0.1 that no machine trusts, made for these tests only
+ * (see `certs/README.md`). Serving HTTPS with it is how an on-prem TFS behind an internal CA
+ * looks to the app.
+ */
+const UNTRUSTED = {
+  key: readFileSync(join(__dirname, 'certs', 'untrusted.key')),
+  cert: readFileSync(join(__dirname, 'certs', 'untrusted.crt'))
+}
+
+export async function startFakeTfs(options: { https?: boolean } = {}): Promise<FakeTfs> {
   const items = new Map<number, RawItem>()
   const requests: Recorded[] = []
   let nextId = 9000
@@ -138,7 +151,7 @@ export async function startFakeTfs(): Promise<FakeTfs> {
     return [404, { message: `The fake TFS does not know ${method} ${path}.` }]
   }
 
-  const server = createServer((request: IncomingMessage, response: ServerResponse) => {
+  const handle = (request: IncomingMessage, response: ServerResponse): void => {
     let raw = ''
     request.on('data', (chunk) => (raw += chunk))
     request.on('end', () => {
@@ -160,13 +173,14 @@ export async function startFakeTfs(): Promise<FakeTfs> {
       response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' })
       response.end(JSON.stringify(json))
     })
-  })
+  }
+  const server = options.https ? createHttpsServer(UNTRUSTED, handle) : createServer(handle)
 
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
   const { port } = server.address() as AddressInfo
 
   return {
-    queryUrl: `http://127.0.0.1:${port}${PROJECT}/_queries/query/${QUERY_ID}`,
+    queryUrl: `${options.https ? 'https' : 'http'}://127.0.0.1:${port}${PROJECT}/_queries/query/${QUERY_ID}`,
     items,
     get queried() {
       return state.queried

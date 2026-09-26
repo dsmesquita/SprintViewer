@@ -48,8 +48,9 @@ Known and accepted for now; each says what closing it would take.
 - ~~Clicking a work item link~~ — links now open through the main process
   (`handlers/links.ts`), which only lets `http`/`https` through; clicking one is tested end to
   end, and so is refusing `file:` and other schemes.
-- **The trusted-certificate setting.** `installCertificatePolicy` in `src/main/index.ts` has no
-  test: it needs an HTTPS fake TFS with a certificate Windows does not trust.
+- ~~The trusted-certificate setting~~ — tested end to end against an HTTPS fake TFS with a
+  self-signed certificate (`e2e/certificates.spec.ts`): refused by default, trusted only for a
+  host named in Settings, and effective as soon as Settings is saved.
 - **Dates in the non-drag end-to-end tests** follow the real clock, so they check what is
   drawn, not where. Placement against fixed dates is covered by the unit tests and by
   `e2e/drag.spec.ts`, which fixes the clock.
