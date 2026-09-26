@@ -45,6 +45,11 @@ owner's call.
   `userData` folder, captured IPC `handlers` (call a route with `invoke(channel, ...args)`),
   and a fake TFS server (`setServer((request) => json(200, {...}))`, requests recorded in
   `requests`). Import those helpers from `test/electron`, not from `'electron'`.
+- Shared helpers: `test/fixtures.ts` (sprint/item/block builders, a two-week sprint from Mon
+  14 Sep 2026, `drawn()` to read a person's calendar as strings), `test/fakeApi.ts`
+  (`installFakeApi()` puts typed `vi.fn` mocks on `window.api` for store and component tests).
+- Component tests (`*.test.tsx`) use Testing Library; wrap anything using dnd-kit hooks in a
+  `DndContext`. Drags themselves are not simulated — test the drop logic as a function.
 - Two styles. Standalone behaviour: plain `describe` / `it` / `expect`. Long step-by-step
   scenarios (refresh on Wednesday, then Thursday…): `checklist()` from `test/checklist.ts` —
   `check(name, ok, detail)` at each step, `report()` at the end turns each into a test. The
@@ -156,8 +161,10 @@ src/renderer/src/  React UI
 ## Planned refactor
 
 A behaviour-preserving cleanup is under way. Done: git, Vitest with the old suites, ESLint +
-Prettier. Next: tests for everything not yet covered (logic, main process, store, components),
-then splitting `scheduling.ts`, `autoAssign.ts`, `App.tsx`, `SidePanel.tsx`, `store.ts` and
-`styles.css` into folders, de-duplicating helpers (`round`/`clamp`, block-list helpers), and
-retiring the legacy `history` drawing path. If the folders above have already moved, trust the
+Prettier, and tests for everything that was not covered (logic, main process, store,
+components — ~500 tests; `src/shared` and `src/main` above 85% line coverage). Next: splitting
+`scheduling.ts`, `autoAssign.ts`, `App.tsx`, `SidePanel.tsx`, `store.ts` and `styles.css` into
+folders, de-duplicating helpers (`round`/`clamp`, block-list helpers), and retiring the legacy
+`history` drawing path. Behaviour the tests pinned down but that may deserve a decision is
+listed at the end of `ROADMAP.md`. If the folders above have already moved, trust the
 tree over this file — and fix this file.
