@@ -1,0 +1,31 @@
+appId: com.sprintviewer.app
+productName: Sprint Viewer
+copyright: Sprint Viewer
+
+directories:
+  buildResources: build
+  output: release
+
+files:
+  - out/**
+  - package.json
+
+# Nothing is fetched at runtime, so the app works on a machine that has never seen it before
+# — only the TFS server it is pointed at needs to be reachable.
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: ${productName} ${version} Setup.${ext}
+
+nsis:
+  # A per-user install needs no administrator rights, which matters when handing the
+  # installer to someone who cannot elevate on their own machine.
+  perMachine: false
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Sprint Viewer
+  uninstallDisplayName: Sprint Viewer
