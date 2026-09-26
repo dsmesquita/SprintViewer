@@ -1,6 +1,6 @@
 {
   "name": "sprint-viewer",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Sprint Progress Viewer — a local calendar for planning a two-week sprint from a TFS query",
   "main": "./out/main/index.js",
   "license": "UNLICENSED",
