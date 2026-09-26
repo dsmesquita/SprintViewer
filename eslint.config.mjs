@@ -6,7 +6,17 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['out/**', 'release/**', 'coverage/**', 'node_modules/**', '**/*.out.mjs'] },
+  {
+    ignores: [
+      'out/**',
+      'release/**',
+      'coverage/**',
+      'node_modules/**',
+      '**/*.out.mjs',
+      'test-results/**',
+      'playwright-report/**'
+    ]
+  },
 
   js.configs.recommended,
   ...tseslint.configs.recommended,

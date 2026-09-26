@@ -31,7 +31,9 @@ User-facing documentation lives **in the app**: `src/renderer/src/components/Hel
 - **`npm run check`** — typecheck + lint + format check + tests. **Must be green before every
   commit.**
 - `npm run build` — typecheck + `electron-vite build` into `out/`.
-- `npm run dist` — `check`, build, then `electron-builder --win` →
+- `npm run test:e2e` — builds, then runs the end-to-end tests (Playwright driving the real
+  Electron app). Not part of `check`: it opens windows and takes longer.
+- `npm run dist` — `check`, build, end-to-end tests, then `electron-builder --win` →
   `release/Sprint Viewer <version> Setup.exe` (unsigned; SmartScreen warns).
 
 A release is: bump `version` in `package.json`, then `npm run dist`. Version bumps are the
@@ -57,6 +59,20 @@ owner's call.
   `check(name, ok, detail)` at each step, `report()` at the end turns each into a test. The
   suites that predate the runner use this form; don't rewrite their assertions.
 - `test/**` and `__tests__` may use `any` for fake TFS JSON; nothing else may.
+
+### End-to-end tests (`e2e/`)
+
+- Playwright launches the **built** app (`out/main/index.js`) — `npm run test:e2e` builds first;
+  if you run `npx playwright test` directly, run `npx electron-vite build` after changing code.
+- Fixtures from `e2e/app.ts` (import `test` and `expect` from there, not from Playwright):
+  `dataDir` (a throwaway folder passed as `--user-data-dir`, so real sprints are never touched),
+  `seed({ settings, sprints })` (write files there before launching), `tfs` (a fake TFS on
+  localhost, `e2e/fakeTfs.ts`: set `tfs.add(...)` / `tfs.queried`, read `tfs.requests`),
+  `launch()` (returns `{ app, page, close }`; launch again after `close()` for a restart).
+- Any console error or uncaught exception in any window fails the test.
+- Seed `authMode: 'windows'` to talk to the fake TFS without a token.
+- Use e2e for what needs the real window: real pointer drags, the preload bridge, files on disk,
+  several windows. Everything else belongs in the Vitest suites, which are much faster.
 
 ## Map
 
@@ -97,6 +113,7 @@ src/renderer/src/    React UI
   grid.ts              drag data types and hour-width zoom steps
   styles/              the stylesheet in cascade order; tokens on :root with a dark block
 test/                shared test helpers: electron fake, fakeApi, fixtures, checklist
+e2e/                 end-to-end tests of the built app (Playwright): fixtures, fake TFS, specs
 ```
 
 ## Core concepts (read before touching scheduling)
@@ -175,7 +192,8 @@ test/                shared test helpers: electron fake, fakeApi, fixtures, chec
 
 1. `npm run check`.
 2. UI: `npm run dev:web` → **Load sample data** → exercise the change → no console errors.
-3. Anything behind `window.api` (TFS, files, snapshots windows): `npm run dev`.
+3. Anything behind `window.api` (TFS, files, snapshots windows): `npm run dev`, and
+   `npm run test:e2e`.
 
 ## Structure rules
 

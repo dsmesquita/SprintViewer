@@ -26,7 +26,8 @@ npm run check        # typecheck + lint + format check + tests — run before ev
 ```
 
 `npm test` runs the tests alone (`npm run test:watch` while working, `npm run coverage` for a
-report in `coverage/`). `npm run format` applies Prettier.
+report in `coverage/`). `npm run test:e2e` builds the app and runs the end-to-end tests, which
+drive the real Electron window against a fake TFS. `npm run format` applies Prettier.
 
 `scripts\run.cmd` installs, builds and launches the app in one go, for someone who only wants to
 run it from source.
@@ -41,9 +42,10 @@ npm run dist
 ```
 
 or `scripts\build-installer.cmd`, which also repairs a common electron-builder cache problem
-(below). Both run `npm run check` first, so a build that fails its tests is never packaged.
-The result is `release\Sprint Viewer <version> Setup.exe`, around 80 MB, which installs per
-user and needs no administrator rights. The version is `version` in `package.json`.
+(below). Both run `npm run check` and the end-to-end tests first, so a build that fails its
+tests is never packaged. The result is `release\Sprint Viewer <version> Setup.exe`, around
+80 MB, which installs per user and needs no administrator rights. The version is `version` in
+`package.json`.
 
 The installer is unsigned, so Windows SmartScreen shows "Windows protected your PC" the first
 time someone runs it — they click **More info**, then **Run anyway**. Signing it would need a
@@ -87,6 +89,7 @@ src/renderer/    the React UI
   dnd/             dragging, with a live preview of where the drop will land
   styles/          the stylesheet, in cascade order
 test/            the fakes and fixtures the tests share (Electron, window.api, sprints)
+e2e/             end-to-end tests of the built app, with a fake TFS server
 ```
 
 The layout engine is the centre of the design. Placements are stored as an ordered queue of

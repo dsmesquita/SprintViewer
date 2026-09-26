@@ -1,5 +1,12 @@
 {
-  "include": ["src/**/__tests__/**/*", "test/**/*", "vitest.config.ts", "src/preload/*.d.ts"],
+  "include": [
+    "src/**/__tests__/**/*",
+    "test/**/*",
+    "e2e/**/*",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "src/preload/*.d.ts"
+  ],
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",

@@ -8,3 +8,5 @@ tsconfig.*.tsbuildinfo
 coverage/
 *.out.mjs
 .claude/settings.local.json
+test-results/
+playwright-report/
