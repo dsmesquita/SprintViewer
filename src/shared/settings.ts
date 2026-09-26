@@ -4,6 +4,9 @@ import type { Member } from './types'
 /** How the app authenticates against TFS. */
 export type AuthMode = 'pat' | 'windows'
 
+/** When to fetch the child tasks of the User Stories and Bugs a query returns. */
+export type ChildQueryMode = 'auto' | 'always' | 'never'
+
 /**
  * Settings as the renderer sees them. The PAT itself is never in here — only whether one
  * is stored and the tail end of it, so the settings panel can show what is configured
@@ -38,8 +41,11 @@ export interface AppSettings {
    * automatically fetch their child tasks. `auto` does it silently when all results are
    * containers; `always` always fetches children; `never` skips it.
    */
-  childQueryMode?: 'auto' | 'always' | 'never'
-  /** Team member id who owns DOC tasks made by the task-creation dialog. None leaves them unassigned. */
+  childQueryMode?: ChildQueryMode
+  /**
+   * Who DOC tasks made by the task-creation dialog go to: a team member's id, or a TFS
+   * account (`DOMAIN\user`) for someone off the team. None leaves them unassigned.
+   */
   docOwner?: string
   /** The same, for QA tasks. */
   qaOwner?: string

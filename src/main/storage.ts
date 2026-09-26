@@ -15,23 +15,15 @@ import type { Sprint } from '@shared/types'
  * Windows is DPAPI scoped to the logged-in user, so the ciphertext is useless elsewhere.
  */
 
-interface StoredSettings {
-  authMode: AppSettings['authMode']
+/**
+ * What `settings.json` holds: the public settings, minus the two that are derived from the
+ * token, plus the sealed token itself.
+ */
+type StoredSettings = Omit<AppSettings, 'hasPat' | 'patHint'> & {
   /** Base64 DPAPI blob. Never leaves the main process. */
   patCipher?: string
   /** Last four characters of the token, kept in the clear so the UI can show a hint. */
   patTail?: string
-  lastQueryUrl?: string
-  apiVersion?: string
-  trustedHosts: string[]
-  members: AppSettings['members']
-  hoursPerDay: number
-  activeSprintId?: string
-  businessOrderField?: string
-  docOwner?: string
-  qaOwner?: string
-  taskTemplates?: AppSettings['taskTemplates']
-  childQueryMode?: AppSettings['childQueryMode']
 }
 
 const DEFAULT_STORED: StoredSettings = {

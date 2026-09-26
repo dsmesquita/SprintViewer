@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { AuthMode } from '@shared/settings'
+import type { AuthMode, ChildQueryMode } from '@shared/settings'
 import {
   DEFAULT_DOMAIN,
   DEFAULT_TASK_TEMPLATES,
@@ -7,7 +7,6 @@ import {
   normaliseIdentity,
   OTHER_OWNER
 } from '@shared/taskCreation'
-type ChildQueryMode = 'auto' | 'always' | 'never'
 import type { Member } from '@shared/types'
 import { cx } from '../format'
 import { useApp } from '../store'

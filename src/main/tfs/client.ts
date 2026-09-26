@@ -2,7 +2,7 @@ import { net } from 'electron'
 import { isContainerType, schedulableItems } from '@shared/grouping'
 import type { CreateTasksResult, TaskDraft } from '@shared/taskCreation'
 import type { WorkItem } from '@shared/types'
-import type { AppSettings, AuthMode } from '@shared/settings'
+import type { AuthMode, ChildQueryMode } from '@shared/settings'
 import type { TfsPerson, TfsTeam } from '@shared/squad'
 import type { ParsedTfsUrl } from './url'
 
@@ -34,7 +34,7 @@ const REQUIRED_FIELDS = [
   'Microsoft.VSTS.Scheduling.RemainingWork'
 ]
 
-export type ChildQueryMode = NonNullable<AppSettings['childQueryMode']>
+export type { ChildQueryMode }
 
 /**
  * Fields that only exist on some servers and process templates. `System.Parent` became
