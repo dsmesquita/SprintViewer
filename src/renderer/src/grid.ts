@@ -43,6 +43,13 @@ export const BACKLOG_DROP_ID = 'backlog'
  * derived from a field and has no block behind it at all. They move for different reasons and
  * land in different places, so the drop has to be able to tell them apart.
  */
-export type DragData =
+export type DragData = (
   | { kind: 'block'; blockId: string; workItemId: number; hours: number }
   | { kind: 'reported'; workItemId: number; hours: number }
+) & {
+  /**
+   * For a piece of the calendar: the task's hours drawn before this piece, so a drag can keep
+   * hold of the task where it was picked up (see `useSprintDnd`). Absent for a backlog card.
+   */
+  hoursBefore?: number
+}

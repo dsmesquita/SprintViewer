@@ -301,13 +301,20 @@ const MemberRow = memo(function MemberRow({
    * the very draggable being dragged, on every hop.
    */
   const pieceIndex = new Map<Segment, number>()
+  // And how many of the block's hours come before each piece, so a drag keeps hold of the
+  // block where it was picked up rather than moving its start to the pointer.
+  const hoursBefore = new Map<Segment, number>()
   const seen = new Map<string, number>()
+  const counted = new Map<string, number>()
   for (const segment of [...layout.segments].sort(
     (a, b) => a.date.localeCompare(b.date) || a.startHour - b.startHour
   )) {
     const count = seen.get(segment.blockId) ?? 0
     seen.set(segment.blockId, count + 1)
     pieceIndex.set(segment, count)
+    const before = counted.get(segment.blockId) ?? 0
+    hoursBefore.set(segment, before)
+    counted.set(segment.blockId, before + segment.hours)
   }
 
   return (
@@ -336,6 +343,7 @@ const MemberRow = memo(function MemberRow({
       <div
         ref={setNodeRef}
         className={cx('row-track', isOver && 'is-over')}
+        data-member={member.id}
         style={{ width: trackWidth }}
         onContextMenu={(event) => {
           const x = event.clientX - event.currentTarget.getBoundingClientRect().left
@@ -400,6 +408,7 @@ const MemberRow = memo(function MemberRow({
               segment={segment}
               title={sprint.workItems[segment.workItemId]?.title ?? ''}
               dragId={`${DRAG_ID_PREFIX}${segment.blockId}:${pieceIndex.get(segment) ?? 0}`}
+              hoursBefore={hoursBefore.get(segment) ?? 0}
               left={(index * sprint.hoursPerDay + segment.startHour) * hourWidth + 1}
               width={segment.hours * hourWidth - 2}
               isHighlighted={highlighted === segment.workItemId}
@@ -428,6 +437,8 @@ interface SegmentProps {
   segment: Segment
   title: string
   dragId: string
+  /** The block's hours drawn before this piece of it. */
+  hoursBefore: number
   left: number
   width: number
   isHighlighted: boolean
@@ -451,6 +462,7 @@ const SegmentBlock = memo(
     segment,
     title,
     dragId,
+    hoursBefore,
     left,
     width,
     isHighlighted,
@@ -472,12 +484,13 @@ const SegmentBlock = memo(
     const isReported = segment.isDone === true
     const isPast = segment.fromHistory === true || isReported
     const data: DragData = isReported
-      ? { kind: 'reported', workItemId: segment.workItemId, hours: segment.hours }
+      ? { kind: 'reported', workItemId: segment.workItemId, hours: segment.hours, hoursBefore }
       : {
           kind: 'block',
           blockId: segment.blockId,
           workItemId: segment.workItemId,
-          hours: segment.hours
+          hours: segment.hours,
+          hoursBefore
         }
     // Locked-day segments can still be dragged OUT of that day (to unpin them), but drops
     // onto locked days are blocked in App.tsx's applyDrop. The visual lock indicator is enough.

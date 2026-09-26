@@ -4,7 +4,6 @@ import {
   anchorFor,
   effectiveCapacity,
   freezeHistoryBefore,
-  insertionIndex,
   isDayDisabledForAll,
   landsInside,
   layoutSprint,
@@ -160,17 +159,6 @@ describe('drop points', () => {
       }
     })
   const layout = () => layoutSprint(s(), MON).diogo
-
-  it('insertionIndex: before the first block, between blocks, after everything', () => {
-    expect(insertionIndex(s(), layout(), 'diogo', MON, 0)).toBe(0)
-    expect(insertionIndex(s(), layout(), 'diogo', TUE, 4)).toBe(1)
-    expect(insertionIndex(s(), layout(), 'diogo', FRI, 0)).toBe(3)
-  })
-
-  it('insertionIndex ignores pinned blocks, which do not move', () => {
-    // Thursday holds only the pinned block, so a drop there goes after the flowing ones.
-    expect(insertionIndex(s(), layout(), 'diogo', THU, 0)).toBe(3)
-  })
 
   it('occupantAt measures the offset across the whole block, over day boundaries', () => {
     // `a` runs Mon 0–8 and Tue 0–4; Tue hour 2 is its eleventh hour.

@@ -140,8 +140,10 @@ e2e/                 end-to-end tests of the built app (Playwright): fixtures, f
 - **Anchor** = the first sprint day at or after today (`anchorFor`). Unpinned work never goes
   before it.
 - **Pin** (`block.pin`) = "start no earlier than this slot". Pinned blocks are placed first;
-  unpinned ones flow around them. A drop on today or earlier pins; a drop later inserts into
-  the queue.
+  unpinned ones flow around them. **Every drop on the calendar pins** — a task lands on the hour
+  it is dropped on and stays there (`applyDrop` in `drop.ts`); Unpin hands it back to the flow.
+  Tasks go on the anchor day or later, reported hours on past days or today, and nothing on a
+  locked day, a day off or past the end of someone's day (`canDrop`).
 - **Size of a task** = Remaining Work + Completed Work (`sizing.ts`). Original Estimate is
   only used by the summary for "off track" (completed > estimate × 1.25).
 - **Remaining is drawn from today on; Completed is drawn behind today** (striped `isDone`
@@ -190,8 +192,16 @@ e2e/                 end-to-end tests of the built app (Playwright): fixtures, f
   kills dragging — call `listeners.onPointerDown?.(event)` inside yours. Keep
   `MeasuringStrategy.Always` on the `DndContext` (WhileDragging caused a mis-measure bug).
 - **Preview == drop**: the drag preview and the drop both go through `applyDrop` in
-  `src/shared/drop.ts`;
-  change one, you change both. Keep it that way.
+  `src/shared/drop.ts`; change one, you change both. Keep it that way.
+- **Where the pointer is** during a drag comes from our own `pointermove` listener in
+  `useSprintDnd`, measured against the row's position _now_ (`data-member` on `.row-track`).
+  dnd-kit's `delta` also counts scrolling, and its `over.rect` can predate it: with either, a
+  drop after the calendar auto-scrolls lands late by the scrolled distance.
+- **A dragged block is held where it was grabbed** (`hoursBefore` in `DragData`, `shiftBack`):
+  moving the pointer one cell moves the task one hour. Backlog cards land at the pointer.
+- **Auto-scroll** is limited to the outer 4% of the calendar (`autoScroll` on the
+  `DndContext`). dnd-kit's default, a fifth of the width, scrolled away under a pointer
+  hovering over the last visible day.
 - **dev:web + HMR**: when poking the store from the browser console/tests, import the module
   URL the page actually loaded, or you get a second store instance.
 - **dev:web after moving files**: when a file becomes a folder (`x.ts` → `x/index.ts`) or is

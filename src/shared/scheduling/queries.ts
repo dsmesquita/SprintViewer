@@ -6,34 +6,6 @@ import type { MemberLayout } from './layout'
  * Questions asked of a layout — where a drop lands, what it lands on — and small block helpers.
  */
 
-/**
- * Where a block dropped on (`date`, `hour`) should land in the person's queue.
- *
- * Returns the index of the first block scheduled at or after that point, so dropping on
- * empty space at the end appends.
- */
-export function insertionIndex(
-  sprint: Sprint,
-  layout: MemberLayout,
-  memberId: string,
-  date: ISODate,
-  hour: number
-): number {
-  const queue = sprint.queues[memberId] ?? []
-  const order = new Map(queue.map((b, i) => [b.id, i]))
-
-  for (const segment of layout.segments) {
-    // Pinned work does not move when something is inserted near it, and history is not part
-    // of the queue at all, so neither can define an insertion point.
-    if (segment.pinned || segment.fromHistory) continue
-    if (segment.date < date) continue
-    if (segment.date === date && segment.startHour + segment.hours <= hour) continue
-    const index = order.get(segment.blockId)
-    if (index !== undefined) return index
-  }
-  return queue.length
-}
-
 /** A block already sitting where something is about to be dropped. */
 export interface Occupant {
   blockId: string

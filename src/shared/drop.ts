@@ -1,8 +1,10 @@
-import { clamp } from './math'
-import { moveBlock, pinBlockAt, pinReportedAt, splitInPlace, type Location } from './mutations'
+import { findBlock, removeBlocks } from './blocks'
+import { clamp, round } from './math'
+import { pinBlockAt, pinReportedAt } from './mutations'
 import {
-  insertionIndex,
+  effectiveCapacity,
   landsInside,
+  layoutSprint,
   occupantAt,
   type MemberLayout,
   type Occupant
@@ -40,18 +42,19 @@ export interface DropContext {
   layouts: Record<string, MemberLayout>
   /** The first day unpinned work flows from. */
   anchor: ISODate
-  /** The real date: a drop on it or before is a record of what happened, so it pins. */
+  /** The real date: reported hours can go on it or before, never after. */
   today: ISODate
-  newId: () => string
 }
 
 /**
- * Applies a drop, returning the sprint it would produce (or the same sprint when the drop
- * means nothing).
+ * Applies a drop, returning the sprint it would produce (or the same sprint when the drop is
+ * refused or means nothing).
  *
- * Dropping on a day that has already happened is a statement about what was worked, so the
- * block holds that exact slot. Dropping ahead of today is a plan, so it joins the queue and
- * flows with everything else.
+ * A task with hours left lands on the hour it is dropped on and stays there: it is pinned to
+ * that slot, and unpinned work flows around it. Reported hours are pinned where they were
+ * really worked. {@link canDrop} says which slots each may go to.
+ *
+ * Only a drop inside another task needs more than the slot: see {@link DropChoice}.
  */
 export function applyDrop(
   sprint: Sprint,
@@ -60,56 +63,150 @@ export function applyDrop(
   context: DropContext,
   choice: DropChoice = 'auto'
 ): Sprint {
-  if ((sprint.lockedDays ?? []).includes(target.date)) return sprint
-
-  // Reported hours are drawn only on the days that have passed, so a drop on the anchor or
-  // later has nothing to mean. Nothing changes rather than the hours quietly staying put
-  // somewhere else, which would look like the drag had been misread.
+  if (!canDrop(sprint, subject, target, context)) return sprint
   if (subject.kind === 'reported') {
-    if (target.date >= context.anchor) return sprint
     return pinReportedAt(sprint, subject.workItemId, target.memberId, target.date, target.hour)
   }
+  const at = landingFor(sprint, subject.blockId, target, context, choice)
+  return pinBlockAt(sprint, subject.blockId, target.memberId, at.date, at.hour)
+}
 
-  const blockId = subject.blockId
-  if (target.date <= context.today) {
-    // A pin claims its exact hour and whatever is unpinned flows around it, which already
-    // parts a task in two where the pin lands. There is nothing to ask.
-    return pinBlockAt(sprint, blockId, target.memberId, target.date, target.hour)
+/**
+ * Whether `subject` may go on `target` at all. Never on a locked day, a day the person is not
+ * working, or an hour past the end of their day. Otherwise, work still to do goes on today or
+ * later — it cannot be planned into the past — and reported hours on the days that have passed
+ * or on today, because that is when work can have been done.
+ */
+export function canDrop(
+  sprint: Sprint,
+  subject: DropSubject,
+  target: DropTarget,
+  context: Pick<DropContext, 'layouts' | 'anchor' | 'today'>
+): boolean {
+  if (!context.layouts[target.memberId]) return false
+  if (!sprint.days.some((day) => day.date === target.date)) return false
+  if ((sprint.lockedDays ?? []).includes(target.date)) return false
+  const capacity = effectiveCapacity(sprint, target.memberId, target.date)
+  if (capacity <= 0 || target.hour < 0 || target.hour >= capacity) return false
+
+  if (subject.kind === 'reported') {
+    return target.date <= context.today && target.date <= context.anchor
   }
-  const layout = context.layouts[target.memberId]
-  if (!layout) return sprint
-  const to: Location = { kind: 'member', memberId: target.memberId }
-  const occupant = occupantAt(sprint, layout, target.memberId, target.date, target.hour)
+  return target.date >= context.anchor
+}
 
-  if (occupant && occupant.blockId !== blockId && choice !== 'auto') {
-    if (choice === 'split') {
-      const parted = splitInPlace(sprint, occupant.blockId, occupant.offset, context.newId)
-      return moveBlock(parted, blockId, to, occupant.index + 1)
-    }
-    return moveBlock(sprint, blockId, to, occupant.index + (choice === 'after' ? 1 : 0))
+/**
+ * Where a dropped task starts. The slot under the pointer, unless that is inside another task:
+ *
+ * - a pinned task holds its place, so the dropped one goes straight after it;
+ * - an unpinned one's first hour means "before it" (the slot itself), its last hour "after it";
+ * - anywhere else in it, `choice` says — `split` takes the slot and parts the task around it,
+ *   `before`/`after` keep it whole and put the dropped one at its start or its end.
+ *
+ * Measured on the board without the task being dropped, so it is never in its own way: sliding
+ * a task along its row, the slots it is leaving are free.
+ */
+function landingFor(
+  sprint: Sprint,
+  blockId: string,
+  target: DropTarget,
+  context: DropContext,
+  choice: DropChoice
+): { date: ISODate; hour: number } {
+  const { board, layout } = boardWithout(sprint, blockId, target.memberId, context.anchor)
+  const occupant = occupantAt(board, layout, target.memberId, target.date, target.hour)
+  if (!occupant) return target
+
+  const pinned = findBlock(board, occupant.blockId)?.block.pin !== undefined
+  const lastHour = occupant.hours > 1 && occupant.offset >= occupant.hours - 1
+  if (pinned || choice === 'after' || (choice === 'auto' && lastHour)) {
+    return dayStartIfPast(sprint, target.memberId, edgeOf(layout, occupant.blockId, 'end'))
   }
-
-  const index = insertionIndex(sprint, layout, target.memberId, target.date, target.hour)
-  return moveBlock(sprint, blockId, to, index)
+  if (choice === 'before') return edgeOf(layout, occupant.blockId, 'start')
+  return target
 }
 
 /**
  * The task a drop lands in the middle of, when there is a real question to ask about it:
- * split it around the new one, or keep it whole on one side.
+ * split it around the new one, or keep it whole on one side. Never about a pinned task — the
+ * dropped one simply goes after it — nor about reported hours or a drop that is refused.
  */
 export function questionFor(
   sprint: Sprint,
   subject: DropSubject,
   target: DropTarget,
-  context: Pick<DropContext, 'layouts' | 'today'>
+  context: Pick<DropContext, 'layouts' | 'anchor' | 'today'>
 ): Occupant | null {
-  // Reported hours never join a queue, and a drop on a past day pins: nothing to ask.
-  if (subject.kind === 'reported' || target.date <= context.today) return null
-  const layout = context.layouts[target.memberId]
-  if (!layout) return null
-  const occupant = occupantAt(sprint, layout, target.memberId, target.date, target.hour)
-  if (!occupant || occupant.blockId === subject.blockId || !landsInside(occupant)) return null
+  if (subject.kind === 'reported' || !canDrop(sprint, subject, target, context)) return null
+  const { board, layout } = boardWithout(sprint, subject.blockId, target.memberId, context.anchor)
+  const occupant = occupantAt(board, layout, target.memberId, target.date, target.hour)
+  if (!occupant || !landsInside(occupant)) return null
+  if (findBlock(board, occupant.blockId)?.block.pin !== undefined) return null
   return occupant
+}
+
+/** The board as it would be with `blockId` lifted off it, and that person's layout on it. */
+function boardWithout(
+  sprint: Sprint,
+  blockId: string,
+  memberId: string,
+  anchor: ISODate
+): { board: Sprint; layout: MemberLayout } {
+  const board = removeBlocks(sprint, [blockId])
+  return { board, layout: layoutSprint(board, anchor)[memberId] }
+}
+
+/**
+ * A slot at or past the end of someone's day is the start of their next working day — so a
+ * task "after" one that fills Thursday is pinned to Friday's first hour, not Thursday's ninth.
+ */
+function dayStartIfPast(
+  sprint: Sprint,
+  memberId: string,
+  slot: { date: ISODate; hour: number }
+): { date: ISODate; hour: number } {
+  if (slot.hour < effectiveCapacity(sprint, memberId, slot.date)) return slot
+  const next = sprint.days.find(
+    (day) => day.date > slot.date && effectiveCapacity(sprint, memberId, day.date) > 0
+  )
+  return next ? { date: next.date, hour: 0 } : slot
+}
+
+/** Where a task on the calendar begins or ends, as a slot. */
+function edgeOf(
+  layout: MemberLayout,
+  blockId: string,
+  side: 'start' | 'end'
+): { date: ISODate; hour: number } {
+  const pieces = layout.segments
+    .filter((segment) => segment.blockId === blockId && !segment.isDone && !segment.fromHistory)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.startHour - b.startHour)
+  const piece = side === 'start' ? pieces[0] : pieces[pieces.length - 1]
+  return side === 'start'
+    ? { date: piece.date, hour: piece.startHour }
+    : { date: piece.date, hour: round(piece.startHour + piece.hours) }
+}
+
+/**
+ * `hours` working hours before `slot` on that person's calendar, counting only the hours they
+ * work — so picking a task up by its fourth hour and moving the pointer one cell moves the task
+ * one hour, even when its start is on the day before. Stops at the sprint's first hour.
+ */
+export function shiftBack(sprint: Sprint, slot: DropTarget, hours: number): DropTarget {
+  const capacityOn = (date: ISODate): number => effectiveCapacity(sprint, slot.memberId, date)
+  let index = sprint.days.findIndex((day) => day.date === slot.date)
+  if (index < 0 || hours <= 0) return slot
+  let hour = Math.min(slot.hour, capacityOn(slot.date))
+  let left = hours
+  while (left > hour) {
+    left = round(left - hour)
+    let previous = index - 1
+    while (previous >= 0 && capacityOn(sprint.days[previous].date) <= 0) previous--
+    if (previous < 0) return { ...slot, date: sprint.days[index].date, hour: 0 }
+    index = previous
+    hour = capacityOn(sprint.days[index].date)
+  }
+  return { ...slot, date: sprint.days[index].date, hour: round(hour - left) }
 }
 
 /**

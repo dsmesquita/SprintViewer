@@ -146,9 +146,14 @@ export function withReportedHours(
 
     for (const { workItemId, hours, pinned } of ordered) {
       const target = targets.get(workItemId)!
-      const packed = pinned
-        ? packFromPin(sprint, memberId, workItemId, hours, target, anchorIndex, occupied)
-        : packForwards(sprint, memberId, workItemId, hours, anchorIndex, occupied)
+      // Dragged onto today: worked this morning, so drawn from the start of today, before
+      // anything planned for it. The past only takes what today has no room for.
+      const onToday = pinned && target.date === todayDate
+      const packed = onToday
+        ? { segments: [], leftover: hours }
+        : pinned
+          ? packFromPin(sprint, memberId, workItemId, hours, target, anchorIndex, occupied)
+          : packForwards(sprint, memberId, workItemId, hours, anchorIndex, occupied)
       const pieces = [...packed.segments]
       let left = packed.leftover
 
@@ -157,6 +162,11 @@ export function withReportedHours(
         pieces.push(donePiece(workItemId, todayDate, todayUsed, take))
         todayUsed = round(todayUsed + take)
         left = round(left - take)
+      }
+      if (onToday && left > 0) {
+        const back = packForwards(sprint, memberId, workItemId, left, anchorIndex, occupied)
+        pieces.push(...back.segments)
+        left = back.leftover
       }
 
       const joined = joinPieces(pieces, left)

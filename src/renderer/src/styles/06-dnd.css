@@ -25,10 +25,17 @@
   outline-offset: 2px;
 }
 
+/* Its height is GHOST_HEIGHT in App.tsx, which keeps it level with the pointer. */
 .drag-ghost {
   position: static;
   height: 26px;
-  min-width: 88px;
   box-shadow: var(--shadow);
   cursor: grabbing;
+}
+
+/* Over a slot the drag may not go on: the past, a locked day, a day off. */
+.drag-ghost.is-refused {
+  outline: 2px dashed var(--danger);
+  outline-offset: 1px;
+  cursor: not-allowed;
 }

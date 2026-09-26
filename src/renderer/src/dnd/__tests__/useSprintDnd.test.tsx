@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { act, renderHook } from '@testing-library/react'
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { findBlock } from '@shared/blocks'
 import { applyDrop, type DropTarget } from '@shared/drop'
 import { layoutSprint } from '@shared/scheduling'
 import type { Sprint } from '@shared/types'
@@ -9,7 +10,7 @@ import { BACKLOG_DROP_ID, MEMBER_DROP_PREFIX, type DragData } from '../../grid'
 import { useApp } from '../../store'
 import { useSprintDnd } from '../useSprintDnd'
 import { installFakeApi } from '../../../../../test/fakeApi'
-import { block, FRI, ids, item, MON, sprint, THU, WED } from '../../../../../test/fixtures'
+import { block, drawn, FRI, item, MON, sprint, THU, WED } from '../../../../../test/fixtures'
 
 /**
  * The drag state machine between dnd-kit and `applyDrop`: the live preview, the fallbacks
@@ -46,9 +47,9 @@ type Over = { memberId: string } | 'backlog' | null
 
 /**
  * The event dnd-kit sends while dragging `data`, with the pointer `x` pixels into the track.
- * The drag starts with the pointer at the track's left edge, so `delta.x` is `x`.
+ * The pointer went down `pressedAt` pixels into the track, so `delta.x` is the difference.
  */
-function event(data: DragData, over: Over, x: number, grabbed = true) {
+function event(data: DragData, over: Over, x: number, grabbed = true, pressedAt = 0) {
   const overId =
     over === null ? null : over === 'backlog' ? BACKLOG_DROP_ID : MEMBER_DROP_PREFIX + over.memberId
   return {
@@ -58,8 +59,8 @@ function event(data: DragData, over: Over, x: number, grabbed = true) {
       rect: { current: { translated: { left: TRACK_LEFT + x } } }
     },
     over: overId === null ? null : { id: overId, rect: { left: TRACK_LEFT } },
-    activatorEvent: grabbed ? { clientX: TRACK_LEFT } : undefined,
-    delta: { x, y: 0 }
+    activatorEvent: grabbed ? { clientX: TRACK_LEFT + pressedAt } : undefined,
+    delta: { x: x - pressedAt, y: 0 }
   } as unknown as DragMoveEvent & DragEndEvent
 }
 
@@ -73,26 +74,32 @@ function render() {
 
 type Hook = ReturnType<typeof render>['result']
 
-const start = (hook: Hook, data: DragData) =>
+/**
+ * Starts a drag. A backlog card is picked up with nothing known about it on the calendar; a
+ * piece of the calendar starts at `pieceAt` and is pressed `pressedAt` pixels into the track.
+ */
+const start = (hook: Hook, data: DragData, pressedAt = 0, pieceAt?: number) =>
   act(() =>
     hook.current.dndProps.onDragStart!({
-      active: { data: { current: data } }
+      active: {
+        data: { current: data },
+        rect: {
+          current: { initial: pieceAt === undefined ? null : { left: TRACK_LEFT + pieceAt } }
+        }
+      },
+      activatorEvent: { clientX: TRACK_LEFT + pressedAt }
     } as unknown as DragStartEvent)
   )
-const move = (hook: Hook, data: DragData, over: Over, x: number) =>
-  act(() => hook.current.dndProps.onDragMove!(event(data, over, x)))
-const end = (hook: Hook, data: DragData, over: Over, x: number) =>
-  act(() => hook.current.dndProps.onDragEnd!(event(data, over, x)))
+const move = (hook: Hook, data: DragData, over: Over, x: number, pressedAt = 0) =>
+  act(() => hook.current.dndProps.onDragMove!(event(data, over, x, true, pressedAt)))
+const end = (hook: Hook, data: DragData, over: Over, x: number, pressedAt = 0) =>
+  act(() => hook.current.dndProps.onDragEnd!(event(data, over, x, true, pressedAt)))
 
 const stored = () => useApp.getState().sprint!
 const queue = (memberId = 'diogo') => stored().queues[memberId].map((b) => b.id)
 const labels = () => useApp.getState().undoStack.map((u) => u.label)
-const context = (s: Sprint) => ({
-  layouts: layoutSprint(s, WED),
-  anchor: WED,
-  today: WED,
-  newId: ids()
-})
+const context = (s: Sprint) => ({ layouts: layoutSprint(s, WED), anchor: WED, today: WED })
+const pinOf = (s: Sprint | null, id: string) => (s ? findBlock(s, id)?.block.pin : undefined)
 
 const initial = useApp.getState()
 
@@ -124,8 +131,31 @@ describe('the preview while dragging', () => {
     start(result, c)
     // Thursday hour 3 is 11 hours into A.
     move(result, c, { memberId: 'diogo' }, xOf(THU, 3))
-    expect(result.current.shownSprint!.queues.diogo.map((b) => b.hours)).toEqual([11, 3, 5, 2])
+    expect(pinOf(result.current.shownSprint, 'c')).toEqual({ date: THU, startHour: 3 })
+    expect(drawn(result.current.shownSprint!, WED, 'diogo', 'a')).toEqual([
+      '09-16@0+8',
+      '09-17@0+3',
+      '09-17@6+2',
+      '09-18@0+3'
+    ])
     expect(queue()).toEqual(['a', 'b'])
+  })
+
+  it('over a slot the task may not go on, shows nothing and says so', () => {
+    const { result } = render()
+    start(result, c)
+    move(result, c, { memberId: 'diogo' }, xOf(FRI, 5))
+    expect(result.current.refused).toBe(false)
+    // Tuesday has passed: work still to do cannot go there.
+    move(result, c, { memberId: 'diogo' }, xOf('2026-09-15', 2))
+    expect(result.current.previewing).toBe(false)
+    expect(result.current.refused).toBe(true)
+    expect(result.current.previewBlockId).toBeUndefined()
+    expect(result.current.shownSprint).toBe(stored())
+    // Back onto an allowed slot, the preview returns.
+    move(result, c, { memberId: 'diogo' }, xOf(FRI, 5))
+    expect(result.current.previewing).toBe(true)
+    expect(result.current.refused).toBe(false)
   })
 
   it('is kept while the pointer stays in the same hour, and replaced in the next one', () => {
@@ -164,7 +194,7 @@ describe('the preview while dragging', () => {
       }
     } as unknown as DragMoveEvent
     act(() => result.current.dndProps.onDragMove!(grabbedMiddle))
-    expect(result.current.shownSprint!.queues.diogo.map((b) => b.id)).toEqual(['a', 'b', 'c'])
+    expect(pinOf(result.current.shownSprint, 'c')).toEqual({ date: FRI, startHour: 2 })
 
     // With no pointer event to go by (a keyboard drag), the block's edge is all there is:
     // Friday hour 0 puts C in front of B.
@@ -174,7 +204,7 @@ describe('the preview while dragging', () => {
         activatorEvent: undefined
       } as unknown as DragMoveEvent)
     )
-    expect(result.current.shownSprint!.queues.diogo.map((b) => b.id)).toEqual(['a', 'c', 'b'])
+    expect(pinOf(result.current.shownSprint, 'c')).toEqual({ date: FRI, startHour: 0 })
   })
 
   it('ignores rows that are not on the board', () => {
@@ -196,13 +226,56 @@ describe('the preview while dragging', () => {
   })
 })
 
+describe('a task on the calendar is held where it was picked up', () => {
+  // The left edge of an hour on the track, where a piece drawn from that hour starts.
+  const edgeOf = (date: string, hour: number) => xOf(date, hour) - 5
+
+  it('picked up by its second hour and moved one cell on, it moves one hour', () => {
+    const { result } = render()
+    // B runs Friday 0–2; pressed on its second hour.
+    const b: DragData = { kind: 'block', blockId: 'b', workItemId: 2, hours: 2, hoursBefore: 0 }
+    const pressed = xOf(FRI, 1)
+    start(result, b, pressed, edgeOf(FRI, 0))
+    move(result, b, { memberId: 'diogo' }, xOf(FRI, 2), pressed)
+    end(result, b, { memberId: 'diogo' }, xOf(FRI, 2), pressed)
+    expect(pinOf(stored(), 'b')).toEqual({ date: FRI, startHour: 1 })
+  })
+
+  it('picked up by the part on its second day and moved a day on, it moves a day', () => {
+    const { result } = render()
+    // A runs all of Wednesday and Thursday; pressed on Thursday's hour 2, ten hours in.
+    const thursdayPiece: DragData = { ...a, hours: 8, hoursBefore: 8 }
+    const pressed = xOf(THU, 2)
+    start(result, thursdayPiece, pressed, edgeOf(THU, 0))
+    move(result, thursdayPiece, { memberId: 'diogo' }, xOf(FRI, 2), pressed)
+    end(result, thursdayPiece, { memberId: 'diogo' }, xOf(FRI, 2), pressed)
+    expect(pinOf(stored(), 'a')).toEqual({ date: THU, startHour: 0 })
+  })
+
+  it('left where it is, it stays: the preview shows it on its own hours', () => {
+    const { result } = render()
+    const b: DragData = { kind: 'block', blockId: 'b', workItemId: 2, hours: 2, hoursBefore: 0 }
+    const pressed = xOf(FRI, 1)
+    start(result, b, pressed, edgeOf(FRI, 0))
+    move(result, b, { memberId: 'diogo' }, pressed, pressed)
+    expect(drawn(result.current.shownSprint!, WED, 'diogo', 'b')).toEqual(['09-18@0+2'])
+  })
+
+  it('a backlog card lands where the pointer is, having nothing ahead of it', () => {
+    const { result } = render()
+    start(result, c, 40)
+    move(result, c, { memberId: 'diogo' }, xOf(FRI, 5), 40)
+    expect(pinOf(result.current.shownSprint, 'c')).toEqual({ date: FRI, startHour: 5 })
+  })
+})
+
 describe('the drop', () => {
   it('lands where the pointer is, as one undoable step', () => {
     const { result } = render()
     start(result, c)
     move(result, c, { memberId: 'diogo' }, xOf(FRI, 5))
     end(result, c, { memberId: 'diogo' }, xOf(FRI, 5))
-    expect(queue()).toEqual(['a', 'b', 'c'])
+    expect(pinOf(stored(), 'c')).toEqual({ date: FRI, startHour: 5 })
     expect(stored().backlog).toEqual([])
     expect(labels()).toEqual(['move'])
     expect(result.current.dragging).toBeNull()
@@ -217,7 +290,19 @@ describe('the drop', () => {
     start(result, c)
     move(result, c, { memberId: 'diogo' }, xOf(FRI, 5))
     end(result, c, null, xOf(FRI, 5))
-    expect(queue()).toEqual(['a', 'b', 'c'])
+    expect(pinOf(stored(), 'c')).toEqual({ date: FRI, startHour: 5 })
+  })
+
+  it('on a slot it may not go on, nothing happens — and nothing is asked', () => {
+    const { result } = render()
+    // A belongs to Diogo in TFS; Sofia's Tuesday has passed. Refused before any question
+    // about whose task it is.
+    start(result, a)
+    end(result, a, { memberId: 'sofia' }, xOf('2026-09-15', 2))
+    expect(result.current.mismatch).toBeNull()
+    expect(result.current.splitQuestion).toBeNull()
+    expect(stored()).toEqual(board())
+    expect(labels()).toEqual([])
   })
 
   it('does not use a preview left from dragging something else', () => {
@@ -255,6 +340,16 @@ describe('the drop', () => {
     end(result, reported, { memberId: 'diogo' }, xOf(MON, 2))
     expect(stored().reportedPins?.[3]).toEqual({ memberId: 'diogo', date: MON, startHour: 2 })
   })
+
+  it('reported hours go on today, but never on a later day', () => {
+    const { result } = render()
+    start(result, reported)
+    end(result, reported, { memberId: 'diogo' }, xOf(THU, 2))
+    expect(stored().reportedPins?.[3]).toBeUndefined()
+    start(result, reported)
+    end(result, reported, { memberId: 'diogo' }, xOf(WED, 2))
+    expect(stored().reportedPins?.[3]).toEqual({ memberId: 'diogo', date: WED, startHour: 2 })
+  })
 })
 
 describe('a drop inside another task', () => {
@@ -279,7 +374,13 @@ describe('a drop inside another task', () => {
     const { result } = render()
     dropInsideA(result)
     act(() => result.current.answerSplit('split'))
-    expect(stored().queues.diogo.map((b) => b.hours)).toEqual([11, 3, 5, 2])
+    expect(pinOf(stored(), 'c')).toEqual({ date: THU, startHour: 3 })
+    expect(drawn(stored(), WED, 'diogo', 'a')).toEqual([
+      '09-16@0+8',
+      '09-17@0+3',
+      '09-17@6+2',
+      '09-18@0+3'
+    ])
     expect(labels()).toEqual(['split and move'])
     expect(result.current.splitQuestion).toBeNull()
   })
@@ -288,13 +389,15 @@ describe('a drop inside another task', () => {
     const { result } = render()
     dropInsideA(result)
     act(() => result.current.answerSplit('before'))
-    expect(queue()).toEqual(['c', 'a', 'b'])
+    expect(pinOf(stored(), 'c')).toEqual({ date: WED, startHour: 0 })
+    expect(drawn(stored(), WED, 'diogo', 'a')).toEqual(['09-16@3+5', '09-17@0+8', '09-18@0+3'])
     expect(labels()).toEqual(['move'])
 
     act(() => useApp.getState().undo())
     dropInsideA(result)
     act(() => result.current.answerSplit('after'))
-    expect(queue()).toEqual(['a', 'c', 'b'])
+    expect(pinOf(stored(), 'c')).toEqual({ date: FRI, startHour: 0 })
+    expect(drawn(stored(), WED, 'diogo', 'a')).toEqual(['09-16@0+8', '09-17@0+8'])
   })
 
   it('dismissed: nothing happens', () => {

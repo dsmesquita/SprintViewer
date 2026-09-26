@@ -36,6 +36,9 @@ import { useApp } from './store'
  * task's place on the calendar is stored, which is what lets a refresh re-flow everything by
  * changing hours.
  */
+/** The drag ghost's height, as in `06-dnd.css`. */
+const GHOST_HEIGHT = 26
+
 export default function App(): JSX.Element {
   const sprint = useApp((s) => s.sprint)
   const loading = useApp((s) => s.loading)
@@ -49,6 +52,7 @@ export default function App(): JSX.Element {
   const lockDay = useApp((s) => s.lockDay)
   const unlockDay = useApp((s) => s.unlockDay)
   const selectTask = useApp((s) => s.selectTask)
+  const hourWidth = useApp((s) => s.hourWidth)
 
   const [confirmClear, setConfirmClear] = useState(false)
   // The plan with every rule applied, and — only when that would move work already on the
@@ -208,8 +212,21 @@ export default function App(): JSX.Element {
         */}
         {drag.dragging && (
           <div
-            className={cx('seg', 'drag-ghost', toneFor(drag.dragging.workItemId))}
-            style={{ opacity: drag.previewing ? 0 : 1 }}
+            className={cx(
+              'seg',
+              'drag-ghost',
+              toneFor(drag.dragging.workItemId),
+              drag.refused && 'is-refused'
+            )}
+            // As long as the task is, at the calendar's scale — not as wide as the backlog card
+            // it may have been picked up from, which hid a dozen hours under the pointer.
+            style={{
+              opacity: drag.previewing ? 0 : 1,
+              width: Math.max(drag.dragging.hours * hourWidth - 2, 24),
+              // Level with the pointer: a card is taller than a block, and was picked up by
+              // wherever the pointer went down on it.
+              marginTop: Math.max(0, drag.grabbedDown - GHOST_HEIGHT / 2)
+            }}
           >
             <span className="seg-id">#{drag.dragging.workItemId}</span>
             <span className="seg-title">{hours(drag.dragging.hours)}</span>

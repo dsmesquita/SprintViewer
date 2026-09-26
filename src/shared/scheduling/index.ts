@@ -25,7 +25,6 @@ export { freezeHistoryBefore, recordPast } from './freeze'
 export { layoutMember, layoutSprint, type MemberLayout } from './layout'
 export {
   anchorFor,
-  insertionIndex,
   landsInside,
   occupantAt,
   placedHours,

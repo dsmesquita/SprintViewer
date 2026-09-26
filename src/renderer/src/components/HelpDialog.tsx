@@ -230,9 +230,24 @@ const SECTIONS: Section[] = [
             other than the TFS assignee asks first.
           </li>
           <li>
-            A block you drop on a particular hour is <strong>pinned</strong> there — work after it
-            flows around it. Blocks that are not pinned flow one after another from today, with no
-            gaps.
+            A block you drop on a particular hour is <strong>pinned</strong> there — it stays on
+            that hour, and work that is not pinned flows around it. Blocks that are not pinned flow
+            one after another from today, with no gaps; <em>Unpin</em> puts a block back in that
+            flow.
+          </li>
+          <li>
+            Pick a block up anywhere along it: it moves with the pointer, so one cell to the right
+            is one hour later, one day to the right is a day later.
+          </li>
+          <li>
+            Tasks can go on today or any later day. Nothing can go on a locked day, someone's day
+            off, or past the end of their day — the block under the pointer gets a red outline
+            there, and letting go changes nothing.
+          </li>
+          <li>
+            <strong>Striped blocks</strong> (hours reported as done) can be dragged to any past day,
+            or to today, to say when the work was really done. Dropped on the backlog, they go back
+            to being placed automatically.
           </li>
           <li>
             Dropping into the middle of another task asks whether to go before it, after it, or
