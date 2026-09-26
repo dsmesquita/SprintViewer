@@ -6,6 +6,7 @@ import { effectiveCapacity, layoutSprint, type MemberLayout } from './scheduling
 import { plannedHoursIn } from './sizing'
 import { tagOf, untagged } from './tags'
 import type { Block, ISODate, Sprint, WorkItem } from './types'
+import { round } from './math'
 
 /**
  * Filling the calendar in one pass.
@@ -837,8 +838,4 @@ function freeGaps(
   }
   if (cursor < capacity) gaps.push({ start: cursor, end: capacity })
   return gaps.filter((gap) => gap.end > gap.start)
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100
 }

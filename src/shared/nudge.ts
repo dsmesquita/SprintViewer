@@ -1,6 +1,7 @@
 import { findBlock, pinBlockAt, pinReportedAt } from './mutations'
 import { effectiveCapacity, layoutSprint } from './scheduling'
 import type { ISODate, Segment, Sprint } from './types'
+import { round } from './math'
 
 /**
  * Moving the selected task one step with Shift + ← / →.
@@ -239,8 +240,4 @@ function covers(segment: Segment, hour: number): boolean {
 
 function inOrder(segments: Segment[]): Segment[] {
   return [...segments].sort((a, b) => a.date.localeCompare(b.date) || a.startHour - b.startHour)
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100
 }

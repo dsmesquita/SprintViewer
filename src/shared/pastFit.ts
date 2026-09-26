@@ -2,6 +2,7 @@ import { splitInPlace, unpinBlock } from './mutations'
 import { layoutSprint } from './scheduling'
 import { completedHours } from './sizing'
 import type { ISODate, Sprint } from './types'
+import { round } from './math'
 
 /**
  * Making room in the past for work that actually happened.
@@ -102,8 +103,4 @@ export function freePastSpace(sprint: Sprint, anchor: ISODate, newId: () => stri
     }
   }
   return next
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100
 }

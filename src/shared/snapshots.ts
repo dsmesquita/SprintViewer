@@ -1,5 +1,6 @@
 import { layoutSprint } from './scheduling'
 import type { ISODate, Sprint } from './types'
+import { round } from './math'
 
 /**
  * Keeping a copy of the board as it stood, and saying what has changed since.
@@ -126,8 +127,4 @@ export function diffSprints(before: Sprint, after: Sprint, anchor: ISODate): Cha
 
 function titleOf(after: Sprint, before: Sprint, workItemId: number): string {
   return after.workItems[workItemId]?.title ?? before.workItems[workItemId]?.title ?? ''
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100
 }

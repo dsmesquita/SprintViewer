@@ -1,8 +1,10 @@
 import { isContainerType } from './grouping'
-import { findBlock, pinReportedAt } from './mutations'
+import { appendToBacklog, removeBlocks, setBlockHours } from './blocks'
+import { pinReportedAt } from './mutations'
 import { freezeHistoryBefore, layoutSprint, liveRecord, recordPast } from './scheduling'
 import { completedHours, isReportedOnly, plannedHours, reportedHours } from './sizing'
 import type { Block, ISODate, Segment, Sprint, WorkItem } from './types'
+import { round } from './math'
 
 /**
  * Reconciling the calendar with TFS.
@@ -369,7 +371,7 @@ function resize(
     // Extra hours join the part that comes first on the calendar: the work grew, and it grows
     // where it is being done. If nothing is scheduled, the single merged backlog card takes it.
     const first = parts[0].block
-    return setHours(sprint, first.id, round(first.hours + delta))
+    return setBlockHours(sprint, first.id, round(first.hours + delta))
   }
 
   // Shrinking cascades backwards: take it out of the last part, and if that part is used up,
@@ -381,7 +383,7 @@ function resize(
     const take = Math.min(block.hours, left)
     left = round(left - take)
     const remaining = round(block.hours - take)
-    next = remaining > 0 ? setHours(next, block.id, remaining) : removeBlocks(next, [block.id])
+    next = remaining > 0 ? setBlockHours(next, block.id, remaining) : removeBlocks(next, [block.id])
   }
   return next
 }
@@ -427,33 +429,4 @@ function hasBlocks(sprint: Sprint, workItemId: number): boolean {
       queue.some((block) => block.workItemId === workItemId)
     )
   )
-}
-
-function setHours(sprint: Sprint, blockId: string, hours: number): Sprint {
-  const found = findBlock(sprint, blockId)
-  if (!found) return sprint
-  return mapBlocks(sprint, (block) => (block.id === blockId ? { ...block, hours } : block))
-}
-
-function removeBlocks(sprint: Sprint, blockIds: string[]): Sprint {
-  const gone = new Set(blockIds)
-  const queues: Record<string, Block[]> = {}
-  for (const [memberId, queue] of Object.entries(sprint.queues)) {
-    queues[memberId] = queue.filter((block) => !gone.has(block.id))
-  }
-  return { ...sprint, queues, backlog: sprint.backlog.filter((block) => !gone.has(block.id)) }
-}
-
-function appendToBacklog(sprint: Sprint, block: Block): Sprint {
-  return { ...sprint, backlog: [...sprint.backlog, block] }
-}
-
-function mapBlocks(sprint: Sprint, fn: (block: Block) => Block): Sprint {
-  const queues: Record<string, Block[]> = {}
-  for (const [memberId, queue] of Object.entries(sprint.queues)) queues[memberId] = queue.map(fn)
-  return { ...sprint, queues, backlog: sprint.backlog.map(fn) }
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100
 }

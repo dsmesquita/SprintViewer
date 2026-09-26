@@ -1,4 +1,5 @@
 import type { Block, Sprint } from './types'
+import { round } from './math'
 
 /**
  * Task titles carry a discipline tag at the front: `DEV:: Export service`, `[TEST] Smoke run`,
@@ -82,7 +83,7 @@ export function tagCounts(sprint: Sprint, blocks: Block[]): TagCount[] {
     const tag = tagForBlock(sprint, block)
     const entry = counts.get(tag) ?? { tag, count: 0, hours: 0 }
     entry.count += 1
-    entry.hours = Math.round((entry.hours + block.hours) * 100) / 100
+    entry.hours = round(entry.hours + block.hours)
     counts.set(tag, entry)
   }
 

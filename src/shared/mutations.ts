@@ -1,38 +1,23 @@
 import { layoutMember, splitBlock } from './scheduling'
 import type { Block, ISODate, Sprint } from './types'
+import {
+  findBlock,
+  insertBlock,
+  insertIntoBacklog,
+  removeBlocks,
+  replaceBlock,
+  type Location
+} from './blocks'
+import { clamp, round } from './math'
+
+// Where a block lives, and how to find it, are part of this module's vocabulary too.
+export { findBlock, type BlockPosition, type Location } from './blocks'
 
 /**
  * Pure transforms of a sprint. Every scheduling action the user takes is one of these:
  * they take a sprint and return a new one, with fresh arrays for anything that changed so
  * React sees the update. Nothing here touches disk or the network.
  */
-
-export type Location = { kind: 'member'; memberId: string } | { kind: 'backlog' }
-
-export interface BlockPosition {
-  location: Location
-  index: number
-  block: Block
-}
-
-/** Where a block currently sits, or null if it is not in this sprint. */
-export function findBlock(sprint: Sprint, blockId: string): BlockPosition | null {
-  const backlogIndex = sprint.backlog.findIndex((block) => block.id === blockId)
-  if (backlogIndex >= 0) {
-    return {
-      location: { kind: 'backlog' },
-      index: backlogIndex,
-      block: sprint.backlog[backlogIndex]
-    }
-  }
-  for (const [memberId, queue] of Object.entries(sprint.queues)) {
-    const index = queue.findIndex((block) => block.id === blockId)
-    if (index >= 0) {
-      return { location: { kind: 'member', memberId }, index, block: queue[index] }
-    }
-  }
-  return null
-}
 
 /**
  * Moves a block to `to`, at `index` within its new home.
@@ -47,7 +32,7 @@ export function moveBlock(sprint: Sprint, blockId: string, to: Location, index: 
   // An ordinary move puts the block back under the queue's control. Dragging a pinned block
   // to a new place is how you unpin it.
   const { pin: _pin, ...moved } = found.block
-  const withoutBlock = removeBlock(sprint, blockId)
+  const withoutBlock = removeBlocks(sprint, [blockId])
   const sameList =
     found.location.kind === to.kind &&
     (to.kind === 'backlog' ||
@@ -74,7 +59,7 @@ export function pinBlockAt(
   if (!found) return sprint
 
   const pinnedBlock: Block = { ...found.block, pin: { date, startHour: Math.max(0, startHour) } }
-  const withoutBlock = removeBlock(sprint, blockId)
+  const withoutBlock = removeBlocks(sprint, [blockId])
   const alreadyThere =
     found.location.kind === 'member' && found.location.memberId === memberId
       ? found.index
@@ -392,58 +377,4 @@ export function setMemberCapacity(
     ...sprint,
     capacityOverrides: { ...sprint.capacityOverrides, [memberId]: forMember }
   }
-}
-
-function removeBlock(sprint: Sprint, blockId: string): Sprint {
-  const queues: Record<string, Block[]> = {}
-  for (const [memberId, queue] of Object.entries(sprint.queues)) {
-    queues[memberId] = queue.filter((block) => block.id !== blockId)
-  }
-  return { ...sprint, queues, backlog: sprint.backlog.filter((block) => block.id !== blockId) }
-}
-
-function replaceBlock(sprint: Sprint, blockId: string, next: Block): Sprint {
-  const queues: Record<string, Block[]> = {}
-  for (const [memberId, queue] of Object.entries(sprint.queues)) {
-    queues[memberId] = queue.map((block) => (block.id === blockId ? next : block))
-  }
-  return {
-    ...sprint,
-    queues,
-    backlog: sprint.backlog.map((block) => (block.id === blockId ? next : block))
-  }
-}
-
-function insertBlock(sprint: Sprint, block: Block, to: Location, index: number): Sprint {
-  if (to.kind === 'backlog') {
-    return { ...sprint, backlog: insertIntoBacklog(sprint.backlog, block, index) }
-  }
-
-  const queue = [...(sprint.queues[to.memberId] ?? [])]
-  queue.splice(clamp(index, 0, queue.length), 0, block)
-  return { ...sprint, queues: { ...sprint.queues, [to.memberId]: queue } }
-}
-
-/**
- * Parts of the same work item rejoin in the backlog rather than piling up as separate
- * cards, so returning both halves of a split leaves the item whole again.
- */
-function insertIntoBacklog(backlog: Block[], block: Block, index: number): Block[] {
-  const existing = backlog.findIndex((other) => other.workItemId === block.workItemId)
-  if (existing >= 0) {
-    const merged = [...backlog]
-    merged[existing] = { ...merged[existing], hours: round(merged[existing].hours + block.hours) }
-    return merged
-  }
-  const next = [...backlog]
-  next.splice(clamp(index, 0, next.length), 0, block)
-  return next
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100
 }

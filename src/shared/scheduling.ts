@@ -1,6 +1,7 @@
 import { memberMatches } from './assignment'
 import { completedHours, reportedHours } from './sizing'
 import type { Block, ISODate, Segment, Sprint } from './types'
+import { clamp, round } from './math'
 
 /**
  * The layout engine.
@@ -835,13 +836,4 @@ export function placedHours(sprint: Sprint, workItemId: number): number {
     for (const block of queue) if (block.workItemId === workItemId) total += block.hours
   }
   return round(total)
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
-}
-
-/** Guards against float drift from repeated subtraction of fractional remaining work. */
-function round(value: number): number {
-  return Math.round(value * 100) / 100
 }

@@ -1,8 +1,9 @@
 /** Presentation helpers shared by the grid and the panel. */
+import { round } from '@shared/math'
 
 /** "8h", "2.5h" — never "2.5000000004h". */
 export function hours(value: number): string {
-  const rounded = Math.round(value * 100) / 100
+  const rounded = round(value)
   return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}h`
 }
 

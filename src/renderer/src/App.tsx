@@ -59,6 +59,7 @@ import {
   UndoIcon,
   WarningIcon
 } from './icons'
+import { clamp } from '@shared/math'
 // ExportIcon inline - a simple download arrow
 const ExportIcon = (): JSX.Element => (
   <svg
@@ -1077,10 +1078,6 @@ function dayMenuItems(
     }
   )
   return items
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
 }
 
 function EmptyState({ loading }: { loading: boolean }): JSX.Element {

@@ -1,6 +1,7 @@
 import { resizeItemTo } from './refresh'
 import { plannedHours } from './sizing'
 import type { ISODate, Sprint, WorkItem } from './types'
+import { round } from './math'
 
 /**
  * Overruling TFS about how long a task is.
@@ -20,7 +21,7 @@ export function setCustomHours(
   newId: () => string
 ): Sprint {
   if (!Number.isFinite(hours) || hours <= 0) return sprint
-  const rounded = Math.round(hours * 100) / 100
+  const rounded = round(hours)
   const withCustom: Sprint = {
     ...sprint,
     customHours: { ...(sprint.customHours ?? {}), [workItemId]: rounded }

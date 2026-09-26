@@ -1,5 +1,6 @@
 import { displayName } from './assignment'
 import type { Block, Sprint, WorkItem } from './types'
+import { round } from './math'
 
 /**
  * Tasks in TFS hang off a User Story or a Bug. The side panel shows that structure: the
@@ -124,7 +125,7 @@ export function groupBlocks(
       groups.set(key, group)
     }
     group.blocks.push(block)
-    group.hours = Math.round((group.hours + block.hours) * 100) / 100
+    group.hours = round(group.hours + block.hours)
   }
 
   // Empty headings come after the groups that have work in them and before the leftovers, so

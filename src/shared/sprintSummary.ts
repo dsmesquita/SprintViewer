@@ -6,6 +6,7 @@ import { anchorFor, effectiveCapacity, layoutSprint, type MemberLayout } from '.
 import { completedHours, isOffTrack, OFF_TRACK_RATIO } from './sizing'
 import type { Snapshot } from './snapshots'
 import type { ISODate, Sprint, WorkItem } from './types'
+import { round } from './math'
 
 /**
  * A sprint written down for later: the plan, what happened, and what everyone noted.
@@ -673,8 +674,4 @@ function signed(value: number): string {
 
 function sum(values: number[]): number {
   return values.reduce((total, value) => total + value, 0)
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100
 }

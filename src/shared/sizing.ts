@@ -1,4 +1,5 @@
 import type { Sprint, WorkItem } from './types'
+import { round } from './math'
 
 /**
  * How much space a work item takes on the board.
@@ -80,12 +81,6 @@ export function reportedHours(item: WorkItem): number {
   return sizeOf(item).reported
 }
 
-/** The item's whole span: what was done plus what is left. */
-export function totalHours(item: WorkItem): number {
-  const size = sizeOf(item)
-  return round(size.planned + size.reported)
-}
-
 /**
  * True when a task is nothing but the hours reported against it: none left to do, some done.
  *
@@ -122,8 +117,4 @@ export function hasNoSize(item: WorkItem): boolean {
 
 function atLeastZero(value: number | undefined): number {
   return value === undefined || value <= 0 ? 0 : round(value)
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100
 }

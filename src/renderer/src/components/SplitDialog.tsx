@@ -3,6 +3,7 @@ import { findBlock } from '@shared/mutations'
 import { hours } from '../format'
 import { useApp, useSprint } from '../store'
 import Dialog from './Dialog'
+import { round } from '@shared/math'
 
 /**
  * Splits a placed task. Two modes:
@@ -30,11 +31,11 @@ export default function SplitDialog(): JSX.Element | null {
   const where = position.location.kind === 'backlog' ? 'the backlog' : 'the calendar'
 
   // Keep/return mode
-  const remainder = Math.round((total - keep) * 100) / 100
+  const remainder = round(total - keep)
   const keepValid = keep > 0 && keep < total
 
   // N-parts mode
-  const partsSum = Math.round(parts.reduce((a, b) => a + b, 0) * 100) / 100
+  const partsSum = round(parts.reduce((a, b) => a + b, 0))
   const partsValid = parts.length >= 2 && parts.every((p) => p > 0) && partsSum === total
 
   const handleNChange = (newN: number): void => {
@@ -197,8 +198,8 @@ export default function SplitDialog(): JSX.Element | null {
 
 function equalParts(total: number, n: number): number[] {
   const base = Math.floor((total / n) * 2) / 2
-  const remainder = Math.round((total - base * n) * 100) / 100
+  const remainder = round(total - base * n)
   const parts = Array(n).fill(base) as number[]
-  if (remainder > 0) parts[0] = Math.round((parts[0] + remainder) * 100) / 100
+  if (remainder > 0) parts[0] = round(parts[0] + remainder)
   return parts
 }
