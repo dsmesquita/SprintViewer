@@ -27,8 +27,10 @@ decision for later, not a bug fix slipped in.
 - ~~Name matching was loose~~ — two people sharing a first or last name counted as one.
   Fixed after 1.3.2: a full name wins, and a first or last name only counts when one person on
   the roster has it (`memberFor` in `src/shared/assignment.ts`).
-- **A pin on a day that left the sprint keeps its hour.** Pinned at 17:00 on a day no longer
-  in the sprint, a block lands at 17:00 on the next sprint day, not at its start.
+- ~~A pin on a day that left the sprint keeps its hour~~ — closed, not changed: no pin can be
+  on a day outside the sprint. Every pin takes its date from the sprint's days, and those never
+  change after the sprint starts. A feature that ever changes them should move or clear the
+  pins itself, and test that there.
 - ~~Locking a day split blocks that never reached it~~ — found by the end-to-end drag tests,
   fixed after 1.3.1: only a block running into the locked day is cut, where that day starts.
 - ~~`sizing.totalHours` unused~~ — removed in the refactor.
