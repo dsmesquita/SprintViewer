@@ -95,7 +95,7 @@ interface Board {
 export function useSprintDnd({ sprint, layouts, anchor, today }: Board) {
   const hourWidth = useApp((s) => s.hourWidth)
   const moveBlock = useApp((s) => s.moveBlock)
-  const unpinReported = useApp((s) => s.unpinReported)
+  const returnDoneToBacklog = useApp((s) => s.returnDoneToBacklog)
   const applySprint = useApp((s) => s.applySprint)
 
   const [dragging, setDragging] = useState<DragData | null>(null)
@@ -230,9 +230,9 @@ export function useSprintDnd({ sprint, layouts, anchor, today }: Board) {
     if (event.over?.id === BACKLOG_DROP_ID) {
       // Not off a locked day, not even back to the backlog.
       if (!canLift(sprint, data, layouts)) return
-      // Reported hours cannot be unscheduled — they happened. Dropping them here is read as
-      // "I no longer want to say when", which hands them back to the automatic placement.
-      if (data.kind === 'reported') unpinReported(data.workItemId)
+      // Done hours dropped here leave the calendar and wait as a card, to be dragged onto the
+      // day they were really worked. (Right-click → Reset to automatic draws them again.)
+      if (data.kind === 'reported') returnDoneToBacklog(data.workItemId)
       else moveBlock(data.blockId, { kind: 'backlog' }, sprint.backlog.length)
       return
     }

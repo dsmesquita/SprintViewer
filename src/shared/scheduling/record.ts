@@ -28,8 +28,10 @@ export function liveRecord(
 
   const used = new Map<number, number>()
   const out: Record<string, Record<ISODate, Segment[]>> = {}
+  // Done hours kept in the backlog are drawn nowhere, the record included, until placed.
+  const waiting = new Set(sprint.doneInBacklog ?? [])
   for (const { memberId, piece } of all) {
-    if (sprint.reportedPins?.[piece.workItemId]) continue
+    if (sprint.reportedPins?.[piece.workItemId] || waiting.has(piece.workItemId)) continue
     const allowed = completedHours(sprint.workItems[piece.workItemId])
     let hours = piece.hours
     if (allowed !== undefined) {

@@ -78,6 +78,21 @@
   border-color: var(--border-strong);
 }
 
+/* A task's done hours, waiting to be put on the day they were worked: marked by a red dot. */
+.task-card.is-done-card {
+  position: relative;
+}
+
+.done-dot {
+  position: absolute;
+  top: 3px;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
 /* Nobody on the squad owns it in TFS: something to sort out before it can be planned. */
 .task-card.is-outsider {
   background: var(--outsider-bg);

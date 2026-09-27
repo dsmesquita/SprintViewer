@@ -4,7 +4,7 @@ import type { Locator, Page } from '@playwright/test'
 import { buildSprintDays } from '../src/shared/dates'
 import type { Sprint } from '../src/shared/types'
 import { expect, test } from './app'
-import { DEV, settingsFor, sprintFor, VAL } from './data'
+import { DEV, settingsFor, sprintFor, storyWithTasks, VAL } from './data'
 import type { FakeTfs } from './fakeTfs'
 
 /**
@@ -663,5 +663,122 @@ test.describe('Shift+arrows and locked days follow the same rules as a drop', ()
     await toBacklog(page, thursday)
     await page.waitForTimeout(300)
     expect(await saved(dataDir)).toEqual(before)
+  })
+})
+
+test.describe('done hours apart from remaining hours', () => {
+  const QA = 105
+
+  /** TFS as the drag board has it, plus a new QA task in the backlog with 3h done by Sofia. */
+  function tfsWithDoneWork(tfs: FakeTfs) {
+    storyWithTasks(tfs)
+    tfs.update(DEV, {
+      'Microsoft.VSTS.Scheduling.RemainingWork': 12,
+      'Microsoft.VSTS.Scheduling.CompletedWork': 2
+    })
+    tfs.add(DOC, {
+      'System.Title': 'DOC:: Export service',
+      'System.Parent': 100,
+      'Microsoft.VSTS.Scheduling.RemainingWork': 2
+    })
+    tfs.add(QA, {
+      'System.Title': 'QA:: Export service',
+      'System.Parent': 100,
+      'System.AssignedTo': 'Sofia Marques <CMF\\smarques>',
+      'Microsoft.VSTS.Scheduling.RemainingWork': 2,
+      'Microsoft.VSTS.Scheduling.CompletedWork': 3
+    })
+    tfs.queried = [DEV, VAL, DOC, QA]
+  }
+  async function refreshAndAnswer(
+    page: Page,
+    answer: 'Keep in the backlog' | 'Place on the calendar'
+  ) {
+    await page.locator('.toolbar').getByRole('button', { name: 'Refresh', exact: true }).click()
+    const question = page.getByRole('dialog', { name: 'Hours already done' })
+    await expect(question).toContainText('QA:: Export service')
+    await question.getByRole('button', { name: answer }).click()
+    await expect(question).toBeHidden()
+  }
+  const doneCard = (page: Page) =>
+    page.locator('.task-card.is-done-card', { hasText: 'QA:: Export service' })
+  const qaDone = (page: Page) =>
+    page.locator('.row-track .seg.is-done', { has: page.locator('.seg-id', { hasText: `#${QA}` }) })
+
+  test('kept in the backlog: a card with a red dot, dragged onto the day it was done', async ({
+    launch,
+    seed,
+    tfs,
+    dataDir
+  }) => {
+    tfsWithDoneWork(tfs)
+    const page = await openBoard(launch, seed, tfs)
+    await refreshAndAnswer(page, 'Keep in the backlog')
+
+    await expect(doneCard(page)).toBeVisible()
+    await expect(doneCard(page).locator('.done-dot')).toBeVisible()
+    // Its remaining hours are an ordinary card of their own.
+    await expect(
+      page.locator('.task-card:not(.is-done-card)', { hasText: 'QA:: Export service' })
+    ).toBeVisible()
+    await expect(qaDone(page)).toHaveCount(0)
+    expect((await saved(dataDir)).doneInBacklog).toEqual([QA])
+
+    await drag(page, doneCard(page), await slot(page, 'Sofia', TUE, 2))
+    await expect
+      .poll(async () => (await saved(dataDir)).reportedPins?.[QA])
+      .toEqual({ memberId: 'sofia', date: TUE, startHour: 2 })
+    await expect(doneCard(page)).toHaveCount(0)
+    await expect(qaDone(page)).toHaveCount(1)
+
+    // Back onto the backlog, they wait there again.
+    await toBacklog(page, qaDone(page))
+    await expect(doneCard(page)).toBeVisible()
+    await expect.poll(async () => (await saved(dataDir)).doneInBacklog).toEqual([QA])
+  })
+
+  test('placed on the calendar: drawn on the owner’s row, like the rest of the task', async ({
+    launch,
+    seed,
+    tfs,
+    dataDir
+  }) => {
+    tfsWithDoneWork(tfs)
+    const page = await openBoard(launch, seed, tfs)
+    await refreshAndAnswer(page, 'Place on the calendar')
+
+    await expect(doneCard(page)).toHaveCount(0)
+    await expect(
+      row(page, 'Sofia').locator('.seg.is-done', {
+        has: page.locator('.seg-id', { hasText: `#${QA}` })
+      })
+    ).toHaveCount(1)
+    expect((await saved(dataDir)).doneDecided).toEqual([QA])
+    // No stripes, no fading: done hours look exactly like the rest of their task.
+    const look = await qaDone(page).evaluate((el) => {
+      const style = getComputedStyle(el)
+      return { stripes: style.backgroundImage, opacity: style.opacity }
+    })
+    expect(look).toEqual({ stripes: 'none', opacity: '1' })
+  })
+
+  test('auto-assign places done hours waiting in the backlog', async ({
+    launch,
+    seed,
+    tfs,
+    dataDir
+  }) => {
+    tfsWithDoneWork(tfs)
+    const page = await openBoard(launch, seed, tfs)
+    await refreshAndAnswer(page, 'Keep in the backlog')
+    await expect(doneCard(page)).toBeVisible()
+
+    await page.locator('.toolbar').getByRole('button', { name: 'Auto-assign' }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toContainText('done hours go on the calendar')
+    await dialog.locator('button.primary').click()
+    await expect(doneCard(page)).toHaveCount(0)
+    await expect.poll(async () => (await saved(dataDir)).doneInBacklog).toEqual([])
+    await expect(qaDone(page)).toHaveCount(1)
   })
 })

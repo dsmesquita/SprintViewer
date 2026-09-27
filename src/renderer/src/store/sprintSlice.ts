@@ -1,3 +1,4 @@
+import { askAbout } from './refreshSlice'
 import type { StateCreator } from 'zustand'
 import { createMockSprint } from '@shared/mock'
 import { opened, scheduleBaseline } from './persistence'
@@ -55,7 +56,8 @@ export const createSprintSlice: StateCreator<AppState, [], [], SprintSlice> = (
       dialog: 'none',
       startDateSeed: null,
       undoStack: [],
-      settings: await window.api.getSettings()
+      settings: await window.api.getSettings(),
+      doneQuestion: askAbout(result.value)
     })
     return null
   },

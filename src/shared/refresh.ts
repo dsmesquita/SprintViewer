@@ -85,7 +85,10 @@ export function applyRefresh(
 
   for (const item of items) {
     const parts = schedulable(next, item.id, positions)
-    const owner = recordOwner(next, item.id)
+    // A task new to the sprint starts in the backlog, whoever has hours done on it: where its
+    // done hours go is asked separately (`doneHours.ts`), and its remaining hours are planned
+    // like any other card.
+    const owner = wasKnown(sprint, item.id) ? recordOwner(next, item.id) : null
 
     if (parts.length === 0 && owner === null) {
       // Stories and bugs are headings, not work, so a new one must not turn up in the

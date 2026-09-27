@@ -140,6 +140,55 @@ describe('refresh', () => {
     expect(state.sprint!.lastRefreshedAt).toBeDefined()
   })
 
+  describe('a new backlog task with hours already done by someone on the team', () => {
+    const refreshWithDoneWork = async () => {
+      fake.api.refreshSprint.mockResolvedValueOnce({
+        ok: true,
+        value: [
+          item(1, { remainingWork: 4 }),
+          item(2, { remainingWork: 4 }),
+          item(3, { remainingWork: 5, completedWork: 2, assignedTo: 'Diogo Mesquita' })
+        ]
+      } as never)
+      await useApp.getState().refresh()
+    }
+
+    it('is asked about once the refresh is in', async () => {
+      await refreshWithDoneWork()
+      expect(useApp.getState().doneQuestion).toEqual([3])
+    })
+
+    it('kept in the backlog: its done hours wait there, as one undoable step', async () => {
+      await refreshWithDoneWork()
+      useApp.getState().answerDoneQuestion(false)
+      const state = useApp.getState()
+      expect(state.doneQuestion).toBeNull()
+      expect(state.sprint!.doneInBacklog).toEqual([3])
+      expect(state.undoStack.map((u) => u.label)).toEqual(['refresh', 'done hours'])
+      useApp.getState().undo()
+      expect(useApp.getState().sprint!.doneInBacklog ?? []).toEqual([])
+    })
+
+    it('placed on the calendar: drawn, and not asked about again', async () => {
+      await refreshWithDoneWork()
+      useApp.getState().answerDoneQuestion(true)
+      expect(useApp.getState().sprint!.doneInBacklog).toEqual([])
+      expect(useApp.getState().sprint!.doneDecided).toEqual([3])
+      await refreshWithDoneWork()
+      expect(useApp.getState().doneQuestion).toBeNull()
+    })
+
+    it('dismissed: nothing is recorded, and the next refresh asks again', async () => {
+      await refreshWithDoneWork()
+      const before = useApp.getState().sprint
+      useApp.getState().dismissDoneQuestion()
+      expect(useApp.getState().doneQuestion).toBeNull()
+      expect(useApp.getState().sprint).toBe(before)
+      await refreshWithDoneWork()
+      expect(useApp.getState().doneQuestion).toEqual([3])
+    })
+  })
+
   it('a failure is shown and the board is untouched', async () => {
     const before = useApp.getState().sprint
     fake.api.refreshSprint.mockResolvedValueOnce({ ok: false, message: 'TFS is down' } as never)

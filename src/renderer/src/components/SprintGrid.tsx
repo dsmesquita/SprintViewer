@@ -482,7 +482,7 @@ const SegmentBlock = memo(
     // ribbon is how they say it. History segments (auto-layout past positions) ARE real blocks
     // and can be repositioned; pinned past blocks were placed by hand and always could be.
     const isReported = segment.isDone === true
-    const isPast = segment.fromHistory === true || isReported
+    const isPast = segment.fromHistory === true
     const data: DragData = isReported
       ? { kind: 'reported', workItemId: segment.workItemId, hours: segment.hours, hoursBefore }
       : {

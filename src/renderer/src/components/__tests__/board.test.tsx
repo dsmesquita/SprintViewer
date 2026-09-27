@@ -64,6 +64,29 @@ describe('SidePanel', () => {
     expect(document.querySelectorAll('.task-card')).toHaveLength(3)
   })
 
+  it('done hours waiting in the backlog are a card of their own, with a red dot', () => {
+    // VAL has 2h remaining and 3h done; its done hours were kept in the backlog.
+    const s = board()
+    useApp.setState({
+      sprint: {
+        ...s,
+        workItems: { ...s.workItems, 2: { ...s.workItems[2], completedWork: 3 } },
+        doneInBacklog: [2]
+      }
+    })
+    panel()
+    const cards = [...document.querySelectorAll('.task-card')]
+    expect(cards).toHaveLength(4)
+    const done = document.querySelectorAll('.task-card.is-done-card')
+    expect(done).toHaveLength(1)
+    expect(done[0].querySelector('.done-dot')).not.toBeNull()
+    expect(done[0]).toHaveTextContent('VAL:: Check')
+    expect(done[0]).toHaveTextContent('3h done')
+    // The remaining hours are still their own, ordinary card.
+    const val = cards.filter((c) => c.textContent?.includes('VAL:: Check'))
+    expect(val.map((c) => c.classList.contains('is-done-card'))).toEqual([false, true])
+  })
+
   it('cards owned by nobody on the squad are marked, and say why', () => {
     panel()
     const outsiders = [...document.querySelectorAll('.task-card.is-outsider')].map((c) =>

@@ -70,6 +70,8 @@ export interface BoardSlice {
   unpinBlock: (blockId: string) => void
   pinReported: (workItemId: number, memberId: string, date: ISODate, startHour: number) => void
   unpinReported: (workItemId: number) => void
+  /** Done hours dropped on the backlog: they wait there as a card. */
+  returnDoneToBacklog: (workItemId: number) => void
   /** Moves the selected block one working hour, or swaps it with its neighbour. */
   nudge: (direction: Direction) => void
   /** Rescales the open sprint around a new working-day length. */
@@ -110,6 +112,14 @@ export interface RefreshSlice {
     text: string
     conflicts: CustomConflict[]
   } | null
+  /**
+   * Tasks in the backlog with hours done by someone on the team, found by the last refresh or
+   * import and not asked about before: where should those hours go?
+   */
+  doneQuestion: number[] | null
+  /** Place them on the calendar where they were worked, or keep them in the backlog. */
+  answerDoneQuestion: (place: boolean) => void
+  dismissDoneQuestion: () => void
   refresh: () => Promise<void>
   resolveRefresh: (choices: Map<number, CustomChoice>) => void
   cancelRefresh: () => void

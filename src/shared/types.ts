@@ -188,6 +188,13 @@ export interface Sprint {
    * you say "this happened on Tuesday morning", and the pin is what remembers that.
    */
   reportedPins?: Record<number, { memberId: string; date: ISODate; startHour: number }>
+  /**
+   * Tasks whose done hours wait in the backlog as a card of their own, drawn nowhere until they
+   * are dragged onto a day (see `doneHours.ts`).
+   */
+  doneInBacklog?: number[]
+  /** Tasks already asked about after a refresh — where their done hours go — so each once. */
+  doneDecided?: number[]
   /** TFS query the work items were imported from. */
   queryUrl?: string
   lastRefreshedAt?: string

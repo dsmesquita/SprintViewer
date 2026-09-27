@@ -160,6 +160,11 @@ e2e/                 end-to-end tests of the built app (Playwright): fixtures, f
   without a record fall back to the legacy `history` snapshots.
 - **Reported pins** (`sprint.reportedPins`) = the user dragged a task's done hours to where
   they were really worked; they overrule the record for that task.
+- **Done hours in the backlog** (`doneHours.ts`): a task not on the calendar keeps its done
+  hours apart from its remaining hours. After a refresh or import the user is asked, once per
+  task (`sprint.doneDecided`), to draw them on the owner's row or keep them in the backlog as a
+  red-dotted card (`sprint.doneInBacklog`: drawn nowhere, not even from the record, until
+  placed). A refresh puts every new task in the backlog; auto-assign places waiting done hours.
 - **Custom hours** (`sprint.customHours`) = a manual size overruling TFS; a refresh that
   disagrees stops and asks (`RefreshHoursDialog`).
 - **Undo**: every board change goes through `mutate(store, transform, label)` in

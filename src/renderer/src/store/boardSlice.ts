@@ -16,6 +16,7 @@ import {
   unpinReported
 } from '@shared/mutations'
 import { addNote, deleteNote, updateNote } from '@shared/notes'
+import { returnDoneToBacklog } from '@shared/doneHours'
 import { nudgeBlock, nudgeReported } from '@shared/nudge'
 import { syncSprintMembers } from '@shared/squad'
 import { showAllTags, toggleTag } from '@shared/tags'
@@ -84,6 +85,8 @@ export const createBoardSlice: StateCreator<AppState, [], [], BoardSlice> = (set
     },
     unpinReported: (workItemId) =>
       change((sprint) => unpinReported(sprint, workItemId), 'reported hours'),
+    returnDoneToBacklog: (workItemId) =>
+      change((sprint) => returnDoneToBacklog(sprint, workItemId), 'done hours'),
     setHoursPerDay: (hoursPerDay) =>
       change((sprint) => setHoursPerDay(sprint, hoursPerDay), 'hours in a day'),
     syncSprintMembers: (roster) =>

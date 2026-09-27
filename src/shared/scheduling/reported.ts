@@ -79,10 +79,12 @@ export function withReportedHours(
     })
   }
 
+  // Done hours waiting in the backlog are drawn nowhere until they are placed.
+  const waiting = new Set(sprint.doneInBacklog ?? [])
   const owned = new Map<string, Array<{ workItemId: number; hours: number; pinned: boolean }>>()
   for (const [workItemId, target] of targets) {
     const item = sprint.workItems[workItemId]
-    if (!item) continue
+    if (!item || (waiting.has(workItemId) && !target.pinned)) continue
     // Whatever is already on the calendar for these hours — pinned by hand, or replayed from
     // a snapshot — is the same work, so only the difference is drawn. Subtracting rather than
     // skipping matters: two hours recorded against six reported should leave four to draw,

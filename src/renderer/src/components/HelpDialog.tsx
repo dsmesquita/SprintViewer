@@ -165,7 +165,8 @@ const SECTIONS: Section[] = [
             everything to its right is the plan.
           </li>
           <li>
-            <strong>Striped blocks</strong> left of today are hours reported in TFS as done.
+            Blocks left of today are hours reported in TFS as <strong>done</strong>. They look like
+            the rest of their task — the orange line is what separates done from planned.
           </li>
           <li>
             Grey, shaded columns are days off. Right-click a day header to make a day off or a half
@@ -246,9 +247,9 @@ const SECTIONS: Section[] = [
             there, and letting go changes nothing.
           </li>
           <li>
-            <strong>Striped blocks</strong> (hours reported as done) can be dragged to any past day,
-            or to today, to say when the work was really done. Dropped on the backlog, they go back
-            to being placed automatically.
+            <strong>Done hours</strong> (left of today) can be dragged to any past day, or to today,
+            to say when the work was really done. Dropped on the backlog, they wait there as a card
+            with a red dot until you place them again.
           </li>
           <li>
             Dropping into the middle of another task asks whether to go before it, after it, or
@@ -261,8 +262,8 @@ const SECTIONS: Section[] = [
           <li>
             <strong>Select</strong> a block and press <Keys>Shift</Keys>+<Keys>←</Keys> /{' '}
             <Keys>→</Keys> to nudge it an hour at a time. It skips nights, days off and locked days,
-            swaps places with the task next to it, and never goes before today. Striped (done) hours
-            nudge through the past, and onto today.
+            swaps places with the task next to it, and never goes before today. Done hours nudge
+            through the past, and onto today.
           </li>
           <li>
             <Keys>Ctrl</Keys>+<Keys>Z</Keys> or <strong>Back</strong> undoes the last change.
@@ -292,9 +293,9 @@ const SECTIONS: Section[] = [
             <strong>Remaining</strong> is drawn from today on — it is what is still to do.
           </li>
           <li>
-            <strong>Completed</strong> is drawn behind today, striped, on the days it was worked. If
-            the days behind today are full, it spills onto the start of today and today's plan moves
-            along to make room.
+            <strong>Completed</strong> is drawn behind today, on the days it was worked. If the days
+            behind today are full, it spills onto the start of today and today's plan moves along to
+            make room.
           </li>
           <li>A task that is half done is drawn as two pieces, one either side of today.</li>
           <li>A closed task has no block ahead of today at all; its hours are all behind it.</li>
@@ -312,10 +313,9 @@ const SECTIONS: Section[] = [
         </p>
         <h4>Saying when work happened</h4>
         <p>
-          Drag a striped block to the day and hour it was really worked. Right-click it and choose{' '}
-          <em>Reset to automatic</em> to undo that. You can also drop a normal block on a day that
-          has passed; at the next refresh, the part of it TFS reports as done is recorded there and
-          the rest goes back to the plan from today.
+          Drag a task's done hours to the day and hour they were really worked. Right-click them and
+          choose <em>Reset to automatic</em> to undo that. Work still to do cannot go on a day that
+          has passed.
         </p>
         <p>
           Original Estimate is not drawn anywhere. It is only used in the sprint summary to spot
@@ -340,6 +340,13 @@ const SECTIONS: Section[] = [
           </li>
           <li>A task with nothing left leaves the days ahead; its hours are drawn behind today.</li>
           <li>New tasks arrive in the backlog.</li>
+          <li>
+            If tasks in the backlog have hours <strong>already done</strong> by someone on the team,
+            you are asked once where those go: <em>Place on the calendar</em> draws them on that
+            person's row, where they were worked; <em>Keep in the backlog</em> leaves them as a card
+            with a red dot, to drag onto the right day yourself. Auto-assign places any that are
+            still waiting. A task's remaining hours stay a card of their own either way.
+          </li>
           <li>
             Tasks the query no longer returns are marked <em>not in query</em>, not deleted.
           </li>

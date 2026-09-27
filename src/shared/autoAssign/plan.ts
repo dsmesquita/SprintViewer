@@ -1,3 +1,4 @@
+import { doneWaiting, placeDone } from '../doneHours'
 import { isContainerType } from '../grouping'
 import { moveBlock, pinBlockAt } from '../mutations'
 import { layoutSprint } from '../scheduling'
@@ -74,7 +75,8 @@ export function planAutoAssign(
     meetingsSplit: 0,
     valsChained: 0,
     valsLate: 0,
-    waitingForDev: 0
+    waitingForDev: 0,
+    donePlaced: 0
   }
 
   const baseIds = new Set(Object.values(sprint.queues).flatMap((queue) => queue.map((b) => b.id)))
@@ -299,7 +301,18 @@ export function planAutoAssign(
 
   summary.people = receivers.size
 
-  // 5. What happened to the work that was already there.
+  // 5. Done hours waiting in the backlog go onto their owner's row, where they were worked.
+  // Drawing them can push today's plan along, so with the calendar held fixed only those that
+  // move nothing already there.
+  for (const item of doneWaiting(next)) {
+    if (!ownerOf(next, item)) continue
+    const placed = placeDone(next, [item.id])
+    if (keepBase && disturbs(placed)) continue
+    next = placed
+    summary.donePlaced++
+  }
+
+  // 6. What happened to the work that was already there.
   const baseChanges: BaseChange[] = []
   const after = placementsOf(next, anchor, baseIds)
   for (const [blockId, was] of original) {

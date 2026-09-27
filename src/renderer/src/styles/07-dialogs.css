@@ -338,18 +338,9 @@ button.primary:hover {
 }
 
 /*
- * Hours reported in TFS, drawn before today. Hatched because they are a record rather than a
- * plan — but a draggable one: where they sit says when the work was done, and only the user
- * knows that.
+ * Hours reported in TFS are drawn exactly like the rest of their task: the today line is what
+ * says done from planned. The class stays for what they do differently — where they may go.
  */
-.seg.is-done {
-  background-image: repeating-linear-gradient(
-    135deg,
-    rgb(0 0 0 / 0.06) 0 5px,
-    transparent 5px 10px
-  );
-  opacity: 0.72;
-}
 
 /* The provisional landing spot while a task is being dragged. */
 .seg.is-preview {
@@ -493,4 +484,13 @@ button.primary:hover {
   width: 58px;
   padding: 1px 4px;
   font-size: 12px;
+}
+
+/* The tasks the done-hours question is about. */
+.done-list {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  max-height: 180px;
+  overflow: auto;
+  font-size: 12.5px;
 }

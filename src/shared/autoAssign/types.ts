@@ -24,6 +24,8 @@ export interface AssignSummary {
   valsLate: number
   /** VAL tasks left in the backlog because their DEV task is not planned yet. */
   waitingForDev: number
+  /** Tasks whose done hours were waiting in the backlog, now drawn where their owner worked. */
+  donePlaced: number
 }
 
 /** Which rule placed a task somewhere it could disturb other work. */

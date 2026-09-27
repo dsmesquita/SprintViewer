@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatRange } from '@shared/dates'
+import { doneWaiting } from '@shared/doneHours'
 import type { PastConflict } from '@shared/pastFit'
 import { cx, hours } from '../format'
 import {
@@ -49,6 +50,9 @@ export default function Toolbar({
   const undo = useApp((s) => s.undo)
   const undoStack = useApp((s) => s.undoStack)
 
+  // Backlog cards, or done hours waiting there to go where they were worked.
+  const somethingToAssign =
+    sprint !== null && (sprint.backlog.length > 0 || doneWaiting(sprint).length > 0)
   const first = sprint?.days[0]?.date
   const last = sprint?.days[sprint.days.length - 1]?.date
   const lastChange = undoStack[undoStack.length - 1]?.label
@@ -134,9 +138,9 @@ export default function Toolbar({
       </button>
       <button
         type="button"
-        disabled={!sprint || sprint.backlog.length === 0}
+        disabled={!sprint || !somethingToAssign}
         title={
-          sprint && sprint.backlog.length > 0
+          somethingToAssign
             ? 'Put the backlog on the calendar, by assignee and priority'
             : 'Nothing in the backlog to assign'
         }

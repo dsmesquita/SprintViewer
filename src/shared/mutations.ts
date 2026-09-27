@@ -86,16 +86,26 @@ export function pinReportedAt(
     reportedPins: {
       ...(sprint.reportedPins ?? {}),
       [workItemId]: { memberId, date, startHour: Math.max(0, startHour) }
-    }
+    },
+    // Placed on a day, they are no longer waiting in the backlog.
+    doneInBacklog: (sprint.doneInBacklog ?? []).filter((id) => id !== workItemId)
   }
 }
 
-/** Hands a work item's reported hours back to the automatic packing. */
+/**
+ * Hands a work item's reported hours back to the automatic packing — from a day they were
+ * pinned to, or from the backlog, where they were waiting.
+ */
 export function unpinReported(sprint: Sprint, workItemId: number): Sprint {
-  if (sprint.reportedPins?.[workItemId] === undefined) return sprint
-  const reportedPins = { ...sprint.reportedPins }
+  const waiting = (sprint.doneInBacklog ?? []).includes(workItemId)
+  if (sprint.reportedPins?.[workItemId] === undefined && !waiting) return sprint
+  const reportedPins = { ...(sprint.reportedPins ?? {}) }
   delete reportedPins[workItemId]
-  return { ...sprint, reportedPins }
+  return {
+    ...sprint,
+    reportedPins,
+    doneInBacklog: (sprint.doneInBacklog ?? []).filter((id) => id !== workItemId)
+  }
 }
 
 /** Hands a pinned block back to the queue, where it flows with everything else. */

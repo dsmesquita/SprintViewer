@@ -1,8 +1,10 @@
 import type { StateCreator } from 'zustand'
 import { applyCustomChoices, customConflicts } from '@shared/customHours'
+import { doneToDecide, keepDoneInBacklog, placeDone } from '@shared/doneHours'
 import { applyRefresh, type RefreshSummary } from '@shared/refresh'
 import { anchorFor } from '@shared/scheduling'
-import { anchorOf, persistSprint, UNDO_DEPTH } from './persistence'
+import { anchorOf, mutate, persistSprint, UNDO_DEPTH } from './persistence'
+import type { Sprint } from '@shared/types'
 import type { AppState, RefreshSlice } from './types'
 
 /** Re-reading the sprint from TFS, and settling any disagreement with hours set by hand. */
@@ -14,6 +16,16 @@ export const createRefreshSlice: StateCreator<AppState, [], [], RefreshSlice> = 
   refreshing: false,
   refreshStatus: null,
   pendingRefresh: null,
+  doneQuestion: null,
+
+  answerDoneQuestion: (place) => {
+    const ids = get().doneQuestion ?? []
+    set({ doneQuestion: null })
+    mutate(store, (sprint) => (place ? placeDone : keepDoneInBacklog)(sprint, ids), 'done hours')
+  },
+
+  // Not answering is not an answer: nothing is recorded, and the next refresh asks again.
+  dismissDoneQuestion: () => set({ doneQuestion: null }),
 
   refresh: async () => {
     const { sprint, today } = get()
@@ -47,7 +59,8 @@ export const createRefreshSlice: StateCreator<AppState, [], [], RefreshSlice> = 
       sprint: next,
       undoStack: [...state.undoStack, { sprint, label: 'refresh' }].slice(-UNDO_DEPTH),
       refreshing: false,
-      refreshStatus: { ok: true, text: describe(summary) }
+      refreshStatus: { ok: true, text: describe(summary) },
+      doneQuestion: askAbout(next)
     }))
     void persistSprint(store)
   },
@@ -65,7 +78,8 @@ export const createRefreshSlice: StateCreator<AppState, [], [], RefreshSlice> = 
       sprint: resolved,
       undoStack: [...state.undoStack, { sprint, label: 'refresh' }].slice(-UNDO_DEPTH),
       pendingRefresh: null,
-      refreshStatus: { ok: true, text: pendingRefresh.text }
+      refreshStatus: { ok: true, text: pendingRefresh.text },
+      doneQuestion: askAbout(resolved)
     }))
     void persistSprint(store)
   },
@@ -74,6 +88,12 @@ export const createRefreshSlice: StateCreator<AppState, [], [], RefreshSlice> = 
   cancelRefresh: () =>
     set({ pendingRefresh: null, refreshStatus: { ok: true, text: 'Refresh cancelled' } })
 })
+
+/** The done hours to ask about after a refresh or an import, or nothing to ask. */
+export function askAbout(sprint: Sprint): number[] | null {
+  const ids = doneToDecide(sprint)
+  return ids.length > 0 ? ids : null
+}
 
 /** Plain-language account of what a refresh changed. */
 function describe(summary: RefreshSummary): string {

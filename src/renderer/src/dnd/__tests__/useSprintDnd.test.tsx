@@ -315,7 +315,7 @@ describe('the drop', () => {
     expect(labels()).toEqual([])
   })
 
-  it('on the backlog: a block goes to its end; reported hours go back to automatic placement', () => {
+  it('on the backlog: a block goes to its end; done hours wait there as a card', () => {
     const { result } = render()
     start(result, a)
     end(result, a, 'backlog', 0)
@@ -332,7 +332,8 @@ describe('the drop', () => {
     start(result, reported)
     end(result, reported, 'backlog', 0)
     expect(stored().reportedPins?.[3]).toBeUndefined()
-    expect(labels()).toEqual(['reported hours'])
+    expect(stored().doneInBacklog).toEqual([3])
+    expect(labels()).toEqual(['done hours'])
   })
 
   it('a task on a locked day stays: not even the backlog takes it', () => {

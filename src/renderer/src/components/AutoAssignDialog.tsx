@@ -32,7 +32,9 @@ export default function AutoAssignDialog({
   const nameOf = (memberId: string): string =>
     sprint.members.find((member) => member.id === memberId)?.name ?? memberId
 
-  if (allow.summary.placed === 0 && (!keep || keep.summary.placed === 0)) {
+  const nothing = (plan: AssignPlan): boolean =>
+    plan.summary.placed === 0 && plan.summary.donePlaced === 0
+  if (nothing(allow) && (!keep || nothing(keep))) {
     return (
       <Dialog
         title="Nothing to assign"
@@ -51,7 +53,11 @@ export default function AutoAssignDialog({
   if (!conflicted) {
     return (
       <Dialog
-        title={`Assign ${count(allow.summary.placed, 'task')}?`}
+        title={
+          allow.summary.placed > 0
+            ? `Assign ${count(allow.summary.placed, 'task')}?`
+            : 'Place the done hours?'
+        }
         onClose={onClose}
         footer={
           <>
@@ -159,6 +165,10 @@ function because(change: BaseChange, title: (id: number) => string): string {
 
 function Summary({ summary }: { summary: AssignSummary }): JSX.Element {
   const lines: Array<[number, string]> = [
+    [
+      summary.donePlaced,
+      `${one(summary.donePlaced, "task's done hours go", "tasks' done hours go")} on the calendar, where they were worked`
+    ],
     [
       summary.meetingsSplit,
       `${one(summary.meetingsSplit, 'meeting allowance is', 'meeting allowances are')} spread over several days`

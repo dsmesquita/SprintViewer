@@ -6,6 +6,7 @@ import { freePastSpace, pastConflicts } from '@shared/pastFit'
 import { anchorFor, layoutSprint } from '@shared/scheduling'
 import AutoAssignDialog from './components/AutoAssignDialog'
 import ClearSprintDialog from './components/ClearSprintDialog'
+import DoneHoursDialog from './components/DoneHoursDialog'
 import ContextMenu from './components/ContextMenu'
 import CreateTasksDialog from './components/CreateTasksDialog'
 import { MismatchDialog, SplitQuestionDialog } from './components/DropDialogs'
@@ -43,6 +44,7 @@ export default function App(): JSX.Element {
   const sprint = useApp((s) => s.sprint)
   const loading = useApp((s) => s.loading)
   const pendingRefresh = useApp((s) => s.pendingRefresh)
+  const doneQuestion = useApp((s) => s.doneQuestion)
   const today = useApp((s) => s.today)
   const dialog = useApp((s) => s.dialog)
   const closeDialog = useApp((s) => s.closeDialog)
@@ -149,6 +151,7 @@ export default function App(): JSX.Element {
         {dialog === 'help' && <HelpDialog onClose={closeDialog} />}
         {dialog === 'create-tasks' && sprint && <CreateTasksDialog />}
         {pendingRefresh && <RefreshHoursDialog />}
+        {doneQuestion && sprint && !pendingRefresh && <DoneHoursDialog ids={doneQuestion} />}
         {showPastFit && sprint && (
           <PastFitDialog
             sprint={sprint}

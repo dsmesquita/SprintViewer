@@ -1,13 +1,20 @@
 import { useDroppable } from '@dnd-kit/core'
+import { doneWaiting } from '@shared/doneHours'
 import { emptyGroupsFor, groupBlocks, searchTextFor } from '@shared/grouping'
+import { reportedHours } from '@shared/sizing'
+import type { Block } from '@shared/types'
 import { isTagVisible, tagCounts, tagOf } from '@shared/tags'
 import { matches } from '@shared/text'
 import { cx, hours } from '../../format'
 import { BACKLOG_DROP_ID } from '../../grid'
 import { FoldIcon } from '../../icons'
 import { useApp, useSprint } from '../../store'
+import DoneCard from './DoneCard'
 import type { BlockContextMenu, GroupContextMenu } from './types'
 import TaskCard from './TaskCard'
+
+/** The id a waiting done card goes by among the backlog's blocks, to be grouped with them. */
+const DONE_PREFIX = 'done:'
 
 export default function Backlog({
   onBlockContextMenu,
@@ -34,9 +41,17 @@ export default function Backlog({
 
   // Filtering only hides cards. The backlog order is untouched, so clearing the filters puts
   // the list back exactly as it was. Both filters apply at once.
-  const visible = sprint.backlog.filter(
-    (block) => isTagVisible(sprint, block) && matches(searchTextFor(sprint, block), search)
-  )
+  const shown = (block: Block): boolean =>
+    isTagVisible(sprint, block) && matches(searchTextFor(sprint, block), search)
+  const visible = sprint.backlog.filter(shown)
+  // Done hours waiting to be placed sit with their task's other cards, under the same parent.
+  const doneCards: Block[] = doneWaiting(sprint)
+    .map((item) => ({
+      id: `${DONE_PREFIX}${item.id}`,
+      workItemId: item.id,
+      hours: reportedHours(item)
+    }))
+    .filter(shown)
   // Containers with no cards under them keep a heading, so neither a bug nobody has broken
   // down nor a story whose tasks are all placed disappears from the list. Same two filters.
   const empties = emptyGroupsFor(sprint).filter(
@@ -44,7 +59,7 @@ export default function Backlog({
       !hidden.includes(tagOf(item.title)) &&
       matches(`${item.id} ${item.title} ${item.type}`, search)
   )
-  const groups = groupBlocks(sprint, visible, empties)
+  const groups = groupBlocks(sprint, [...visible, ...doneCards], empties)
   const total = visible.reduce((sum, block) => sum + block.hours, 0)
   const searching = search.trim().length > 0
   const anyExpanded = groups.some((group) => !collapsed.includes(group.key))
@@ -164,15 +179,25 @@ export default function Backlog({
                   </p>
                 )}
                 {!isCollapsed &&
-                  group.blocks.map((block) => (
-                    <TaskCard
-                      key={block.id}
-                      block={block}
-                      isHighlighted={highlighted === block.workItemId}
-                      onHover={highlight}
-                      onBlockContextMenu={onBlockContextMenu}
-                    />
-                  ))}
+                  group.blocks.map((block) =>
+                    block.id.startsWith(DONE_PREFIX) ? (
+                      <DoneCard
+                        key={block.id}
+                        item={sprint.workItems[block.workItemId]}
+                        done={block.hours}
+                        isHighlighted={highlighted === block.workItemId}
+                        onHover={highlight}
+                      />
+                    ) : (
+                      <TaskCard
+                        key={block.id}
+                        block={block}
+                        isHighlighted={highlighted === block.workItemId}
+                        onHover={highlight}
+                        onBlockContextMenu={onBlockContextMenu}
+                      />
+                    )
+                  )}
               </div>
             )
           })}

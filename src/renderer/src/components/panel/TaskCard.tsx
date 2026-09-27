@@ -39,7 +39,8 @@ export default function TaskCard({
   const assignee = displayName(item?.assignedTo)
   // Nobody on the squad owns it in TFS — unassigned, or someone from outside the team.
   const outsider = item !== undefined && memberFor(sprint.members, item.assignedTo) === undefined
-  const done = item ? reportedHours(item) : 0
+  // Done hours waiting in the backlog have a card of their own, which says them already.
+  const done = item && !(sprint.doneInBacklog ?? []).includes(item.id) ? reportedHours(item) : 0
   const data: DragData = {
     kind: 'block',
     blockId: block.id,
