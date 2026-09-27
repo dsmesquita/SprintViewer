@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { ExportFile } from '@shared/calendarExport'
 import type { Result } from '@shared/ipc'
 import type {
   AppSettings,
@@ -55,6 +56,9 @@ const api = {
     ipcRenderer.invoke('sprint:saveSummary', sprintName, markdown),
   exportNotes: (sprintId: string): Promise<Result<string | null>> =>
     ipcRenderer.invoke('sprint:exportNotes', sprintId),
+  /** Saves calendar exports: one file where the user picks, several into a folder they pick. */
+  exportCalendar: (files: ExportFile[]): Promise<Result<string[] | null>> =>
+    ipcRenderer.invoke('sprint:exportCalendar', files),
 
   takeSnapshot: (sprint: Sprint, name: string): Promise<Result<SnapshotMeta>> =>
     ipcRenderer.invoke('snapshot:take', sprint, name),

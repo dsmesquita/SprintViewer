@@ -5,6 +5,7 @@ import { clearCalendarCost } from '@shared/mutations'
 import { freePastSpace, pastConflicts } from '@shared/pastFit'
 import { anchorFor, layoutSprint } from '@shared/scheduling'
 import AutoAssignDialog from './components/AutoAssignDialog'
+import CalendarExportDialog from './components/CalendarExportDialog'
 import ClearSprintDialog from './components/ClearSprintDialog'
 import DoneHoursDialog from './components/DoneHoursDialog'
 import ContextMenu from './components/ContextMenu'
@@ -150,6 +151,7 @@ export default function App(): JSX.Element {
         {dialog === 'summary' && sprint && <SummaryDialog />}
         {dialog === 'help' && <HelpDialog onClose={closeDialog} />}
         {dialog === 'create-tasks' && sprint && <CreateTasksDialog />}
+        {dialog === 'export-calendar' && sprint && <CalendarExportDialog />}
         {pendingRefresh && <RefreshHoursDialog />}
         {doneQuestion && sprint && !pendingRefresh && <DoneHoursDialog ids={doneQuestion} />}
         {showPastFit && sprint && (

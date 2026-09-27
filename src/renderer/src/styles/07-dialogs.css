@@ -494,3 +494,40 @@ button.primary:hover {
   overflow: auto;
   font-size: 12.5px;
 }
+
+/* A person's calendar as it will be exported: a row per day, the tasks on it. */
+.export-board + .export-board {
+  margin-top: 18px;
+}
+
+.export-board h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.export-board .hint {
+  margin: 2px 0 8px;
+}
+
+.export-board table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.export-board th,
+.export-board td {
+  border: 1px solid var(--border);
+  padding: 5px 9px;
+  text-align: left;
+}
+
+.export-board th {
+  background: var(--surface-3);
+}
+
+.export-board .export-day {
+  white-space: nowrap;
+  font-weight: 600;
+  width: 1%;
+}

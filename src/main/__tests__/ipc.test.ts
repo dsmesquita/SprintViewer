@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { registerIpc } from '../ipc'
@@ -9,6 +9,7 @@ import {
   json,
   opened,
   requests,
+  setOpenPath,
   setSavePath,
   setServer,
   userData
@@ -332,5 +333,67 @@ describe('app:openExternal opens web addresses only', () => {
       await expect(invoke('app:openExternal', url)).resolves.toBeUndefined()
     }
     expect(opened).toEqual([])
+  })
+})
+
+describe('sprint:exportCalendar saves calendar exports', () => {
+  // The smallest valid PNG header, then filler: enough for the signature check.
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]).toString(
+    'base64'
+  )
+
+  it('one file: where the Save dialog says, named after the person', async () => {
+    const target = join(userData, 'diogo.md')
+    setSavePath(target)
+    const result = await invoke<Result<string[] | null>>('sprint:exportCalendar', [
+      { name: 'Sprint 24.09 - Diogo', kind: 'md', content: '# Diogo' }
+    ])
+    expect(result).toEqual({ ok: true, value: [target] })
+    expect(dialog.lastDefaultPath).toBe('Sprint 24.09 - Diogo.md')
+    expect(await readFile(target, 'utf8')).toBe('# Diogo')
+  })
+
+  it('several files: one folder, a file each', async () => {
+    const folder = join(userData, 'exports')
+    await mkdir(folder, { recursive: true })
+    setOpenPath(folder)
+    const result = await invoke<Result<string[] | null>>('sprint:exportCalendar', [
+      { name: 'Sprint - Diogo', kind: 'png', content: png },
+      { name: 'Sprint - Sofia', kind: 'png', content: png }
+    ])
+    expect(result).toEqual({
+      ok: true,
+      value: [join(folder, 'Sprint - Diogo.png'), join(folder, 'Sprint - Sofia.png')]
+    })
+    expect((await readFile(join(folder, 'Sprint - Sofia.png')))[1]).toBe(0x50)
+  })
+
+  it('cancelled: nothing written', async () => {
+    setOpenPath(null)
+    const result = await invoke<Result<string[] | null>>('sprint:exportCalendar', [
+      { name: 'a', kind: 'md', content: '' },
+      { name: 'b', kind: 'md', content: '' }
+    ])
+    expect(result).toEqual({ ok: true, value: null })
+  })
+
+  it('refuses anything but Markdown and real PNG images', async () => {
+    setSavePath(join(userData, 'x'))
+    for (const files of [
+      [{ name: 'x', kind: 'exe', content: 'MZ' }],
+      [{ name: 'x', kind: 'png', content: Buffer.from('not an image').toString('base64') }],
+      [],
+      'nothing'
+    ]) {
+      const result = await invoke<Result<string[] | null>>('sprint:exportCalendar', files)
+      expect(result.ok).toBe(false)
+    }
+  })
+
+  it('keeps file names to letters, digits, spaces and dashes', async () => {
+    const target = join(userData, 'safe.md')
+    setSavePath(target)
+    await invoke('sprint:exportCalendar', [{ name: '../../evil:name', kind: 'md', content: '' }])
+    expect(dialog.lastDefaultPath).toBe('evilname.md')
   })
 })

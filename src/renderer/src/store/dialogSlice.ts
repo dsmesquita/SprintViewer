@@ -9,12 +9,14 @@ export const createDialogSlice: StateCreator<AppState, [], [], DialogSlice> = (s
   noteTarget: null,
   hoursTarget: null,
   createTasksParent: null,
+  exportMembers: null,
 
   openDialog: (dialog, startDateSeed) => set({ dialog, startDateSeed: startDateSeed ?? null }),
   openSplit: (blockId) => set({ dialog: 'split', splitTarget: blockId }),
   openNote: (noteTarget) => set({ dialog: 'note', noteTarget }),
   openHours: (hoursTarget) => set({ dialog: 'hours', hoursTarget }),
   openCreateTasks: (createTasksParent) => set({ dialog: 'create-tasks', createTasksParent }),
+  openExportCalendar: (exportMembers) => set({ dialog: 'export-calendar', exportMembers }),
   closeDialog: () =>
     set({
       dialog: 'none',
@@ -22,6 +24,7 @@ export const createDialogSlice: StateCreator<AppState, [], [], DialogSlice> = (s
       splitTarget: null,
       noteTarget: null,
       hoursTarget: null,
-      createTasksParent: null
+      createTasksParent: null,
+      exportMembers: null
     })
 })

@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { dialog } from 'electron'
+import type { ExportFile } from '@shared/calendarExport'
 import { notesMarkdown } from '@shared/notes'
 import { loadSnapshot, loadSprint } from '../storage'
 
@@ -9,9 +10,15 @@ import { loadSnapshot, loadSprint } from '../storage'
  * Save dialog is cancelled, which is an answer rather than an error.
  */
 
-/** A name safe to suggest in a Save dialog: letters, digits, spaces and dashes. */
+/**
+ * A name safe to suggest in a Save dialog: letters, digits, spaces, dashes and dots — "Sprint
+ * 24.09" stays as it is. No slashes means no leaving the chosen folder, and leading dots go too,
+ * so a name is never `..` or hidden.
+ */
 function safe(name: string): string {
-  return String(name).replace(/[^\w -]+/g, '')
+  return String(name)
+    .replace(/[^\w .-]+/g, '')
+    .replace(/^[.\s]+/, '')
 }
 
 async function saveAs(
@@ -58,4 +65,43 @@ export async function exportSnapshot(sprintId: string, id: string): Promise<stri
     { name: 'Snapshot', extensions: ['json'] },
     JSON.stringify(snapshot, null, 2)
   )
+}
+
+/**
+ * Calendar exports, one file per person. One file is saved where the user picks, like any
+ * other export; several go into one folder the user picks, so exporting a whole team is one
+ * question rather than one per person. Resolves to the paths written, or `null` if cancelled.
+ */
+export async function exportCalendar(files: ExportFile[]): Promise<string[] | null> {
+  const fileName = (file: ExportFile): string => `${safe(file.name) || 'Calendar'}.${file.kind}`
+  const body = (file: ExportFile): string | Buffer =>
+    file.kind === 'png' ? Buffer.from(file.content, 'base64') : file.content
+
+  if (files.length === 1) {
+    const [file] = files
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      defaultPath: fileName(file),
+      filters: [
+        file.kind === 'png'
+          ? { name: 'PNG image', extensions: ['png'] }
+          : { name: 'Markdown', extensions: ['md'] }
+      ]
+    })
+    if (canceled || !filePath) return null
+    await writeFile(filePath, body(file))
+    return [filePath]
+  }
+
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Choose a folder for the exports',
+    properties: ['openDirectory', 'createDirectory']
+  })
+  if (canceled || !filePaths?.[0]) return null
+  const written: string[] = []
+  for (const file of files) {
+    const target = path.join(filePaths[0], fileName(file))
+    await writeFile(target, body(file))
+    written.push(target)
+  }
+  return written
 }

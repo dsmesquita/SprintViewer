@@ -7,7 +7,7 @@ import type {
 } from '@shared/settings'
 import type { TaskDraft } from '@shared/taskCreation'
 import type { Sprint } from '@shared/types'
-import { exportNotes, exportSnapshot, saveSummary } from './handlers/files'
+import { exportCalendar, exportNotes, exportSnapshot, saveSummary } from './handlers/files'
 import { openInBrowser } from './handlers/links'
 import { startSprint, switchSprint } from './handlers/sprint'
 import {
@@ -34,7 +34,7 @@ import {
   takeSnapshot,
   updateSettings
 } from './storage'
-import { sanitiseDrafts, writable } from './validate'
+import { exportFiles, sanitiseDrafts, writable } from './validate'
 
 /**
  * Everything the renderer can ask the main process to do — one line per route. What each one
@@ -75,6 +75,9 @@ export function registerIpc(): void {
   )
   ipcMain.handle('sprint:exportNotes', (_event, sprintId: string) =>
     guard(() => exportNotes(sprintId))
+  )
+  ipcMain.handle('sprint:exportCalendar', (_event, files: unknown) =>
+    guard(() => exportCalendar(exportFiles(files)))
   )
 
   ipcMain.handle('snapshot:take', (_event, sprint: Sprint, name: string) =>

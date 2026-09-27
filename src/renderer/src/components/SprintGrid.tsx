@@ -1,4 +1,12 @@
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  type CSSProperties
+} from 'react'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { formatDayHeader } from '@shared/dates'
 import { effectiveCapacity, type MemberLayout } from '@shared/scheduling'
@@ -49,6 +57,21 @@ export default function SprintGrid({
   const selectedMemberId = useApp((s) => s.selectedMemberId)
   const selectedBlockId = useApp((s) => s.selectedBlockId)
   const selectMember = useApp((s) => s.selectMember)
+  const pickedMembers = useApp((s) => s.pickedMembers)
+  const pickMember = useApp((s) => s.pickMember)
+  // Ctrl+click (or Ctrl+Alt+click) picks several people, Shift+click a run of them; a plain
+  // click opens one person's panel, as it always has.
+  const onName = useCallback(
+    (memberId: string, event: React.MouseEvent): void => {
+      if (event.ctrlKey || event.metaKey) pickMember(memberId, 'toggle')
+      else if (event.shiftKey) pickMember(memberId, 'range')
+      else {
+        pickMember(memberId, 'only')
+        selectMember(memberId)
+      }
+    },
+    [pickMember, selectMember]
+  )
   const highlighted = useApp((s) => s.highlightedWorkItemId)
   const hourWidth = useApp((s) => s.hourWidth)
   const zoomBy = useApp((s) => s.zoomBy)
@@ -215,8 +238,8 @@ export default function SprintGrid({
               dayIndex={dayIndex}
               anchorIndex={anchorIndex}
               anchorLabel={anchorLabel}
-              isSelected={selectedMemberId === member.id}
-              onSelect={selectMember}
+              isSelected={selectedMemberId === member.id || pickedMembers.includes(member.id)}
+              onSelect={onName}
               highlighted={highlighted}
               selectedBlockId={selectedBlockId}
               lockedDays={lockedDays}
@@ -248,7 +271,7 @@ interface RowProps {
   anchorIndex: number | undefined
   anchorLabel: string
   isSelected: boolean
-  onSelect: (memberId: string) => void
+  onSelect: (memberId: string, event: React.MouseEvent) => void
   highlighted: number | null
   selectedBlockId: string | null
   lockedDays: Set<string>
@@ -322,9 +345,9 @@ const MemberRow = memo(function MemberRow({
       <button
         type="button"
         className={cx('row-name', isSelected && 'is-selected')}
-        onClick={() => onSelect(member.id)}
+        onClick={(event) => onSelect(member.id, event)}
         onContextMenu={(event) => onMemberContextMenu(member.id, event)}
-        title={`Open ${member.name}'s panel — right-click to add a note`}
+        title={`Open ${member.name}'s panel — right-click to add a note or export the calendar`}
       >
         <span className="who">{member.name}</span>
         {layout.spillover > 0 && (

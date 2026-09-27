@@ -45,6 +45,7 @@ export function fakeApi(overrides: Record<string, unknown> = {}) {
     ),
     saveSummary: vi.fn<Api['saveSummary']>(async () => ok(null)),
     exportNotes: vi.fn<Api['exportNotes']>(async () => ok(null)),
+    exportCalendar: vi.fn<Api['exportCalendar']>(async () => ok(null)),
     takeSnapshot: vi.fn<Api['takeSnapshot']>(async () =>
       ok({ id: 's', sprintId: '', name: '', takenAt: '' })
     ),

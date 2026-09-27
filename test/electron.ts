@@ -58,11 +58,18 @@ let savePath: string | null = null
 export function setSavePath(path: string | null): void {
   savePath = path
 }
+/** The folder the next folder picker "chooses"; `null` means the user cancelled. */
+let openPath: string | null = null
+export function setOpenPath(path: string | null): void {
+  openPath = path
+}
 export const dialog = {
   showSaveDialog: async (options: { defaultPath?: string }) => {
     dialog.lastDefaultPath = options.defaultPath
     return savePath ? { canceled: false, filePath: savePath } : { canceled: true, filePath: '' }
   },
+  showOpenDialog: async () =>
+    openPath ? { canceled: false, filePaths: [openPath] } : { canceled: true, filePaths: [] },
   lastDefaultPath: undefined as string | undefined
 }
 

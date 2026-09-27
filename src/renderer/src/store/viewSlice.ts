@@ -4,9 +4,11 @@ import { DEFAULT_HOUR_W, HOUR_W_STEPS, stepZoom } from '../grid'
 import type { AppState, ViewSlice } from './types'
 
 /** What is being looked at, and how. None of it is part of the plan or undoable. */
-export const createViewSlice: StateCreator<AppState, [], [], ViewSlice> = (set) => ({
+export const createViewSlice: StateCreator<AppState, [], [], ViewSlice> = (set, get) => ({
   today: todayISO(),
   selectedMemberId: null,
+  pickedMembers: [],
+  pickAnchor: null,
   selectedWorkItemId: null,
   selectedBlockId: null,
   panelCollapsed: false,
@@ -18,6 +20,30 @@ export const createViewSlice: StateCreator<AppState, [], [], ViewSlice> = (set) 
 
   selectMember: (memberId) =>
     set({ selectedMemberId: memberId, panelTab: 'person', panelCollapsed: false }),
+  pickMember: (memberId, mode) => {
+    const { pickedMembers, pickAnchor, selectedMemberId, sprint } = get()
+    if (mode === 'only') {
+      set({ pickedMembers: [], pickAnchor: memberId })
+      return
+    }
+    // The name whose panel is open counts as picked: Ctrl+click on a second name picks both.
+    const current =
+      pickedMembers.length === 0 && selectedMemberId ? [selectedMemberId] : pickedMembers
+    if (mode === 'toggle') {
+      set({
+        pickedMembers: current.includes(memberId)
+          ? current.filter((id) => id !== memberId)
+          : [...current, memberId],
+        pickAnchor: memberId
+      })
+      return
+    }
+    const order = (sprint?.members ?? []).map((member) => member.id)
+    const from = order.indexOf(pickAnchor ?? selectedMemberId ?? memberId)
+    const to = order.indexOf(memberId)
+    if (from < 0 || to < 0) return
+    set({ pickedMembers: order.slice(Math.min(from, to), Math.max(from, to) + 1) })
+  },
   selectTask: (selectedWorkItemId, blockId) =>
     set({
       selectedWorkItemId,

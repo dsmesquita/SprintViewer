@@ -1,3 +1,4 @@
+import type { ExportFile } from '@shared/calendarExport'
 import type { WritableSettings } from '@shared/settings'
 import { parseTags, type TaskDraft } from '@shared/taskCreation'
 
@@ -74,4 +75,29 @@ export function webUrl(value: unknown): string | null {
   } catch {
     return null
   }
+}
+
+/** The first bytes of every PNG file. */
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+
+/**
+ * Calendar export files as the renderer sends them, checked: a name, a known kind, and content
+ * of that kind — Markdown as text, a PNG as base64 that really is a PNG image. Anything else is
+ * refused rather than written.
+ */
+export function exportFiles(value: unknown): ExportFile[] {
+  if (!Array.isArray(value) || value.length === 0) throw new Error('Nothing to export.')
+  return value.map((file): ExportFile => {
+    const name = typeof file?.name === 'string' ? file.name : ''
+    const content = typeof file?.content === 'string' ? file.content : ''
+    if (file?.kind === 'md') return { name, kind: 'md', content }
+    if (file?.kind === 'png') {
+      const bytes = Buffer.from(content, 'base64')
+      if (!PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)) {
+        throw new Error('The image to export is not a PNG.')
+      }
+      return { name, kind: 'png', content }
+    }
+    throw new Error('Only Markdown and PNG files can be exported.')
+  })
 }

@@ -158,6 +158,17 @@ const SECTIONS: Section[] = [
             <strong>Rows</strong> are people; click a name to open their panel on the right.
           </li>
           <li>
+            Right-click a name and choose <strong>Export calendar…</strong> for a simple board of
+            their sprint — a row per day, and the tasks on it, like{' '}
+            <code>#15243 (DEV) / #12345 (VAL)</code> — saved as Markdown or as a PNG image. Meetings
+            are left out unless you tick <em>Show meetings</em>.
+          </li>
+          <li>
+            <Keys>Ctrl</Keys>+click names to pick several people, or <Keys>Shift</Keys>+click to
+            pick everyone between two names; right-click one of them to export all their calendars
+            at once, a file each, into a folder you choose.
+          </li>
+          <li>
             <strong>Columns</strong> are days, cut into the hours of a working day (8 by default).
           </li>
           <li>

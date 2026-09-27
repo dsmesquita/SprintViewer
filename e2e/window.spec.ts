@@ -28,6 +28,7 @@ test('the page gets window.api and nothing else from Node or Electron', async ({
       'createTasks',
       'deleteSnapshot',
       'ensureBaseline',
+      'exportCalendar',
       'exportNotes',
       'exportSnapshot',
       'getAppVersion',

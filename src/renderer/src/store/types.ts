@@ -23,6 +23,7 @@ export type DialogKind =
   | 'create-tasks'
   | 'summary'
   | 'help'
+  | 'export-calendar'
 
 /** What the note dialog opens on: an existing note, or a blank one seeded from context. */
 export interface NoteTarget {
@@ -130,7 +131,13 @@ export interface ViewSlice {
   /** The anchor for the layout engine: days before it are history, days after are planned. */
   today: ISODate
   selectedMemberId: string | null
-  /** The task the Task tab is describing, set by clicking a block on the calendar. */
+  /**
+   * People picked on the calendar with Ctrl+click or Shift+click, for acting on several at once
+   * (exporting their calendars). A plain click clears it.
+   */
+  pickedMembers: string[]
+  /** The last name clicked, where a Shift+click range starts. */
+  pickAnchor: string | null
   selectedWorkItemId: number | null
   /**
    * The block that was clicked, which is what Shift + ←/→ moves. The work item alone is not
@@ -155,6 +162,11 @@ export interface ViewSlice {
   collapsedGroups: string[]
 
   selectMember: (memberId: string) => void
+  /**
+   * A click on a person's name: `toggle` (Ctrl) adds or removes them, `range` (Shift) picks
+   * everyone from the last one clicked to them, `only` (a plain click) starts again from them.
+   */
+  pickMember: (memberId: string, mode: 'toggle' | 'range' | 'only') => void
   selectTask: (workItemId: number, blockId?: string) => void
   /** Drops the task the panel is describing, and leaves the Task tab if that is where we are. */
   clearTask: () => void
@@ -181,12 +193,15 @@ export interface DialogSlice {
   hoursTarget: number | null
   /** The Bug or User Story new tasks are being created under. */
   createTasksParent: number | null
+  /** The people whose calendars are being exported. */
+  exportMembers: string[] | null
 
   openDialog: (dialog: DialogKind, startDateSeed?: ISODate) => void
   openSplit: (blockId: string) => void
   openNote: (target: NoteTarget) => void
   openHours: (workItemId: number) => void
   openCreateTasks: (parentId: number) => void
+  openExportCalendar: (memberIds: string[]) => void
   closeDialog: () => void
 }
 

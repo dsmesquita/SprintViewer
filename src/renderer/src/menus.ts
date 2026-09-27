@@ -16,6 +16,7 @@ export function useContextMenus(sprint: Sprint | null) {
   const openDialog = useApp((s) => s.openDialog)
   const openSplit = useApp((s) => s.openSplit)
   const openNote = useApp((s) => s.openNote)
+  const openExportCalendar = useApp((s) => s.openExportCalendar)
   const openHours = useApp((s) => s.openHours)
   const openCreateTasks = useApp((s) => s.openCreateTasks)
   const moveBlock = useApp((s) => s.moveBlock)
@@ -49,14 +50,29 @@ export function useContextMenus(sprint: Sprint | null) {
       event.preventDefault()
       if (!sprint) return
       const member = sprint.members.find((m) => m.id === memberId)
+      // Right-clicking one of several picked people exports them all; anyone else, just them.
+      const picked = useApp.getState().pickedMembers
+      const exporting =
+        picked.length > 1 && picked.includes(memberId)
+          ? sprint.members.filter((m) => picked.includes(m.id)).map((m) => m.id)
+          : [memberId]
       setMenu({
         x: event.clientX,
         y: event.clientY,
         label: member?.name,
-        items: [{ label: 'Add note…', onSelect: () => openNote({ memberId }) }]
+        items: [
+          { label: 'Add note…', onSelect: () => openNote({ memberId }) },
+          {
+            label:
+              exporting.length > 1
+                ? `Export calendars… (${exporting.length} people)`
+                : 'Export calendar…',
+            onSelect: () => openExportCalendar(exporting)
+          }
+        ]
       })
     },
-    [sprint, openNote]
+    [sprint, openNote, openExportCalendar]
   )
 
   const onReportedContextMenu = useCallback(

@@ -370,3 +370,36 @@ describe('view state', () => {
     })
   })
 })
+
+describe('picking several people', () => {
+  // The fixture sprint has Diogo and Sofia; a third makes ranges worth testing.
+  beforeEach(() => {
+    const s = useApp.getState().sprint!
+    useApp.setState({
+      sprint: { ...s, members: [...s.members, { id: 'rui', name: 'Rui', order: 2 }] }
+    })
+  })
+  const picked = () => useApp.getState().pickedMembers
+
+  it('Ctrl+click adds and removes, starting from the person whose panel is open', () => {
+    useApp.getState().selectMember('diogo')
+    useApp.getState().pickMember('sofia', 'toggle')
+    expect(picked()).toEqual(['diogo', 'sofia'])
+    useApp.getState().pickMember('diogo', 'toggle')
+    expect(picked()).toEqual(['sofia'])
+  })
+
+  it('Shift+click picks everyone from the last name clicked, in row order', () => {
+    useApp.getState().pickMember('rui', 'only')
+    useApp.getState().pickMember('diogo', 'range')
+    expect(picked()).toEqual(['diogo', 'sofia', 'rui'])
+  })
+
+  it('a plain click starts again', () => {
+    useApp.getState().pickMember('sofia', 'toggle')
+    useApp.getState().pickMember('rui', 'toggle')
+    useApp.getState().pickMember('diogo', 'only')
+    expect(picked()).toEqual([])
+    expect(useApp.getState().pickAnchor).toBe('diogo')
+  })
+})
