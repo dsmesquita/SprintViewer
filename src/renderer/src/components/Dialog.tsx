@@ -7,10 +7,19 @@ interface Props {
   footer: ReactNode
   /** A reading-sized dialog, for long content such as the Read me. */
   wide?: boolean
+  /** An extra class on the dialog, for one that needs its own shape. */
+  className?: string
 }
 
 /** Modal shell. Escape closes it; clicking the backdrop does not, to protect typed input. */
-export default function Dialog({ title, onClose, children, footer, wide }: Props): JSX.Element {
+export default function Dialog({
+  title,
+  onClose,
+  children,
+  footer,
+  wide,
+  className
+}: Props): JSX.Element {
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') onClose()
@@ -22,7 +31,7 @@ export default function Dialog({ title, onClose, children, footer, wide }: Props
   return (
     <div className="backdrop">
       <div
-        className={wide ? 'dialog is-wide' : 'dialog'}
+        className={['dialog', wide && 'is-wide', className].filter(Boolean).join(' ')}
         role="dialog"
         aria-modal="true"
         aria-label={title}

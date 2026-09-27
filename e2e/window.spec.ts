@@ -180,3 +180,38 @@ test('the ⓘ in the corner explains the keys and marks; Shift+wheel scrolls sid
   await page.keyboard.up('Shift')
   await expect.poll(() => calendar.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0)
 })
+
+test('the Read me keeps one size; long sections and the contents scroll inside it', async ({
+  launch
+}) => {
+  const { app, page } = await launch()
+  await page.getByRole('button', { name: 'Read me' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Read me — Sprint Viewer' })
+  const body = dialog.locator('.help-body')
+  const size = async () => {
+    const box = (await dialog.boundingBox())!
+    return [Math.round(box.width), Math.round(box.height)]
+  }
+
+  const first = await size()
+  const sections = dialog.locator('.help-toc-item')
+  let scrolls = 0
+  for (let index = 0; index < (await sections.count()); index++) {
+    await sections.nth(index).click()
+    expect(await size()).toEqual(first)
+    if (await body.evaluate((el) => el.scrollHeight > el.clientHeight)) scrolls++
+  }
+  // Some sections are longer than the dialog: those scroll inside it.
+  expect(scrolls).toBeGreaterThan(0)
+
+  // In a small window the dialog shrinks to fit, and the contents list scrolls on its own.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1024, 640))
+  await expect.poll(async () => (await size())[1]).toBeLessThan(first[1])
+  const box = (await dialog.boundingBox())!
+  const viewport = await page.evaluate(() => window.innerHeight)
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport)
+  const toc = dialog.locator('.help-toc')
+  expect(await toc.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true)
+  await toc.evaluate((el) => el.scrollTo(0, el.scrollHeight))
+  await expect(sections.last()).toBeInViewport()
+})

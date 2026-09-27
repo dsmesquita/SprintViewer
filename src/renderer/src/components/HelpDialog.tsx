@@ -28,6 +28,7 @@ export default function HelpDialog({ onClose }: Props): JSX.Element {
       title="Read me — Sprint Viewer"
       onClose={onClose}
       wide
+      className="is-help"
       footer={
         <>
           <button

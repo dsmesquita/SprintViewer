@@ -5,11 +5,25 @@
   max-width: none;
 }
 
+/*
+ * The Read me keeps one size, taken from the window, whichever section is open: switching
+ * sections never makes it jump. The contents and the section each scroll on their own, only
+ * when they have to.
+ */
+.dialog.is-help {
+  height: min(760px, calc(100vh - 48px));
+}
+
+.dialog.is-help .dialog-body {
+  overflow: hidden;
+  padding-right: 4px;
+}
+
 .help {
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr);
   gap: 18px;
-  min-height: min(520px, 60vh);
+  height: 100%;
 }
 
 .help-toc {
@@ -18,6 +32,8 @@
   gap: 1px;
   border-right: 1px solid var(--border);
   padding-right: 10px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .help-toc-item {
@@ -53,8 +69,15 @@
 }
 
 .help-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 10px;
   font-size: 13.5px;
   line-height: 1.55;
+}
+
+/* A comfortable line length for reading, while the scrollbar stays at the column's edge. */
+.help-body > * {
   max-width: 64ch;
 }
 
@@ -106,6 +129,7 @@
 @media (max-width: 640px) {
   .help {
     grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .help-toc {
