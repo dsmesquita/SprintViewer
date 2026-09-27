@@ -92,6 +92,9 @@ export interface BoardSlice {
   unlockDay: (date: ISODate) => void
   toggleTag: (tag: string) => void
   showAllTags: () => void
+  /** Hides a task's backlog cards; placing it anywhere shows it again. */
+  hideInBacklog: (workItemId: number) => void
+  unhideInBacklog: (workItemId: number) => void
   /**
    * Creates tasks in TFS and adds whatever was created to the backlog. Resolves to the
    * server's answer, or to a message when the request could not be made at all.
@@ -160,6 +163,8 @@ export interface ViewSlice {
   backlogSearch: string
   /** Keys of backlog groups the user has folded away. */
   collapsedGroups: string[]
+  /** Whether the backlog lists the tasks hidden from it, dimmed, so they can be unhidden. */
+  showHiddenBacklog: boolean
 
   selectMember: (memberId: string) => void
   /**
@@ -178,6 +183,7 @@ export interface ViewSlice {
   setBacklogSearch: (search: string) => void
   toggleGroup: (key: string) => void
   setCollapsedGroups: (keys: string[]) => void
+  setShowHiddenBacklog: (show: boolean) => void
 }
 
 /** Which dialog is open, and what it is acting on. */

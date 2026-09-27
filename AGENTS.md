@@ -115,6 +115,7 @@ src/shared/          pure domain logic — no React, no Electron, no DOM, no zus
   sizing.ts            how big a task is (Remaining + Completed), the off-track rule
   math.ts              round (to the hundredth) and clamp — use these, not local copies
   sprintSummary.ts     Markdown sprint summary for an AI write-up
+  hiddenBacklog.ts     tasks hidden from the backlog; placing one clears its mark (in `mutate`)
   calendarExport.ts    a person's calendar as a day-by-day board (Export calendar…), and as
                        Markdown; the renderer draws the PNG (renderer/src/export/png.ts)
   snapshots.ts, baseline.ts, notes.ts, squad.ts, taskCreation.ts, tags.ts, grouping.ts,

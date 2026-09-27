@@ -1,6 +1,7 @@
 import { useDroppable } from '@dnd-kit/core'
 import { doneWaiting } from '@shared/doneHours'
 import { emptyGroupsFor, groupBlocks, searchTextFor } from '@shared/grouping'
+import { hiddenInBacklog, shownBacklog } from '@shared/hiddenBacklog'
 import { reportedHours } from '@shared/sizing'
 import type { Block } from '@shared/types'
 import { isTagVisible, tagCounts, tagOf } from '@shared/tags'
@@ -32,20 +33,36 @@ export default function Backlog({
   const toggleGroup = useApp((s) => s.toggleGroup)
   const setCollapsedGroups = useApp((s) => s.setCollapsedGroups)
   const toggleTag = useApp((s) => s.toggleTag)
+  const showHidden = useApp((s) => s.showHiddenBacklog)
+  const setShowHidden = useApp((s) => s.setShowHiddenBacklog)
+  const unhide = useApp((s) => s.unhideInBacklog)
   const { setNodeRef, isOver } = useDroppable({ id: BACKLOG_DROP_ID })
+
+  // Tasks hidden from the backlog are left out of everything — cards, counts, hours, tags —
+  // unless the user asks to see them, and even then they are listed but not counted.
+  const hiddenTasks = hiddenInBacklog(sprint)
+  const counted = shownBacklog(sprint)
+  const pool = showHidden ? sprint.backlog : counted
+  const hiddenCount = [...hiddenTasks].filter(
+    (id) =>
+      sprint.backlog.some((block) => block.workItemId === id) ||
+      doneWaiting(sprint).some((item) => item.id === id)
+  ).length
 
   // Counted over the whole backlog rather than what is currently shown, so a chip never
   // vanishes while it is switched off — you would have no way to switch it back on.
-  const tags = tagCounts(sprint, sprint.backlog)
+  const tags = tagCounts(sprint, pool)
   const hidden = sprint.hiddenTags ?? []
 
   // Filtering only hides cards. The backlog order is untouched, so clearing the filters puts
   // the list back exactly as it was. Both filters apply at once.
   const shown = (block: Block): boolean =>
     isTagVisible(sprint, block) && matches(searchTextFor(sprint, block), search)
-  const visible = sprint.backlog.filter(shown)
+  const visible = pool.filter(shown)
+  const visibleCounted = visible.filter((block) => !hiddenTasks.has(block.workItemId))
   // Done hours waiting to be placed sit with their task's other cards, under the same parent.
   const doneCards: Block[] = doneWaiting(sprint)
+    .filter((item) => showHidden || !hiddenTasks.has(item.id))
     .map((item) => ({
       id: `${DONE_PREFIX}${item.id}`,
       workItemId: item.id,
@@ -60,7 +77,7 @@ export default function Backlog({
       matches(`${item.id} ${item.title} ${item.type}`, search)
   )
   const groups = groupBlocks(sprint, [...visible, ...doneCards], empties)
-  const total = visible.reduce((sum, block) => sum + block.hours, 0)
+  const total = visibleCounted.reduce((sum, block) => sum + block.hours, 0)
   const searching = search.trim().length > 0
   const anyExpanded = groups.some((group) => !collapsed.includes(group.key))
 
@@ -108,13 +125,24 @@ export default function Backlog({
         </div>
       )}
 
+      {hiddenCount > 0 && (
+        <label className="hidden-toggle">
+          <input
+            type="checkbox"
+            checked={showHidden}
+            onChange={(event) => setShowHidden(event.target.checked)}
+          />
+          Show hidden ({hiddenCount})
+        </label>
+      )}
+
       {groups.length > 0 ? (
         <>
           <div className="row" style={{ alignItems: 'baseline' }}>
             <p className="section-title" style={{ flex: 1, margin: '4px 0 8px' }}>
               {searching || hidden.length > 0
-                ? `${visible.length} of ${sprint.backlog.length} · ${hours(total)}`
-                : `Unassigned · ${hours(total)} across ${sprint.backlog.length} items`}
+                ? `${visibleCounted.length} of ${counted.length} · ${hours(total)}`
+                : `Unassigned · ${hours(total)} across ${counted.length} items`}
             </p>
             {!searching && groups.length > 1 && (
               <button
@@ -187,6 +215,8 @@ export default function Backlog({
                         done={block.hours}
                         isHighlighted={highlighted === block.workItemId}
                         onHover={highlight}
+                        onBlockContextMenu={onBlockContextMenu}
+                        onUnhide={hiddenTasks.has(block.workItemId) ? unhide : undefined}
                       />
                     ) : (
                       <TaskCard
@@ -195,6 +225,7 @@ export default function Backlog({
                         isHighlighted={highlighted === block.workItemId}
                         onHover={highlight}
                         onBlockContextMenu={onBlockContextMenu}
+                        onUnhide={hiddenTasks.has(block.workItemId) ? unhide : undefined}
                       />
                     )
                   )}
@@ -202,11 +233,17 @@ export default function Backlog({
             )
           })}
         </>
-      ) : sprint.backlog.length === 0 ? (
+      ) : pool.length === 0 && doneCards.length === 0 ? (
         <p className="empty">
           Everything is scheduled.
           <br />
           Drop a task here to unschedule it.
+          {hiddenCount > 0 && (
+            <>
+              <br />
+              {hiddenCount} hidden {hiddenCount === 1 ? 'task waits' : 'tasks wait'} here.
+            </>
+          )}
         </p>
       ) : (
         <p className="empty">

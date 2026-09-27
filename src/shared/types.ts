@@ -195,6 +195,11 @@ export interface Sprint {
   doneInBacklog?: number[]
   /** Tasks already asked about after a refresh — where their done hours go — so each once. */
   doneDecided?: number[]
+  /**
+   * Tasks hidden from the backlog (`hiddenBacklog.ts`). Placing one on a calendar clears its
+   * mark; auto-assign places them like any other task.
+   */
+  hiddenBacklog?: number[]
   /** TFS query the work items were imported from. */
   queryUrl?: string
   lastRefreshedAt?: string

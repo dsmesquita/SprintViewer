@@ -1,4 +1,5 @@
 import type { StoreApi } from 'zustand'
+import { forgetPlacedHidden } from '@shared/hiddenBacklog'
 import { alignReportedOnly } from '@shared/refresh'
 import { anchorFor, recordPast } from '@shared/scheduling'
 import type { ISODate, Sprint } from '@shared/types'
@@ -31,7 +32,8 @@ export function mutate(
 ): void {
   const { sprint, undoStack } = store.getState()
   if (!sprint) return
-  const next = transform(sprint)
+  // A hidden task that this change placed on a calendar is hidden no longer (hiddenBacklog.ts).
+  const next = forgetPlacedHidden(sprint, transform(sprint))
   if (next === sprint) return
   store.setState({
     sprint: next,

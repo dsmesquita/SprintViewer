@@ -21,13 +21,16 @@ interface TaskCardProps {
   isHighlighted: boolean
   onHover: (workItemId: number | null) => void
   onBlockContextMenu: BlockContextMenu
+  /** Set when the task is hidden from the backlog and shown anyway: brings it back. */
+  onUnhide?: (workItemId: number) => void
 }
 
 export default function TaskCard({
   block,
   isHighlighted,
   onHover,
-  onBlockContextMenu
+  onBlockContextMenu,
+  onUnhide
 }: TaskCardProps): JSX.Element {
   const sprint = useSprint()
   const item = sprint.workItems[block.workItemId]
@@ -69,7 +72,8 @@ export default function TaskCard({
         outsider && 'is-outsider',
         isHighlighted && 'is-highlighted',
         isDragging && 'is-dragging',
-        block.hours > 0 && 'is-draggable'
+        block.hours > 0 && 'is-draggable',
+        onUnhide && 'is-hidden-card'
       )}
       title={
         outsider
@@ -103,6 +107,16 @@ export default function TaskCard({
           {item?.type ?? 'Task'}
         </span>
         <span className="task-type">{item?.missingFromQuery ? 'not in query' : item?.state}</span>
+        {onUnhide && (
+          <button
+            type="button"
+            className="ghost unhide-button"
+            onClick={() => onUnhide(block.workItemId)}
+            title="Show it in the backlog again"
+          >
+            Unhide
+          </button>
+        )}
       </div>
       <div className="task-title">{item?.title ?? 'Unknown work item'}</div>
       <div className="task-meta">

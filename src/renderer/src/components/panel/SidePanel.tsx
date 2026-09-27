@@ -1,3 +1,4 @@
+import { shownBacklog } from '@shared/hiddenBacklog'
 import type { MemberLayout } from '@shared/scheduling'
 import { cx, hours } from '../../format'
 import { ChevronIcon } from '../../icons'
@@ -48,7 +49,7 @@ export default function SidePanel({
           </button>
         </div>
         <div className="panel-collapsed-label">
-          Backlog · {hours(sprint.backlog.reduce((sum, b) => sum + b.hours, 0))}
+          Backlog · {hours(shownBacklog(sprint).reduce((sum, b) => sum + b.hours, 0))}
         </div>
       </aside>
     )

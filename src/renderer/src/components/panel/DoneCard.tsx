@@ -4,6 +4,7 @@ import type { WorkItem } from '@shared/types'
 import { cx, hours, toneFor } from '../../format'
 import { DRAG_ID_PREFIX, type DragData } from '../../grid'
 import { ExternalIcon } from '../../icons'
+import type { BlockContextMenu } from './types'
 
 interface DoneCardProps {
   item: WorkItem
@@ -11,6 +12,9 @@ interface DoneCardProps {
   done: number
   isHighlighted: boolean
   onHover: (workItemId: number | null) => void
+  onBlockContextMenu: BlockContextMenu
+  /** Set when the task is hidden from the backlog and shown anyway: brings it back. */
+  onUnhide?: (workItemId: number) => void
 }
 
 /**
@@ -22,7 +26,9 @@ export default function DoneCard({
   item,
   done,
   isHighlighted,
-  onHover
+  onHover,
+  onBlockContextMenu,
+  onUnhide
 }: DoneCardProps): JSX.Element {
   const assignee = displayName(item.assignedTo)
   const data: DragData = { kind: 'reported', workItemId: item.id, hours: done }
@@ -41,11 +47,15 @@ export default function DoneCard({
         'is-done-card',
         isHighlighted && 'is-highlighted',
         isDragging && 'is-dragging',
-        'is-draggable'
+        'is-draggable',
+        onUnhide && 'is-hidden-card'
       )}
       title="Hours already done — drag them onto the day they were worked, or onto today"
       onMouseEnter={() => onHover(item.id)}
       onMouseLeave={() => onHover(null)}
+      onContextMenu={(event) =>
+        onBlockContextMenu(`done:${item.id}`, event, `#${item.id} ${item.title} · done hours`)
+      }
     >
       <span className="done-dot" aria-label="Done hours" />
       <div className="task-top">
@@ -61,6 +71,16 @@ export default function DoneCard({
           {item.type}
         </span>
         <span className="task-type">{item.state}</span>
+        {onUnhide && (
+          <button
+            type="button"
+            className="ghost unhide-button"
+            onClick={() => onUnhide(item.id)}
+            title="Show it in the backlog again"
+          >
+            Unhide
+          </button>
+        )}
       </div>
       <div className="task-title">{item.title}</div>
       <div className="task-meta">

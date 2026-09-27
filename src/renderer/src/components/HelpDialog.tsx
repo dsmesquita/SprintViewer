@@ -287,6 +287,13 @@ const SECTIONS: Section[] = [
           <li>
             <strong>Clear</strong> sends every task back to the backlog (locked days keep theirs).
           </li>
+          <li>
+            Right-click a backlog card and choose <strong>Hide from backlog</strong> for work nobody
+            will pick up, such as deprecated tasks. It leaves the list and the backlog's hours; tick{' '}
+            <em>Show hidden</em> to see it again, dimmed, with an <strong>Unhide</strong> button.
+            Once a hidden task is placed on a calendar — by you or by Auto-assign — it is no longer
+            hidden, even if it goes back to the backlog.
+          </li>
         </ul>
         <h4>Set hours</h4>
         <p>
@@ -397,6 +404,7 @@ const SECTIONS: Section[] = [
         <ul>
           <li>Nobody is put over their capacity. What does not fit stays in the backlog.</li>
           <li>Tasks assigned to nobody on the team stay in the backlog.</li>
+          <li>Hidden backlog tasks are placed like any other, and stop being hidden.</li>
           <li>
             <strong>Meetings</strong> (a task titled just "Meeting" or "Meetings", or starting with
             it and a colon, like "Meetings:: Tech talk + Others") are split into 2–5 pieces and

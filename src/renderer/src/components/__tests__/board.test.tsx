@@ -1,5 +1,5 @@
 import { DndContext } from '@dnd-kit/core'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -219,6 +219,53 @@ describe('App', () => {
     expect(useApp.getState().sprint!.queues.sofia).toHaveLength(1)
     await user.keyboard('{Control>}z{/Control}')
     expect(useApp.getState().sprint!.queues.sofia).toHaveLength(0)
+  })
+
+  it('a backlog task can be hidden, shown dimmed on request, and unhidden', async () => {
+    fake.saved.set('test', board())
+    fake.setSettings({ activeSprintId: 'test' })
+    render(<App />)
+    await screen.findByText('Diogo')
+    const user = userEvent.setup()
+    const card = (title: string) =>
+      [...document.querySelectorAll('.task-card')].find((c) => c.textContent?.includes(title))
+    expect(screen.getByText('Unassigned · 6h across 3 items')).toBeInTheDocument()
+
+    fireEvent.contextMenu(card('Nobody’s')!)
+    await user.click(screen.getByRole('menuitem', { name: 'Hide from backlog' }))
+    expect(card('Nobody’s')).toBeUndefined()
+    // Out of the counts and the hours: in the header, and on the folded panel.
+    expect(screen.getByText('Unassigned · 3h across 2 items')).toBeInTheDocument()
+    act(() => useApp.getState().togglePanel())
+    expect(screen.getByText('Backlog · 3h')).toBeInTheDocument()
+    act(() => useApp.getState().togglePanel())
+
+    await user.click(screen.getByRole('checkbox', { name: 'Show hidden (1)' }))
+    expect(card('Nobody’s')).toHaveClass('is-hidden-card')
+    expect(screen.getByText('Unassigned · 3h across 2 items')).toBeInTheDocument()
+
+    // Right-click offers the way back too; the button on the card is the quick one.
+    fireEvent.contextMenu(card('Nobody’s')!)
+    expect(screen.getByRole('menuitem', { name: 'Unhide' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    await user.click(
+      within(card('Nobody’s') as HTMLElement).getByRole('button', { name: 'Unhide' })
+    )
+    expect(card('Nobody’s')).not.toHaveClass('is-hidden-card')
+    expect(screen.queryByRole('checkbox', { name: /Show hidden/ })).not.toBeInTheDocument()
+    expect(screen.getByText('Unassigned · 6h across 3 items')).toBeInTheDocument()
+  })
+
+  it('placing a hidden task clears its mark; undo brings the mark back with it', () => {
+    useApp.setState({ sprint: { ...board(), hiddenBacklog: [3] } })
+    useApp.getState().pinBlock('c', 'sofia', MON, 0)
+    expect(useApp.getState().sprint!.hiddenBacklog).toEqual([])
+    // Sent back to the backlog, it is shown: hidden only if hidden again.
+    useApp.getState().moveBlock('c', { kind: 'backlog' }, 0)
+    expect(useApp.getState().sprint!.hiddenBacklog).toEqual([])
+    useApp.getState().undo()
+    useApp.getState().undo()
+    expect(useApp.getState().sprint!.hiddenBacklog).toEqual([3])
   })
 
   it('the empty state offers the Read me', async () => {

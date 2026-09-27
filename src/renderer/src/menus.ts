@@ -22,6 +22,8 @@ export function useContextMenus(sprint: Sprint | null) {
   const moveBlock = useApp((s) => s.moveBlock)
   const unpinBlock = useApp((s) => s.unpinBlock)
   const unpinReported = useApp((s) => s.unpinReported)
+  const hideInBacklog = useApp((s) => s.hideInBacklog)
+  const unhideInBacklog = useApp((s) => s.unhideInBacklog)
   const setDayCapacity = useApp((s) => s.setDayCapacity)
   const setMemberCapacity = useApp((s) => s.setMemberCapacity)
 
@@ -127,7 +129,23 @@ export function useContextMenus(sprint: Sprint | null) {
     (blockId: string, event: React.MouseEvent, label: string): void => {
       event.preventDefault()
       if (!sprint) return
-      const found = findBlock(sprint, blockId)
+      // Hiding is for whatever waits in the backlog: a task's card, or its done hours.
+      const waiting = blockId.startsWith('done:')
+        ? Number(blockId.slice('done:'.length))
+        : undefined
+      const found = waiting === undefined ? findBlock(sprint, blockId) : undefined
+      const inBacklog =
+        waiting ?? (found?.location.kind === 'backlog' ? found.block.workItemId : null)
+      const hideItems =
+        inBacklog === null
+          ? []
+          : (sprint.hiddenBacklog ?? []).includes(inBacklog)
+            ? [{ label: 'Unhide', onSelect: () => unhideInBacklog(inBacklog) }]
+            : [{ label: 'Hide from backlog', onSelect: () => hideInBacklog(inBacklog) }]
+      if (waiting !== undefined) {
+        setMenu({ x: event.clientX, y: event.clientY, label, items: hideItems })
+        return
+      }
       setMenu({
         x: event.clientX,
         y: event.clientY,
@@ -156,11 +174,12 @@ export function useContextMenus(sprint: Sprint | null) {
                   onSelect: () => moveBlock(blockId, { kind: 'backlog' }, sprint.backlog.length)
                 }
               ]
-            : [])
+            : []),
+          ...hideItems
         ]
       })
     },
-    [sprint, openSplit, openHours, openNote, unpinBlock, moveBlock]
+    [sprint, openSplit, openHours, openNote, unpinBlock, moveBlock, hideInBacklog, unhideInBacklog]
   )
 
   return {

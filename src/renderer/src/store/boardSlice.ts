@@ -17,6 +17,7 @@ import {
 } from '@shared/mutations'
 import { addNote, deleteNote, updateNote } from '@shared/notes'
 import { returnDoneToBacklog } from '@shared/doneHours'
+import { hideInBacklog, unhideInBacklog } from '@shared/hiddenBacklog'
 import { nudgeBlock, nudgeReported } from '@shared/nudge'
 import { syncSprintMembers } from '@shared/squad'
 import { showAllTags, toggleTag } from '@shared/tags'
@@ -53,6 +54,10 @@ export const createBoardSlice: StateCreator<AppState, [], [], BoardSlice> = (set
     // box it lives on the sprint and is written to disk.
     toggleTag: (tag) => change((sprint) => toggleTag(sprint, tag), null),
     showAllTags: () => change((sprint) => showAllTags(sprint), null),
+    hideInBacklog: (workItemId) =>
+      change((sprint) => hideInBacklog(sprint, workItemId), 'hide from backlog'),
+    unhideInBacklog: (workItemId) =>
+      change((sprint) => unhideInBacklog(sprint, workItemId), 'unhide'),
 
     saveNote: (draft, noteId) =>
       change(

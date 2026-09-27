@@ -17,6 +17,7 @@ export const createViewSlice: StateCreator<AppState, [], [], ViewSlice> = (set, 
   hourWidth: storedHourWidth(),
   backlogSearch: '',
   collapsedGroups: [],
+  showHiddenBacklog: false,
 
   selectMember: (memberId) =>
     set({ selectedMemberId: memberId, panelTab: 'person', panelCollapsed: false }),
@@ -76,6 +77,7 @@ export const createViewSlice: StateCreator<AppState, [], [], ViewSlice> = (set, 
   togglePanel: () => set((state) => ({ panelCollapsed: !state.panelCollapsed })),
   highlightWorkItem: (highlightedWorkItemId) => set({ highlightedWorkItemId }),
   setBacklogSearch: (backlogSearch) => set({ backlogSearch }),
+  setShowHiddenBacklog: (showHiddenBacklog) => set({ showHiddenBacklog }),
   toggleGroup: (key) =>
     set((state) => ({
       collapsedGroups: state.collapsedGroups.includes(key)
