@@ -78,7 +78,7 @@ export const createBoardSlice: StateCreator<AppState, [], [], BoardSlice> = (set
         (sprint) =>
           reported === null
             ? nudgeBlock(sprint, blockId, direction, anchor(sprint))
-            : nudgeReported(sprint, reported, direction, anchor(sprint)),
+            : nudgeReported(sprint, reported, direction, anchor(sprint), get().today),
         'nudge'
       )
     },

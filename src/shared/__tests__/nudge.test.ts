@@ -69,15 +69,59 @@ describe('nudgeBlock', () => {
     expect(nudgeBlock(s, 'a', -1, MON)).toBe(s)
   })
 
-  it('does nothing onto, or off, a locked day', () => {
+  it('jumps a locked day, as it would a day off', () => {
+    // At the end of Monday; Tuesday is locked, so one step on is Wednesday morning.
     const s = sprint({
       items: [item(1, { remainingWork: 1 })],
       queues: { diogo: [block('a', 1, 1, { date: MON, startHour: 7 })] }
     })
-    const lockedNext = { ...s, lockedDays: [TUE] }
-    expect(nudgeBlock(lockedNext, 'a', 1, MON)).toBe(lockedNext)
-    const lockedHere = { ...s, lockedDays: [MON] }
-    expect(nudgeBlock(lockedHere, 'a', -1, MON)).toBe(lockedHere)
+    const next = nudgeBlock({ ...s, lockedDays: [TUE] }, 'a', 1, MON)
+    expect(pinOf(next, 'a')).toEqual({ date: WED, startHour: 0 })
+    expect(drawn(next, MON)).toEqual(['09-16@0+1'])
+  })
+
+  it('a task running up to a locked day carries on past it', () => {
+    // 2h from Monday hour 6: one step on is Monday 7, and its second hour jumps locked Tuesday.
+    const s = sprint({
+      items: [item(1, { remainingWork: 2 })],
+      queues: { diogo: [block('a', 1, 2, { date: MON, startHour: 6 })] },
+      lockedDays: [TUE]
+    })
+    expect(drawn(nudgeBlock(s, 'a', 1, MON), MON)).toEqual(['09-14@7+1', '09-16@0+1'])
+  })
+
+  it('nothing on a locked day moves', () => {
+    const s = sprint({
+      items: [item(1, { remainingWork: 1 })],
+      queues: { diogo: [block('a', 1, 1, { date: MON, startHour: 3 })] },
+      lockedDays: [MON]
+    })
+    expect(nudgeBlock(s, 'a', -1, MON)).toBe(s)
+    expect(nudgeBlock(s, 'a', 1, MON)).toBe(s)
+  })
+
+  it('never into the past: work still to do stops at the start of today', () => {
+    const s = sprint({
+      items: [item(1, { remainingWork: 2 })],
+      queues: { diogo: [block('a', 1, 2)] }
+    })
+    // Flowing from today's first hour: one step back would be yesterday.
+    expect(nudgeBlock(s, 'a', -1, WED)).toBe(s)
+    const later = nudgeBlock(s, 'a', 1, WED)
+    expect(pinOf(later, 'a')).toEqual({ date: WED, startHour: 1 })
+    expect(pinOf(nudgeBlock(later, 'a', -1, WED), 'a')).toEqual({ date: WED, startHour: 0 })
+  })
+
+  it('never swaps a task into the past either', () => {
+    // An old pin from before today sits right before A: swapping would put A behind it, before
+    // today.
+    const s = sprint({
+      items: [item(1, { remainingWork: 2 }), item(2, { remainingWork: 2 })],
+      queues: {
+        diogo: [block('old', 2, 2, { date: TUE, startHour: 6 }), block('a', 1, 2)]
+      }
+    })
+    expect(nudgeBlock(s, 'a', -1, WED)).toBe(s)
   })
 
   it('does not trade places with reported hours', () => {
@@ -114,9 +158,43 @@ describe('nudgeReported', () => {
     expect(nudgeReported(s, 5, -1, WED)).toBe(s)
   })
 
-  it('cannot move onto today', () => {
-    const s = reported(16) // Monday and Tuesday full, ending where today begins
-    expect(nudgeReported(s, 5, 1, WED)).toBe(s)
+  it('can step onto today, where it is drawn from the start of the day, and no further', () => {
+    // Two done hours pinned to the end of Tuesday; today is Wednesday.
+    const s = {
+      ...reported(2),
+      reportedPins: { 5: { memberId: 'diogo', date: TUE, startHour: 6 } }
+    }
+    const step = nudgeReported(s, 5, 1, WED, WED)
+    expect(step.reportedPins?.[5]).toEqual({ memberId: 'diogo', date: TUE, startHour: 7 })
+    const onto = nudgeReported(step, 5, 1, WED, WED)
+    expect(onto.reportedPins?.[5]).toEqual({ memberId: 'diogo', date: WED, startHour: 0 })
+    expect(nudgeReported(onto, 5, 1, WED, WED)).toBe(onto)
+  })
+
+  it('not onto the first day of the plan when that is not today', () => {
+    // A weekend: today is Saturday 19, so the plan resumes on Monday 21 — not a day to report on.
+    const s = reported(16)
+    expect(nudgeReported(s, 5, 1, WED, '2026-09-12')).toBe(s)
+  })
+
+  it('nothing on a locked day moves', () => {
+    // Pinned to Monday 0–2, then Monday is locked.
+    const s = {
+      ...reported(2),
+      reportedPins: { 5: { memberId: 'diogo', date: MON, startHour: 0 } },
+      lockedDays: [MON]
+    }
+    expect(nudgeReported(s, 5, 1, WED, WED)).toBe(s)
+  })
+
+  it('jumps a locked day on its way', () => {
+    // Pinned at the end of Monday; Tuesday is locked, so one step on is today, Wednesday.
+    const s = {
+      ...reported(1),
+      reportedPins: { 5: { memberId: 'diogo', date: MON, startHour: 7 } },
+      lockedDays: [TUE]
+    }
+    expect(nudgeReported(s, 5, 1, WED, WED).reportedPins?.[5]?.date).toEqual(WED)
   })
 
   it('does nothing for a work item with no reported hours drawn', () => {

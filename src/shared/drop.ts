@@ -72,10 +72,10 @@ export function applyDrop(
 }
 
 /**
- * Whether `subject` may go on `target` at all. Never on a locked day, a day the person is not
- * working, or an hour past the end of their day. Otherwise, work still to do goes on today or
- * later — it cannot be planned into the past — and reported hours on the days that have passed
- * or on today, because that is when work can have been done.
+ * Whether `subject` may go on `target` at all. Never from a locked day ({@link canLift}), nor
+ * onto one, a day the person is not working, or an hour past the end of their day. Otherwise,
+ * work still to do goes on today or later — it cannot be planned into the past — and reported
+ * hours on the days that have passed or on today, because that is when work can have been done.
  */
 export function canDrop(
   sprint: Sprint,
@@ -83,6 +83,7 @@ export function canDrop(
   target: DropTarget,
   context: Pick<DropContext, 'layouts' | 'anchor' | 'today'>
 ): boolean {
+  if (!canLift(sprint, subject, context.layouts)) return false
   if (!context.layouts[target.memberId]) return false
   if (!sprint.days.some((day) => day.date === target.date)) return false
   if ((sprint.lockedDays ?? []).includes(target.date)) return false
@@ -93,6 +94,28 @@ export function canDrop(
     return target.date <= context.today && target.date <= context.anchor
   }
   return target.date >= context.anchor
+}
+
+/**
+ * Whether what is being dragged may leave where it is. Nothing on a locked day moves — not
+ * onto the calendar, not to the backlog — until the day is unlocked.
+ */
+export function canLift(
+  sprint: Sprint,
+  subject: DropSubject,
+  layouts: Record<string, MemberLayout>
+): boolean {
+  const locked = new Set(sprint.lockedDays ?? [])
+  if (locked.size === 0) return true
+  return !Object.values(layouts).some((layout) =>
+    layout.segments.some(
+      (segment) =>
+        locked.has(segment.date) &&
+        (subject.kind === 'block'
+          ? segment.blockId === subject.blockId && !segment.isDone
+          : segment.isDone === true && segment.workItemId === subject.workItemId)
+    )
+  )
 }
 
 /**

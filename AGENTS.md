@@ -143,7 +143,12 @@ e2e/                 end-to-end tests of the built app (Playwright): fixtures, f
   unpinned ones flow around them. **Every drop on the calendar pins** — a task lands on the hour
   it is dropped on and stays there (`applyDrop` in `drop.ts`); Unpin hands it back to the flow.
   Tasks go on the anchor day or later, reported hours on past days or today, and nothing on a
-  locked day, a day off or past the end of someone's day (`canDrop`).
+  locked day, a day off or past the end of someone's day (`canDrop`). Shift + arrows
+  (`nudge.ts`) keep the same rules; only what happens next to another task differs (a nudge
+  swaps, a drop asks).
+- **Locked day** = settled: nothing goes in or out until it is unlocked. `lockDay` pins what is
+  on the day where it is drawn; the layout lets nothing else onto a locked day, so moved and
+  flowing work jumps it like a day off; `canLift` refuses to move anything that sits on one.
 - **Size of a task** = Remaining Work + Completed Work (`sizing.ts`). Original Estimate is
   only used by the summary for "off track" (completed > estimate × 1.25).
 - **Remaining is drawn from today on; Completed is drawn behind today** (striped `isDone`

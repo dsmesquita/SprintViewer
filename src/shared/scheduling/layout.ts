@@ -69,11 +69,16 @@ export function layoutMember(
     today === undefined ? 0 : Math.min(reportedToday, effectiveCapacity(sprint, memberId, today))
   if (today !== undefined && taken > 0) claim(occupied, today, { start: 0, end: taken })
 
+  // Locked days are left out of both sides of "free": nothing new can go on them, and what is
+  // already there is not using room that anything else could have.
+  const locked = new Set(sprint.lockedDays ?? [])
   let availableHours = 0
   for (const day of sprint.days) {
-    if (day.date >= anchor) availableHours += effectiveCapacity(sprint, memberId, day.date)
+    if (day.date >= anchor && !locked.has(day.date)) {
+      availableHours += effectiveCapacity(sprint, memberId, day.date)
+    }
   }
-  availableHours = round(availableHours - taken)
+  availableHours = round(availableHours - (today !== undefined && locked.has(today) ? 0 : taken))
 
   const queue = sprint.queues[memberId] ?? []
   const pinned = queue.filter((block) => block.pin).sort(byPin)
@@ -104,7 +109,9 @@ export function layoutMember(
   }
 
   const usedHours = segments
-    .filter((segment) => !segment.fromHistory && segment.date >= anchor)
+    .filter(
+      (segment) => !segment.fromHistory && segment.date >= anchor && !locked.has(segment.date)
+    )
     .reduce((sum, segment) => sum + segment.hours, 0)
 
   return {
@@ -147,10 +154,14 @@ function allocate(
   const startIndex = dayIndex.get(fromDate) ?? nextDayIndex(sprint, fromDate)
   if (startIndex < 0) return { segments, leftover: left, end: null }
 
+  const locked = new Set(sprint.lockedDays ?? [])
   for (let index = startIndex; index < sprint.days.length && left > 0; index++) {
     const day = sprint.days[index]
     const capacity = effectiveCapacity(sprint, memberId, day.date)
     if (capacity <= 0) continue
+    // A locked day takes nothing new: only what was pinned onto it when it was locked. Anything
+    // else jumps it, like a day off.
+    if (locked.has(day.date) && block.pin?.date !== day.date) continue
 
     const floor = index === startIndex ? fromHour : 0
     for (const gap of freeIntervals(capacity, occupied.get(day.date))) {

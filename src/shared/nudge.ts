@@ -6,14 +6,17 @@ import { round } from './math'
 /**
  * Moving the selected task one step with Shift + ← / →.
  *
- * One step is one *working* hour: evenings, days off and part-days are skipped, so a task at
- * the end of Friday steps onto Monday morning rather than into time nobody has. What is in that
- * hour decides what happens:
+ * One step is one *working* hour: evenings, days off, part-days and locked days are skipped,
+ * so a task at the end of Friday steps onto Monday morning rather than into time nobody has —
+ * or, with Monday locked, onto Tuesday. What is in that hour decides what happens:
  *
  *  - nothing: the task moves one hour and is pinned there — a gap is something only a pin can
  *    hold, since the queue flows everything else together;
  *  - another task: the two change places;
- *  - a record of the past, a locked day, or the edge of the sprint: nothing happens.
+ *  - a record of the past, or the edge of the sprint: nothing happens.
+ *
+ * The same rules as a drop (`drop.ts`): work still to do never goes before today, reported hours
+ * never after it, and nothing on a locked day moves at all.
  */
 
 export type Direction = -1 | 1
@@ -45,11 +48,10 @@ export function nudgeBlock(
   const start: Point = { date: own[0].date, hour: own[0].startHour }
   const last = own[own.length - 1]
   const end: Point = { date: last.date, hour: last.startHour + last.hours }
-  const locked = new Set(sprint.lockedDays ?? [])
-  if (locked.has(start.date) || locked.has(last.date)) return sprint
+  if (onLockedDay(sprint, own)) return sprint
 
   const probe = probePoint(sprint, memberId, direction === 1 ? end : start, direction)
-  if (!probe || locked.has(probe.date)) return sprint
+  if (!probe) return sprint
 
   const neighbour = layout.segments.find(
     (s) => s.blockId !== blockId && s.date === probe.date && covers(s, probe.hour)
@@ -57,13 +59,14 @@ export function nudgeBlock(
 
   if (!neighbour) {
     const target = stepWorking(sprint, memberId, start, direction)
-    if (!target || locked.has(target.date)) return sprint
+    // Work still to do cannot be planned into the past.
+    if (!target || target.date < anchor) return sprint
     return pinBlockAt(sprint, blockId, memberId, target.date, target.hour)
   }
 
   // Records say what happened; they are not something a plan can trade places with.
   if (neighbour.fromHistory || neighbour.isDone) return sprint
-  return swap(sprint, memberId, layout.segments, blockId, neighbour.blockId, direction)
+  return swap(sprint, memberId, layout.segments, blockId, neighbour.blockId, direction, anchor)
 }
 
 /**
@@ -76,7 +79,9 @@ export function nudgeReported(
   sprint: Sprint,
   workItemId: number,
   direction: Direction,
-  anchor: ISODate
+  anchor: ISODate,
+  /** The real date: reported hours may step onto the anchor day only when it is today. */
+  today: ISODate = anchor
 ): Sprint {
   const layouts = layoutSprint(sprint, anchor)
   const owner = Object.entries(layouts).find(([, l]) =>
@@ -89,20 +94,30 @@ export function nudgeReported(
   const start: Point = { date: own[0].date, hour: own[0].startHour }
   const last = own[own.length - 1]
   const end: Point = { date: last.date, hour: last.startHour + last.hours }
-  const locked = new Set(sprint.lockedDays ?? [])
+  if (onLockedDay(sprint, own)) return sprint
+
+  // The last day they may go on is the anchor day when it is today, else the day before it.
+  // On today they are drawn from its start, so from there there is nowhere further right.
+  const onToday = anchor <= today
+  if (direction === 1 && start.date >= anchor) return sprint
+  const allowed = (date: ISODate): boolean => date < anchor || (date === anchor && onToday)
 
   const probe = probePoint(sprint, memberId, direction === 1 ? end : start, direction)
-  if (!probe || probe.date >= anchor || locked.has(probe.date)) return sprint
+  if (!probe || !allowed(probe.date)) return sprint
   // Only the ribbon itself is excluded — a block of the same work item pinned back there is
-  // still something the hours cannot slide over.
+  // still something the hours cannot slide over. Today's plan is not in the way: reported hours
+  // on today go before it.
   const taken = layout.segments.some(
     (s) =>
-      !(s.isDone && s.workItemId === workItemId) && s.date === probe.date && covers(s, probe.hour)
+      !(s.isDone && s.workItemId === workItemId) &&
+      !(s.date >= anchor && !s.isDone) &&
+      s.date === probe.date &&
+      covers(s, probe.hour)
   )
   if (taken) return sprint
 
   const target = stepWorking(sprint, memberId, start, direction)
-  if (!target || target.date >= anchor || locked.has(target.date)) return sprint
+  if (!target || !allowed(target.date)) return sprint
   return pinReportedAt(sprint, workItemId, memberId, target.date, target.hour)
 }
 
@@ -119,7 +134,8 @@ function swap(
   segments: Segment[],
   moving: string,
   other: string,
-  direction: Direction
+  direction: Direction,
+  anchor: ISODate
 ): Sprint {
   const queue = sprint.queues[memberId] ?? []
   const a = queue.findIndex((b) => b.id === moving)
@@ -142,6 +158,9 @@ function swap(
   // hours the second actually takes rather than the hours of whatever used to be there.
   const follows = stepWorking(sprint, memberId, pairStart, 1, second.hours)
   if (!follows) return sprint
+  // The moving task may not end up before today, any more than by a plain step.
+  const movedTo = secondId === moving ? pairStart : follows
+  if (movedTo.date < anchor) return sprint
   const moved = pinBlockAt(sprint, secondId, memberId, pairStart.date, pairStart.hour)
   return pinBlockAt(moved, firstId, memberId, follows.date, follows.hour)
 }
@@ -222,8 +241,16 @@ function stepWorking(
   return null
 }
 
+/** Working hours on a day, for stepping: none on a locked day, which a step jumps. */
 function capacity(sprint: Sprint, memberId: string, index: number): number {
-  return effectiveCapacity(sprint, memberId, sprint.days[index].date)
+  const date = sprint.days[index].date
+  return (sprint.lockedDays ?? []).includes(date) ? 0 : effectiveCapacity(sprint, memberId, date)
+}
+
+/** Whether any of these pieces sits on a locked day — then nothing of it moves. */
+function onLockedDay(sprint: Sprint, pieces: Segment[]): boolean {
+  const locked = new Set(sprint.lockedDays ?? [])
+  return pieces.some((piece) => locked.has(piece.date))
 }
 
 /**

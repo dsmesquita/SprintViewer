@@ -17,6 +17,8 @@ import {
   unpinBlock,
   unpinReported
 } from '@shared/mutations'
+import { setBlockHours } from '@shared/blocks'
+import type { Sprint } from '@shared/types'
 import { block, drawn, FRI, ids, item, MON, sprint, THU, TUE, WED } from '../../../test/fixtures'
 
 const three = () =>
@@ -184,15 +186,22 @@ describe('locking days', () => {
     expect(lockDay(once, WED, MON, ids()).lockedDays).toEqual([WED])
   })
 
-  it('a block running into the locked day is cut at the boundary, the rest to the backlog', () => {
-    // 12h from Monday: Monday 8h, Tuesday 4h. Locking Tuesday leaves Monday's 8 in place.
+  // Locking a day changes nothing on the calendar: the board is drawn the same before and after.
+  const allDrawn = (x: Sprint) => [...drawn(x, MON, 'diogo'), '|', ...drawn(x, MON, 'sofia')]
+
+  it('a block running into the locked day keeps its part there, pinned', () => {
+    // 12h from Monday: Monday 8h, Tuesday 4h. Locking Tuesday pins Tuesday's 4 to Tuesday.
     const s = sprint({
       items: [item(1, { remainingWork: 12 })],
       queues: { diogo: [block('a', 1, 12)] }
     })
     const locked = lockDay(s, TUE, MON, ids())
-    expect(findBlock(locked, 'a')?.block.hours).toBe(8)
-    expect(locked.backlog).toEqual([block('n1', 1, 4)])
+    expect(locked.queues.diogo).toEqual([
+      block('a', 1, 8),
+      block('n1', 1, 4, { date: TUE, startHour: 0 })
+    ])
+    expect(locked.backlog).toEqual([])
+    expect(allDrawn(locked)).toEqual(allDrawn(s))
   })
 
   it('a block that does not reach the locked day is left whole', () => {
@@ -204,27 +213,36 @@ describe('locking days', () => {
     expect(lockDay(s, THU, MON, ids())).toEqual({ ...s, lockedDays: [THU] })
   })
 
-  it('a block over several days keeps every day before the locked one', () => {
-    // 20h from Monday: Monday 8h, Tuesday 8h, Wednesday 4h. Locking Wednesday keeps 16.
+  it('a block right through the locked day: before, pinned on it, and after', () => {
+    // 20h from Monday: Monday 8h, Tuesday 8h, Wednesday 4h. Locking Tuesday.
     const s = sprint({
       items: [item(1, { remainingWork: 20 })],
       queues: { diogo: [block('a', 1, 20)] }
     })
-    const locked = lockDay(s, WED, MON, ids())
-    expect(findBlock(locked, 'a')?.block.hours).toBe(16)
-    expect(locked.backlog).toEqual([block('n1', 1, 4)])
+    const locked = lockDay(s, TUE, MON, ids())
+    expect(locked.queues.diogo).toEqual([
+      block('a', 1, 8),
+      block('n1', 1, 8, { date: TUE, startHour: 0 }),
+      block('n2', 1, 4)
+    ])
+    expect(allDrawn(locked)).toEqual(allDrawn(s))
   })
 
-  it('a block that starts on the locked day stays where it is', () => {
-    // A (8h) fills Monday, so B starts on Tuesday: locking Tuesday leaves both whole.
+  it('a block that starts on the locked day is pinned where it is', () => {
+    // A (8h) fills Monday, so B starts on Tuesday.
     const s = sprint({
       items: [item(1, { remainingWork: 8 }), item(2, { remainingWork: 4 })],
       queues: { diogo: [block('a', 1, 8), block('b', 2, 4)] }
     })
-    expect(lockDay(s, TUE, MON, ids())).toEqual({ ...s, lockedDays: [TUE] })
+    const locked = lockDay(s, TUE, MON, ids())
+    expect(locked.queues.diogo).toEqual([
+      block('a', 1, 8),
+      block('b', 2, 4, { date: TUE, startHour: 0 })
+    ])
+    expect(allDrawn(locked)).toEqual(allDrawn(s))
   })
 
-  it('only the blocks running into the locked day are cut, on every row', () => {
+  it('on every row', () => {
     const s = sprint({
       items: [item(1, { remainingWork: 12 }), item(2, { remainingWork: 10 })],
       queues: { diogo: [block('a', 1, 12)], sofia: [block('b', 2, 10)] }
@@ -232,10 +250,26 @@ describe('locking days', () => {
     const locked = lockDay(s, TUE, MON, ids())
     expect(findBlock(locked, 'a')?.block.hours).toBe(8)
     expect(findBlock(locked, 'b')?.block.hours).toBe(8)
-    expect(locked.backlog.map((x) => [x.workItemId, x.hours])).toEqual([
-      [1, 4],
-      [2, 2]
-    ])
+    expect(allDrawn(locked)).toEqual(allDrawn(s))
+  })
+
+  it('afterwards, work that grows or arrives jumps the locked day', () => {
+    const s = sprint({
+      items: [item(1, { remainingWork: 12 }), item(2, { remainingWork: 3 })],
+      queues: { diogo: [block('a', 1, 12)] }
+    })
+    const locked = lockDay(s, TUE, MON, ids())
+    // A grows by 2h: its Monday part cannot spill onto Tuesday, so it goes on to Wednesday.
+    const grown = setBlockHours(locked, 'a', 10)
+    expect(drawn(grown, MON, 'diogo', 'a')).toEqual(['09-14@0+8', '09-16@0+2'])
+    // A new task at the end of the queue flows past Tuesday too.
+    const added = moveBlock(
+      { ...grown, backlog: [block('c', 2, 3)] },
+      'c',
+      { kind: 'member', memberId: 'diogo' },
+      9
+    )
+    expect(drawn(added, MON, 'diogo', 'c')).toEqual(['09-16@2+3'])
   })
 
   it('unlockDay removes it', () => {

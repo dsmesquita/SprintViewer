@@ -4,6 +4,7 @@ import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { findBlock } from '@shared/blocks'
 import { applyDrop, type DropTarget } from '@shared/drop'
+import { lockDay } from '@shared/mutations'
 import { layoutSprint } from '@shared/scheduling'
 import type { Sprint } from '@shared/types'
 import { BACKLOG_DROP_ID, MEMBER_DROP_PREFIX, type DragData } from '../../grid'
@@ -332,6 +333,17 @@ describe('the drop', () => {
     end(result, reported, 'backlog', 0)
     expect(stored().reportedPins?.[3]).toBeUndefined()
     expect(labels()).toEqual(['reported hours'])
+  })
+
+  it('a task on a locked day stays: not even the backlog takes it', () => {
+    const locked = lockDay(board(), THU, WED, () => 'thu')
+    act(() => useApp.setState({ sprint: locked }))
+    const { result } = render()
+    const thursdayPart: DragData = { kind: 'block', blockId: 'thu', workItemId: 1, hours: 8 }
+    start(result, thursdayPart)
+    end(result, thursdayPart, 'backlog', 0)
+    expect(stored()).toEqual(locked)
+    expect(labels()).toEqual([])
   })
 
   it('reported hours dropped before today are pinned where they were really worked', () => {

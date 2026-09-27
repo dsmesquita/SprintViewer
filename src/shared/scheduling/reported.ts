@@ -141,8 +141,7 @@ export function withReportedHours(
     // cannot be planned into them.
     let todayUsed = 0
     const todayDate = sprint.days[anchorIndex]?.date
-    const todayCapacity =
-      todayDate === undefined ? 0 : effectiveCapacity(sprint, memberId, todayDate)
+    const todayCapacity = todayDate === undefined ? 0 : openHours(sprint, memberId, todayDate)
 
     for (const { workItemId, hours, pinned } of ordered) {
       const target = targets.get(workItemId)!
@@ -163,7 +162,9 @@ export function withReportedHours(
         todayUsed = round(todayUsed + take)
         left = round(left - take)
       }
-      if (onToday && left > 0) {
+      // Pinned hours that neither the past after the pin nor today could take go back to the
+      // oldest free time rather than being lost.
+      if (pinned && left > 0) {
         const back = packForwards(sprint, memberId, workItemId, left, anchorIndex, occupied)
         pieces.push(...back.segments)
         left = back.leftover
@@ -222,9 +223,10 @@ interface Packed {
 /**
  * The same, but starting where the user dropped the ribbon and filling forwards.
  *
- * Forwards rather than backwards because a pin says "it started here". Anything that will not
- * fit ahead of the pin falls back to {@link packForwards} rather than being lost — a pin whose
- * day has since been shortened should still draw every hour somewhere.
+ * Forwards rather than backwards because a pin says "it started here". What will not fit
+ * before today is returned as leftover: the caller carries it on into today, and only what
+ * today cannot take goes back to the oldest free time — a pin whose day has since been
+ * shortened should still draw every hour somewhere.
  */
 function packFromPin(
   sprint: Sprint,
@@ -244,7 +246,11 @@ function packFromPin(
   if (startIndex >= 0) {
     for (let index = startIndex; index < anchorIndex && left > 0; index++) {
       const day = sprint.days[index]
-      const capacity = effectiveCapacity(sprint, memberId, day.date)
+      // A pin already on a locked day stays there; nothing new is packed onto one.
+      const capacity =
+        day.date === pin.date
+          ? effectiveCapacity(sprint, memberId, day.date)
+          : openHours(sprint, memberId, day.date)
       if (capacity <= 0) continue
 
       const floor = index === startIndex ? pin.hour : 0
@@ -258,12 +264,6 @@ function packFromPin(
         claim(occupied, day.date, { start, end: round(start + take) })
       }
     }
-  }
-
-  if (left > 0) {
-    const back = packForwards(sprint, memberId, workItemId, left, anchorIndex, occupied)
-    pieces.push(...back.segments)
-    left = back.leftover
   }
 
   return joinPieces(pieces, left)
@@ -287,7 +287,7 @@ function packForwards(
 
   for (let index = 0; index < anchorIndex && left > 0; index++) {
     const day = sprint.days[index]
-    const capacity = effectiveCapacity(sprint, memberId, day.date)
+    const capacity = openHours(sprint, memberId, day.date)
     if (capacity <= 0) continue
     for (const gap of freeIntervals(capacity, occupied.get(day.date))) {
       if (left <= 0) break
@@ -300,6 +300,11 @@ function packForwards(
   }
 
   return joinPieces(pieces, left)
+}
+
+/** A day's working hours for placing anything new: none on a locked day. */
+function openHours(sprint: Sprint, memberId: string, date: ISODate): number {
+  return (sprint.lockedDays ?? []).includes(date) ? 0 : effectiveCapacity(sprint, memberId, date)
 }
 
 function donePiece(workItemId: number, date: ISODate, startHour: number, hours: number): Segment {

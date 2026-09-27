@@ -1,5 +1,5 @@
-import { layoutMember, splitBlock } from './scheduling'
-import type { Block, ISODate, Sprint } from './types'
+import { layoutSprint, splitBlock } from './scheduling'
+import type { Block, ISODate, Segment, Sprint } from './types'
 import {
   findBlock,
   insertBlock,
@@ -156,8 +156,12 @@ export function splitIntoN(
 }
 
 /**
- * Locks a day so drops are rejected and clear/refresh skip it. A block that runs into the
- * locked day from the days before is split where that day starts, so no block spans it.
+ * Locks a day: from now on nothing goes onto it and nothing on it moves, until it is unlocked.
+ *
+ * What is on the day stays exactly where it is drawn. Each task's part on that day becomes a
+ * block of its own, pinned to its hour — the layout lets nothing else onto a locked day, so
+ * anything not pinned there would flow off it. The part of the task before the day keeps the
+ * original block; any part after it follows as an unpinned block, and flows on past the lock.
  */
 export function lockDay(
   sprint: Sprint,
@@ -168,28 +172,47 @@ export function lockDay(
   const lockedDays = [...(sprint.lockedDays ?? []), date].filter(
     (d, i, arr) => arr.indexOf(d) === i
   )
-  let next: Sprint = { ...sprint, lockedDays }
+  if (lockedDays.length === (sprint.lockedDays ?? []).length) return sprint
 
-  // A block still running when the locked day starts is cut there: what it covers before that
-  // day stays, the rest goes to the backlog. Only a piece that *continues* onto the locked day
-  // counts — one that starts on it was placed there before the lock, and is left alone.
+  // Where everything is now, before the lock changes what the layout allows.
+  const layouts = layoutSprint(sprint, anchor)
+  const queues = { ...sprint.queues }
   for (const member of sprint.members) {
-    const { segments } = layoutMember(next, member.id, anchor)
-    const running = segments.filter(
-      (segment) =>
-        segment.date === date && segment.continued && !segment.isDone && !segment.fromHistory
+    const segments = layouts[member.id]?.segments ?? []
+    const onDay = new Set(
+      segments.filter((s) => s.date === date && !s.isDone && !s.fromHistory).map((s) => s.blockId)
     )
-    for (const segment of running) {
-      const before = segments
-        .filter(
-          (s) => s.blockId === segment.blockId && s.date < date && !s.isDone && !s.fromHistory
-        )
-        .reduce((sum, s) => sum + s.hours, 0)
-      next = splitAndReturn(next, segment.blockId, before, newId)
-    }
+    if (onDay.size === 0) continue
+    queues[member.id] = (queues[member.id] ?? []).flatMap((block) =>
+      onDay.has(block.id) ? keepOnDay(block, segments, date, newId) : [block]
+    )
   }
+  return { ...sprint, lockedDays, queues }
+}
 
-  return next
+/** A block cut into its part before `date`, each of its pieces on `date` pinned, and the rest. */
+function keepOnDay(block: Block, segments: Segment[], date: ISODate, newId: () => string): Block[] {
+  const own = segments
+    .filter((s) => s.blockId === block.id && !s.isDone && !s.fromHistory)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.startHour - b.startHour)
+  const before = round(own.filter((s) => s.date < date).reduce((sum, s) => sum + s.hours, 0))
+  const onDay = own.filter((s) => s.date === date)
+  const on = round(onDay.reduce((sum, s) => sum + s.hours, 0))
+  // Whatever the calendar could not fit is still part of the task, after the day.
+  const after = round(block.hours - before - on)
+
+  const parts: Block[] = []
+  if (before > 0) parts.push({ ...block, hours: before })
+  onDay.forEach((piece, index) => {
+    parts.push({
+      id: before === 0 && index === 0 ? block.id : newId(),
+      workItemId: block.workItemId,
+      hours: piece.hours,
+      pin: { date, startHour: piece.startHour }
+    })
+  })
+  if (after > 0) parts.push({ id: newId(), workItemId: block.workItemId, hours: after })
+  return parts
 }
 
 /** Removes a day from the locked set. */

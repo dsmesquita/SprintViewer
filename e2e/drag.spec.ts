@@ -566,3 +566,102 @@ test.describe('around the drag', () => {
     await expect.poll(async () => (await saved(dataDir)).backlog.map((b) => b.id)).toEqual(['doc'])
   })
 })
+
+test.describe('Shift+arrows and locked days follow the same rules as a drop', () => {
+  /** Selects a task's block, then presses Shift + ← or →. */
+  async function nudge(page: Page, id: number, key: 'ArrowLeft' | 'ArrowRight', times = 1) {
+    await block(page, id).click()
+    await expect(block(page, id)).toHaveClass(/is-selected/)
+    for (let i = 0; i < times; i++) {
+      await page.keyboard.press(`Shift+${key}`)
+      await page.waitForTimeout(150)
+    }
+  }
+  async function lock(page: Page, date: string) {
+    await page.locator('.cal-head .day-lock').nth(DAYS.indexOf(date)).click({ force: true })
+  }
+
+  test('Shift+← stops at the start of today: work still to do never goes into the past', async ({
+    launch,
+    seed,
+    tfs,
+    dataDir
+  }) => {
+    const page = await openBoard(launch, seed, tfs)
+    // VAL flows from today's first hour.
+    await nudge(page, VAL, 'ArrowLeft')
+    expect(await pinOf(dataDir, 'val')).toBeUndefined()
+    await nudge(page, VAL, 'ArrowRight')
+    await expect.poll(() => pinOf(dataDir, 'val')).toEqual({ date: WED, startHour: 1 })
+    await nudge(page, VAL, 'ArrowLeft', 3)
+    await expect.poll(() => pinOf(dataDir, 'val')).toEqual({ date: WED, startHour: 0 })
+    await expectDrawnFrom(page, 'Sofia', VAL, WED, 0)
+  })
+
+  test('Shift+→ jumps a locked day, as it would a day off', async ({
+    launch,
+    seed,
+    tfs,
+    dataDir
+  }) => {
+    const sprint = dragSprint(tfs)
+    sprint.queues.sofia = [
+      { id: 'val', workItemId: VAL, hours: 3, pin: { date: WED, startHour: 5 } }
+    ]
+    const page = await openBoard(launch, seed, tfs, { sprint })
+    await lock(page, THU)
+    await expect.poll(async () => (await saved(dataDir)).lockedDays).toEqual([THU])
+
+    // Wednesday 5–8; one hour on, its last hour cannot go on Thursday, so it goes on Friday.
+    await nudge(page, VAL, 'ArrowRight')
+    await expect.poll(() => pinOf(dataDir, 'val')).toEqual({ date: WED, startHour: 6 })
+    const pieces = row(page, 'Sofia').locator('.seg', {
+      has: page.locator('.seg-id', { hasText: `#${VAL}` })
+    })
+    await expect(pieces).toHaveCount(2)
+    const friday = (await cell(page, 'Sofia', FRI, 0).boundingBox())!
+    expect(Math.abs((await pieces.nth(1).boundingBox())!.x - friday.x)).toBeLessThanOrEqual(2)
+  })
+
+  test('a dropped task that would run onto a locked day jumps it', async ({
+    launch,
+    seed,
+    tfs,
+    dataDir
+  }) => {
+    const page = await openBoard(launch, seed, tfs)
+    await lock(page, FRI)
+    await drag(page, card(page, 'DOC:: Export service'), await slot(page, 'Sofia', THU, 7))
+    await expect.poll(() => pinOf(dataDir, 'doc')).toEqual({ date: THU, startHour: 7 })
+    // Thursday's last hour, then — Friday being locked — Monday's first.
+    const pieces = row(page, 'Sofia').locator('.seg', {
+      has: page.locator('.seg-id', { hasText: `#${DOC}` })
+    })
+    await expect(pieces).toHaveCount(2)
+    const monday = (await cell(page, 'Sofia', MON2, 0).boundingBox())!
+    expect(Math.abs((await pieces.nth(1).boundingBox())!.x - monday.x)).toBeLessThanOrEqual(2)
+  })
+
+  test('a task on a locked day cannot be dragged anywhere, not even to the backlog', async ({
+    launch,
+    seed,
+    tfs,
+    dataDir
+  }) => {
+    const page = await openBoard(launch, seed, tfs)
+    // DEV runs Wednesday and Thursday; locking Thursday keeps its Thursday part there.
+    await lock(page, THU)
+    await expect.poll(async () => (await saved(dataDir)).lockedDays).toEqual([THU])
+    const before = await saved(dataDir)
+    const thursday = row(page, 'Diogo').locator('.seg.is-day-locked')
+    await expect(thursday).toHaveCount(1)
+
+    await pickUp(page, thursday)
+    await moveTo(page, await slot(page, 'Diogo', FRI, 3))
+    await expect(page.locator('.drag-ghost.is-refused')).toBeVisible()
+    await release(page)
+    await toBacklog(page, thursday)
+    await page.waitForTimeout(300)
+    expect(await saved(dataDir)).toEqual(before)
+  })
+})

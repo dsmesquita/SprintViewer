@@ -14,6 +14,7 @@ import { checkAssignment, type AssignmentMismatch } from '@shared/assignment'
 import {
   applyDrop,
   canDrop,
+  canLift,
   questionFor,
   shiftBack,
   slotAt,
@@ -227,6 +228,8 @@ export function useSprintDnd({ sprint, layouts, anchor, today }: Board) {
     if (!data || !sprint) return
 
     if (event.over?.id === BACKLOG_DROP_ID) {
+      // Not off a locked day, not even back to the backlog.
+      if (!canLift(sprint, data, layouts)) return
       // Reported hours cannot be unscheduled — they happened. Dropping them here is read as
       // "I no longer want to say when", which hands them back to the automatic placement.
       if (data.kind === 'reported') unpinReported(data.workItemId)

@@ -172,9 +172,10 @@ const SECTIONS: Section[] = [
             day for everyone, or for one person from their row.
           </li>
           <li>
-            The <strong>lock</strong> on a day header stops anything new being dropped on that day —
-            handy for a day that is already settled. A task running into that day from the day
-            before is cut where the day starts, and the rest goes back to the backlog.
+            The <strong>lock</strong> on a day header settles that day: nothing can go onto it and
+            nothing on it can be moved — by dragging or with Shift+arrows — until it is unlocked.
+            What is on it when you lock it stays exactly where it is. Tasks you move, and work that
+            flows, jump a locked day as they would a day off.
           </li>
           <li>
             A ⚠ next to a name means the person has more work than hours left in the sprint — hover
@@ -259,7 +260,9 @@ const SECTIONS: Section[] = [
           </li>
           <li>
             <strong>Select</strong> a block and press <Keys>Shift</Keys>+<Keys>←</Keys> /{' '}
-            <Keys>→</Keys> to nudge it an hour at a time.
+            <Keys>→</Keys> to nudge it an hour at a time. It skips nights, days off and locked days,
+            swaps places with the task next to it, and never goes before today. Striped (done) hours
+            nudge through the past, and onto today.
           </li>
           <li>
             <Keys>Ctrl</Keys>+<Keys>Z</Keys> or <strong>Back</strong> undoes the last change.

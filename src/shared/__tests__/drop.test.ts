@@ -1,10 +1,30 @@
 import { describe, expect, it } from 'vitest'
 import { planAutoAssign } from '@shared/autoAssign'
-import { applyDrop, canDrop, questionFor, shiftBack, slotAt, type DropContext } from '@shared/drop'
-import { findBlock } from '@shared/mutations'
+import {
+  applyDrop,
+  canDrop,
+  canLift,
+  questionFor,
+  shiftBack,
+  slotAt,
+  type DropContext
+} from '@shared/drop'
+import { findBlock, lockDay } from '@shared/mutations'
 import { layoutSprint } from '@shared/scheduling'
 import type { Sprint } from '@shared/types'
-import { block, drawn, FRI, item, MON, MON2, sprint, THU, TUE, WED } from '../../../test/fixtures'
+import {
+  block,
+  drawn,
+  FRI,
+  ids,
+  item,
+  MON,
+  MON2,
+  sprint,
+  THU,
+  TUE,
+  WED
+} from '../../../test/fixtures'
 
 /**
  * What a drop on the calendar does — the same function draws the preview and makes the drop.
@@ -163,6 +183,38 @@ describe('where a task cannot go', () => {
 
   it('a row that is not on the board', () => {
     refused(board(), 'ghost', THU, 0)
+  })
+})
+
+describe('locked days: nothing goes in or out', () => {
+  it('a dropped task that would run onto a locked day jumps it', () => {
+    // C (3h) dropped on Friday hour 6, with next Monday locked: Friday 6–8, then Tuesday.
+    const s = { ...board(), lockedDays: [MON2] }
+    const next = drop(s, 'sofia', FRI, 6)
+    expect(pinOf(next, 'c')).toEqual({ date: FRI, startHour: 6 })
+    expect(drawn(next, WED, 'sofia', 'c')).toEqual(['09-18@6+2', '09-22@0+1'])
+  })
+
+  it('a task with any part on a locked day cannot be lifted, anywhere', () => {
+    // A runs Wednesday and Thursday; Thursday is locked (locking pins A's Thursday part there).
+    const s = lockDay(board(), THU, WED, ids())
+    const thursdayPart = s.queues.diogo.find((b) => b.pin?.date === THU)!
+    const subject = { kind: 'block' as const, blockId: thursdayPart.id, workItemId: 1 }
+    expect(canLift(s, subject, ctx(s).layouts)).toBe(false)
+    expect(applyDrop(s, subject, { memberId: 'diogo', date: FRI, hour: 5 }, ctx(s))).toBe(s)
+    // Its Wednesday part is not on the locked day: that one moves.
+    const wednesday = { kind: 'block' as const, blockId: 'a', workItemId: 1 }
+    expect(canLift(s, wednesday, ctx(s).layouts)).toBe(true)
+  })
+
+  it('reported hours on a locked day stay where they are', () => {
+    const s = {
+      ...board(),
+      reportedPins: { 3: { memberId: 'diogo', date: MON, startHour: 0 } },
+      lockedDays: [MON]
+    }
+    expect(canLift(s, done, ctx(s).layouts)).toBe(false)
+    expect(applyDrop(s, done, { memberId: 'diogo', date: TUE, hour: 2 }, ctx(s))).toBe(s)
   })
 })
 
