@@ -158,6 +158,10 @@ const SECTIONS: Section[] = [
             <strong>Rows</strong> are people; click a name to open their panel on the right.
           </li>
           <li>
+            The <strong>ⓘ</strong> in the calendar&rsquo;s top-left corner lists the keyboard
+            shortcuts and what the marks on the calendar mean — hover it for a reminder.
+          </li>
+          <li>
             Right-click a name and choose <strong>Export calendar…</strong> for a simple board of
             their sprint — a row per day, and the tasks on it, like{' '}
             <code>#15243 (DEV) / #12345 (VAL)</code> — saved as Markdown or as a PNG image. Meetings

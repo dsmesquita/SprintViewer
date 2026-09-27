@@ -186,3 +186,14 @@ export function ExportIcon(props: IconProps): JSX.Element {
     </svg>
   )
 }
+
+export function InfoIcon(props: IconProps): JSX.Element {
+  return (
+    <svg {...svgProps(props)}>
+      {props.title && <title>{props.title}</title>}
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v6" />
+      <path d="M12 7.5v.1" />
+    </svg>
+  )
+}

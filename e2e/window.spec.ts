@@ -153,3 +153,30 @@ test('a snapshot opens in its own read-only window, beside the board', async ({
   expect(app.windows()).toHaveLength(1)
   await expect(page.locator('.toolbar .title')).toHaveText('Sprint E2E')
 })
+
+test('the ⓘ in the corner explains the keys and marks; Shift+wheel scrolls sideways', async ({
+  launch,
+  seed,
+  tfs
+}) => {
+  const sprint = sprintFor(tfs)
+  await seed({ settings: { ...settingsFor(tfs), activeSprintId: sprint.id }, sprints: [sprint] })
+  const { page } = await launch()
+
+  await page.getByRole('button', { name: 'Keys and marks' }).hover()
+  const key = page.getByRole('tooltip')
+  await expect(key).toBeVisible()
+  await expect(key).toContainText('Scroll the calendar sideways')
+  // Above the calendar, not clipped by it.
+  const box = (await key.boundingBox())!
+  expect(box.height).toBeGreaterThan(150)
+
+  // What the key promises: Shift + mouse wheel scrolls the calendar sideways.
+  const calendar = page.locator('.cal-scroll')
+  const area = (await calendar.boundingBox())!
+  await page.mouse.move(area.x + area.width / 2, area.y + 150)
+  await page.keyboard.down('Shift')
+  await page.mouse.wheel(0, 300)
+  await page.keyboard.up('Shift')
+  await expect.poll(() => calendar.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0)
+})

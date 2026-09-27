@@ -14,6 +14,7 @@ import type { ISODate, Member, Segment, Sprint } from '@shared/types'
 import { cx, hours, toneFor } from '../format'
 import { DRAG_ID_PREFIX, MEMBER_DROP_PREFIX, zoomPercent, type DragData } from '../grid'
 import { LockIcon, NoteIcon, WarningIcon } from '../icons'
+import CalendarKey from './CalendarKey'
 import { useApp, useSprint } from '../store'
 
 interface Props {
@@ -163,6 +164,7 @@ export default function SprintGrid({
                   <button type="button" className="zoom-reset" onClick={() => zoomBy(null)}>
                     Reset
                   </button>
+                  <CalendarKey />
                 </div>
               )}
             </div>
