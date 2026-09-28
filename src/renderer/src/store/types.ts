@@ -1,3 +1,4 @@
+import type { PlanSettings } from '@shared/sprintSettings'
 import type { CustomChoice, CustomConflict } from '@shared/customHours'
 import type { Location } from '@shared/mutations'
 import type { NoteDraft } from '@shared/notes'
@@ -84,6 +85,8 @@ export interface BoardSlice {
   clearSprint: () => void
   /** Changes the query or sprint URL that Refresh reads the open sprint from. */
   setQueryUrl: (url: string) => void
+  /** Saves the Sprint tab of Settings into the open sprint, as one undoable change. */
+  applySprintSettings: (next: PlanSettings & { name: string }) => void
   /** Replaces the sprint with one already transformed by the caller, then persists it. */
   applySprint: (next: Sprint, label?: string) => void
   splitBlock: (blockId: string, keepHours: number) => void

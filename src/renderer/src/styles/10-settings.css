@@ -103,3 +103,24 @@
 .base-changes li {
   margin-bottom: 4px;
 }
+
+/* Settings is in two tabs: this sprint's own settings, and the app's defaults. */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin: -4px 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-tabs .tab {
+  font-size: 13px;
+  padding: 5px 12px;
+}
+
+/* Filling one tab from the other: set apart from the fields, at the end of the tab. */
+.settings-copy {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}

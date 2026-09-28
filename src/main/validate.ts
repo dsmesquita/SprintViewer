@@ -1,5 +1,5 @@
 import type { ExportFile } from '@shared/calendarExport'
-import type { WritableSettings } from '@shared/settings'
+import type { ChildQueryMode, WritableSettings } from '@shared/settings'
 import { parseTags, type TaskDraft } from '@shared/taskCreation'
 
 /**
@@ -100,4 +100,9 @@ export function exportFiles(value: unknown): ExportFile[] {
     }
     throw new Error('Only Markdown and PNG files can be exported.')
   })
+}
+
+/** A child-task mode the renderer sent, or undefined for anything else. */
+export function childMode(value: unknown): ChildQueryMode | undefined {
+  return value === 'auto' || value === 'always' || value === 'never' ? value : undefined
 }

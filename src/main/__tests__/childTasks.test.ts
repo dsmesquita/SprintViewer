@@ -111,10 +111,14 @@ async function start(
   }
 }
 
-async function refresh(mode: 'auto' | 'always' | 'never', queryIds: number[]) {
+async function refresh(
+  mode: 'auto' | 'always' | 'never',
+  queryIds: number[],
+  sprintMode?: 'auto' | 'always' | 'never'
+) {
   await call('settings:update', { childQueryMode: mode })
   const childQueries = serve(queryIds)
-  const result = await call('sprint:refresh', QUERY)
+  const result = await call('sprint:refresh', QUERY, sprintMode)
   if (!result.ok) throw new Error(result.message)
   return { childQueries, ids: (result.value as Array<{ id: number }>).map((item) => item.id) }
 }
@@ -231,6 +235,20 @@ async function run(): Promise<void> {
   f = await refresh('never', [1, 2, 4])
   check(
     'refresh · never → query result only',
+    f.childQueries.length === 0 && sorted(f.ids) === '[1,2,4]',
+    f.ids
+  )
+
+  // The sprint's own setting wins over the app's default, which is only for new sprints.
+  f = await refresh('never', [1, 2, 4], 'auto')
+  check(
+    'refresh · the sprint says auto, the app never → children included',
+    [10, 11, 30, 40, 41].every((id) => f.ids.includes(id)),
+    f.ids
+  )
+  f = await refresh('auto', [1, 2, 4], 'never')
+  check(
+    'refresh · the sprint says never, the app auto → query result only',
     f.childQueries.length === 0 && sorted(f.ids) === '[1,2,4]',
     f.ids
   )

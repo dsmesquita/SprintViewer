@@ -3,6 +3,7 @@ import { applyCustomChoices, customConflicts } from '@shared/customHours'
 import { doneToDecide, keepDoneInBacklog, placeDone } from '@shared/doneHours'
 import { applyRefresh, type RefreshSummary } from '@shared/refresh'
 import { anchorFor } from '@shared/scheduling'
+import { sprintPlan } from '@shared/sprintSettings'
 import { anchorOf, mutate, persistSprint, UNDO_DEPTH } from './persistence'
 import type { Sprint } from '@shared/types'
 import type { AppState, RefreshSlice } from './types'
@@ -32,7 +33,10 @@ export const createRefreshSlice: StateCreator<AppState, [], [], RefreshSlice> = 
     if (!sprint?.queryUrl) return
 
     set({ refreshing: true, refreshStatus: null })
-    const result = await window.api.refreshSprint(sprint.queryUrl)
+    const result = await window.api.refreshSprint(
+      sprint.queryUrl,
+      sprintPlan(sprint, get().settings).childQueryMode
+    )
     if (!result.ok) {
       set({ refreshing: false, refreshStatus: { ok: false, text: result.message } })
       return

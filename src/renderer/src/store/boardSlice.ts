@@ -21,6 +21,7 @@ import { returnDoneToBacklog } from '@shared/doneHours'
 import { hideInBacklog, unhideInBacklog } from '@shared/hiddenBacklog'
 import { nudgeBlock, nudgeReported } from '@shared/nudge'
 import { syncSprintMembers } from '@shared/squad'
+import { applySprintSettings } from '@shared/sprintSettings'
 import { showAllTags, toggleTag } from '@shared/tags'
 import { addCreatedTasks } from '@shared/taskCreation'
 import { anchorOf, mutate, persistSprint } from './persistence'
@@ -109,6 +110,8 @@ export const createBoardSlice: StateCreator<AppState, [], [], BoardSlice> = (set
       ),
     clearSprint: () => change(clearCalendar, 'clear sprint'),
     setQueryUrl: (url) => change((sprint) => setQueryUrl(sprint, url), 'query URL'),
+    applySprintSettings: (next) =>
+      change((sprint) => applySprintSettings(sprint, next), 'sprint settings'),
     applySprint: (next, label = 'change') => change(() => next, label),
     splitBlock: (blockId, keepHours) =>
       change((sprint) => splitAndReturn(sprint, blockId, keepHours, newId), 'split'),

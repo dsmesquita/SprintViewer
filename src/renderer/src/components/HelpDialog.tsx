@@ -548,30 +548,46 @@ const SECTIONS: Section[] = [
     title: 'Settings reference',
     body: (
       <>
+        <p>
+          Settings has two tabs. <strong>App &amp; new sprints</strong> holds how this PC reaches
+          TFS and the defaults a new sprint starts from. <strong>This sprint</strong> holds the open
+          sprint&rsquo;s own copy of those defaults, which is what it uses: changing one never
+          changes the other. <em>Apply app settings to this sprint</em> and{' '}
+          <em>Use this sprint&rsquo;s settings as defaults</em> copy one tab into the other; Save
+          writes both.
+        </p>
         <ul>
           <li>
-            <strong>Authentication</strong> — a Personal Access Token (stored encrypted, never shown
-            again) or your Windows sign-in. <em>Test</em> checks it against a URL.
+            <strong>Authentication</strong> (app only) — a Personal Access Token (stored encrypted,
+            never shown again) or your Windows sign-in, the TFS API version if your server needs a
+            specific one, and hosts whose certificates to trust.
           </li>
           <li>
-            <strong>Query or sprint URL</strong> — while a sprint is open, the URL{' '}
-            <strong>Refresh</strong> reads it from. Paste another query's address and Save to point
-            the sprint at it. With no sprint open, it is where new sprints start from.
+            <strong>Sprint name</strong> (sprint only) — shown in the toolbar and in exported file
+            names.
           </li>
           <li>
-            <strong>Hours in a working day</strong> — also rescales the open sprint; days off and
-            half days stay off and half.
+            <strong>Query or sprint URL</strong> — on the sprint, the URL <strong>Refresh</strong>{' '}
+            reads it from: paste another query&rsquo;s address and Save to point the sprint at it.
+            On the app, where Start sprint begins. <em>Test</em> connects and then runs the query,
+            saying how many work items it returns — or why it failed.
           </li>
           <li>
-            <strong>Team</strong> — the roster, and the TFS sync.
+            <strong>Hours in a working day</strong> — on the sprint, rescales its calendar; days off
+            and half days stay off and half. On the app, the length new sprints start with.
+          </li>
+          <li>
+            <strong>People</strong> — the sprint&rsquo;s rows, or the team roster new sprints start
+            with, and the TFS sync. Taking someone with tasks off a sprint asks first; their tasks
+            go back to the backlog, and Undo puts everything back.
           </li>
           <li>
             <strong>Creating tasks</strong> — who DOC and QA tasks go to (a team member or any TFS
             login), and your templates.
           </li>
           <li>
-            <strong>Import</strong> — how child tasks are found for a query, and the TFS API version
-            if your server needs a specific one.
+            <strong>Import</strong> — how child tasks are found for a query, at import and at every
+            refresh.
           </li>
         </ul>
         <p className="hint">

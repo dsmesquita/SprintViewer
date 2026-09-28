@@ -3,6 +3,7 @@ import type { ExportFile } from '@shared/calendarExport'
 import type { Result } from '@shared/ipc'
 import type {
   AppSettings,
+  ChildQueryMode,
   ConnectionResult,
   SprintSummary,
   StartSprintRequest,
@@ -46,8 +47,8 @@ const api = {
 
   startSprint: (request: StartSprintRequest): Promise<Result<Sprint>> =>
     ipcRenderer.invoke('sprint:start', request),
-  refreshSprint: (queryUrl: string): Promise<Result<WorkItem[]>> =>
-    ipcRenderer.invoke('sprint:refresh', queryUrl),
+  refreshSprint: (queryUrl: string, childQueryMode?: ChildQueryMode): Promise<Result<WorkItem[]>> =>
+    ipcRenderer.invoke('sprint:refresh', queryUrl, childQueryMode),
   saveSprint: (sprint: Sprint): Promise<Result<void>> => ipcRenderer.invoke('sprint:save', sprint),
   loadSprint: (id: string): Promise<Sprint | null> => ipcRenderer.invoke('sprint:load', id),
   listSprints: (): Promise<SprintSummary[]> => ipcRenderer.invoke('sprint:list'),

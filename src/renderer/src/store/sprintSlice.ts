@@ -30,7 +30,7 @@ export const createSprintSlice: StateCreator<AppState, [], [], SprintSlice> = (
     const sprintList = await window.api.listSprints()
     set({
       settings,
-      sprint: opened(store, sprint),
+      sprint: opened(store, sprint, settings),
       sprintList,
       isSample: false,
       loading: false,

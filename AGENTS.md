@@ -116,6 +116,8 @@ src/shared/          pure domain logic — no React, no Electron, no DOM, no zus
   math.ts              round (to the hundredth) and clamp — use these, not local copies
   sprintSummary.ts     Markdown sprint summary for an AI write-up
   hiddenBacklog.ts     tasks hidden from the backlog; placing one clears its mark (in `mutate`)
+  sprintSettings.ts    a sprint's own copy of the app's defaults (URL, day, people, task
+                       creation, child tasks) and applying Settings' Sprint tab
   calendarExport.ts    a person's calendar as a day-by-day board (Export calendar…), and as
                        Markdown; the renderer draws the PNG (renderer/src/export/png.ts)
   snapshots.ts, baseline.ts, notes.ts, squad.ts, taskCreation.ts, tags.ts, grouping.ts,
@@ -168,6 +170,11 @@ e2e/                 end-to-end tests of the built app (Playwright): fixtures, f
   task (`sprint.doneDecided`), to draw them on the owner's row or keep them in the backlog as a
   red-dotted card (`sprint.doneInBacklog`: drawn nowhere, not even from the record, until
   placed). A refresh puts every new task in the backlog; auto-assign places waiting done hours.
+- **Settings in two places.** App settings (`settings.json`) are how this PC reaches TFS plus
+  the _defaults_ a new sprint copies; each sprint keeps its own copy (`queryUrl`,
+  `hoursPerDay`, `members`, `childQueryMode`, `docOwner`, `qaOwner`, `taskTemplates`) and uses
+  only that — read it through `sprintPlan()`, which borrows the app's for old sprint files.
+  Refresh reads `sprint.queryUrl` and the sprint's child mode, never the app's.
 - **Custom hours** (`sprint.customHours`) = a manual size overruling TFS; a refresh that
   disagrees stops and asks (`RefreshHoursDialog`).
 - **Undo**: every board change goes through `mutate(store, transform, label)` in

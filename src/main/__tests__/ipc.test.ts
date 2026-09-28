@@ -205,6 +205,37 @@ describe('sprint:start', () => {
     const settings = await invoke<AppSettings>('settings:get')
     expect(settings).toMatchObject({ activeSprintId: s.id, lastQueryUrl: QUERY })
   })
+
+  it('the sprint takes its own copy of the app’s defaults', async () => {
+    serveQuery()
+    await invoke('settings:update', {
+      members: [{ id: 'diogo', name: 'Diogo', order: 0 }],
+      hoursPerDay: 6,
+      childQueryMode: 'never',
+      docOwner: 'diogo',
+      qaOwner: 'CMF\\qa',
+      taskTemplates: [{ name: 'Solo', prefixes: ['DEV'] }]
+    })
+    const result = await invoke<Result<Sprint>>('sprint:start', {
+      name: 'S',
+      startDate: '2026-09-14',
+      weeks: 1,
+      includeWeekends: false,
+      queryUrl: QUERY
+    })
+    if (!result.ok) throw new Error(result.message)
+    expect(result.value).toMatchObject({
+      hoursPerDay: 6,
+      queryUrl: QUERY,
+      childQueryMode: 'never',
+      docOwner: 'diogo',
+      qaOwner: 'CMF\\qa',
+      taskTemplates: [{ name: 'Solo', prefixes: ['DEV'] }]
+    })
+    // Later changes to the defaults do not reach it.
+    await invoke('settings:update', { childQueryMode: 'always' })
+    expect((await invoke<Sprint>('sprint:load', result.value.id)).childQueryMode).toBe('never')
+  })
 })
 
 describe('sprints, snapshots and files', () => {

@@ -1,6 +1,7 @@
 import { buildSprintDays } from '@shared/dates'
 import { schedulableItems } from '@shared/grouping'
 import type { StartSprintRequest } from '@shared/settings'
+import { appPlan } from '@shared/sprintSettings'
 import { plannedHours } from '@shared/sizing'
 import type { Block, Sprint, WorkItem } from '@shared/types'
 import { getSettings, loadSprint, newSprintId, saveSprint, updateSettings } from '../storage'
@@ -14,8 +15,9 @@ export async function startSprint(request: StartSprintRequest): Promise<Sprint> 
     throw new Error('Add the team members in Settings first — they are the rows of the calendar.')
   }
 
+  const defaults = appPlan(settings)
   const { client } = await clientFor(request.queryUrl)
-  const items = await client.fetchSprintItems(settings.childQueryMode ?? 'auto')
+  const items = await client.fetchSprintItems(defaults.childQueryMode)
   await rememberBusinessOrderField(client)
 
   const workItems: Record<number, WorkItem> = {}
@@ -47,7 +49,12 @@ export async function startSprint(request: StartSprintRequest): Promise<Sprint> 
     notes: [],
     queryUrl: request.queryUrl,
     lastRefreshedAt: new Date().toISOString(),
-    history: {}
+    history: {},
+    // Its own copy of the app's defaults: changing those later leaves this sprint as it is.
+    childQueryMode: defaults.childQueryMode,
+    docOwner: defaults.docOwner,
+    qaOwner: defaults.qaOwner,
+    taskTemplates: defaults.taskTemplates
   }
 
   await saveSprint(sprint)

@@ -81,6 +81,31 @@ describe('CreateTasksDialog', () => {
     ])
   })
 
+  it('a sprint with its own owners and templates uses them, not the app’s', async () => {
+    const s = useApp.getState().sprint!
+    useApp.setState({
+      sprint: {
+        ...s,
+        docOwner: '',
+        qaOwner: 'diogo',
+        taskTemplates: [{ name: 'Docs', prefixes: ['DOC'] }]
+      }
+    })
+    const user = userEvent.setup()
+    render(<CreateTasksDialog />)
+    await user.selectOptions(screen.getByLabelText('Apply template'), '0')
+    await user.click(screen.getByRole('button', { name: '+ DOC task' }))
+    await user.click(screen.getByRole('button', { name: '+ QA task' }))
+    await create(user)
+    expect(
+      drafts()?.map((d: { title: string; assignedTo?: string }) => [d.title, d.assignedTo])
+    ).toEqual([
+      ['DOC:: Export', undefined],
+      ['DOC:: Export', undefined],
+      ['QA:: Export', 'Diogo Mesquita']
+    ])
+  })
+
   it('custom tags replace the parent’s on every task', async () => {
     const user = userEvent.setup()
     render(<CreateTasksDialog />)

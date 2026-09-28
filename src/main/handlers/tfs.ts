@@ -1,5 +1,5 @@
 import { session } from 'electron'
-import type { ConnectionResult } from '@shared/settings'
+import type { ChildQueryMode, ConnectionResult } from '@shared/settings'
 import type { TaskDraft } from '@shared/taskCreation'
 import { getSettings, readPat, updateSettings } from '../storage'
 import { TfsClient, type TfsCredentials } from '../tfs/client'
@@ -53,10 +53,13 @@ export async function testConnection(url: string): Promise<ConnectionResult> {
 /**
  * The work items a query or sprint URL returns now. Only a fetch: the reconciliation runs in
  * the renderer, where the sprint lives, so the main process never holds a second copy of it.
+ * `mode` is the sprint's own child-task setting; the app's default when it has none.
  */
-export async function fetchSprintItems(url: string) {
+export async function fetchSprintItems(url: string, mode?: ChildQueryMode) {
   const { client } = await clientFor(url)
-  const items = await client.fetchSprintItems((await getSettings()).childQueryMode ?? 'auto')
+  const items = await client.fetchSprintItems(
+    mode ?? (await getSettings()).childQueryMode ?? 'auto'
+  )
   await rememberBusinessOrderField(client)
   return items
 }

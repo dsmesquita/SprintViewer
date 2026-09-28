@@ -2,6 +2,8 @@ import type { StoreApi } from 'zustand'
 import { forgetPlacedHidden } from '@shared/hiddenBacklog'
 import { alignReportedOnly } from '@shared/refresh'
 import { anchorFor, recordPast } from '@shared/scheduling'
+import type { AppSettings } from '@shared/settings'
+import { withAppDefaults } from '@shared/sprintSettings'
 import type { ISODate, Sprint } from '@shared/types'
 import type { AppState } from './types'
 
@@ -72,10 +74,17 @@ export function scheduleBaseline(store: Store): void {
  * them, and they would be drawn twice; this brings them into line the moment the sprint is
  * loaded rather than waiting for a refresh.
  */
-export function opened(store: Store, sprint: Sprint | null): Sprint | null {
+export function opened(
+  store: Store,
+  sprint: Sprint | null,
+  settings: AppSettings | null = store.getState().settings
+): Sprint | null {
   if (!sprint) return sprint
   const anchor = anchorFor(sprint, store.getState().today)
   let { sprint: aligned } = alignReportedOnly(sprint, anchor)
+  // A sprint saved before it kept its own settings takes a copy of the app's, so it goes on
+  // behaving as it did however the app's defaults change later.
+  if (settings) aligned = withAppDefaults(aligned, settings)
   // A sprint refreshed before past days became a fixed record starts one from exactly what it
   // shows now, so upgrading moves nothing and the next refresh only adds to it.
   if (!aligned.pastRecord && aligned.lastRefreshedAt) {

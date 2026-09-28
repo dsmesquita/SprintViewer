@@ -1,3 +1,4 @@
+import { sprintPlan } from '@shared/sprintSettings'
 import { useState } from 'react'
 import { memberFor } from '@shared/assignment'
 import {
@@ -46,9 +47,9 @@ export default function CreateTasksDialog(): JSX.Element | null {
   const parent = parentId === null ? undefined : sprint.workItems[parentId]
   const baseTitle = parent?.title ?? ''
   const members = [...sprint.members].sort((a, b) => a.order - b.order)
-  const templates = settings?.taskTemplates?.length
-    ? settings.taskTemplates
-    : DEFAULT_TASK_TEMPLATES
+  // The sprint's own owners and templates, which start as the app's defaults.
+  const plan = sprintPlan(sprint, settings)
+  const templates = plan.taskTemplates.length ? plan.taskTemplates : DEFAULT_TASK_TEMPLATES
   // The parent's own assignee is the best first guess for a single task, and only for that:
   // a VAL or QA task is exactly the kind that belongs to someone else.
   const parentOwner = memberFor(members, parent?.assignedTo)
@@ -360,7 +361,10 @@ export default function CreateTasksDialog(): JSX.Element | null {
               type="button"
               onClick={() =>
                 addRows([
-                  { ...row(taggedTitle('DOC', baseTitle), ''), ...savedOwner(settings?.docOwner) }
+                  {
+                    ...row(taggedTitle('DOC', baseTitle), ''),
+                    ...savedOwner(plan.docOwner || undefined)
+                  }
                 ])
               }
             >
@@ -370,7 +374,10 @@ export default function CreateTasksDialog(): JSX.Element | null {
               type="button"
               onClick={() =>
                 addRows([
-                  { ...row(taggedTitle('QA', baseTitle), ''), ...savedOwner(settings?.qaOwner) }
+                  {
+                    ...row(taggedTitle('QA', baseTitle), ''),
+                    ...savedOwner(plan.qaOwner || undefined)
+                  }
                 ])
               }
             >

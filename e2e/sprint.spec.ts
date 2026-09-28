@@ -121,6 +121,43 @@ test('a new query URL saved in Settings is the one Refresh reads', async ({
   expect((await savedSprint(dataDir, sprint.id))?.queryUrl).toBe(tfs.queryUrl)
 })
 
+test('Settings: the sprint tab saves into the sprint, the app tab into the defaults', async ({
+  launch,
+  seed,
+  tfs,
+  dataDir
+}) => {
+  storyWithTasks(tfs)
+  const sprint = sprintFor(tfs)
+  await seed({ settings: { ...settingsFor(tfs), activeSprintId: sprint.id }, sprints: [sprint] })
+  const { page, close } = await launch()
+
+  await page.locator('.toolbar').getByRole('button', { name: 'Settings' }).click()
+  const settings = page.getByRole('dialog', { name: 'Settings' })
+  await expect(settings.getByRole('tab', { name: 'This sprint' })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  )
+  await settings.getByLabel('Sprint name').fill('Sprint 42')
+  await settings.getByLabel('Fetch child tasks').selectOption('never')
+
+  await settings.getByRole('tab', { name: 'App & new sprints' }).click()
+  await settings.getByLabel('Hours in a working day').fill('6')
+  await settings.getByRole('button', { name: 'Save' }).click()
+  await expect(settings).toBeHidden()
+  await expect(page.locator('.toolbar .title')).toHaveText('Sprint 42')
+
+  await expect
+    .poll(async () => {
+      const saved = await savedSprint(dataDir, sprint.id)
+      return saved && { name: saved.name, hours: saved.hoursPerDay, mode: saved.childQueryMode }
+    })
+    .toEqual({ name: 'Sprint 42', hours: 8, mode: 'never' })
+  const app = JSON.parse(await readFile(join(dataDir, 'settings.json'), 'utf8'))
+  expect(app.hoursPerDay).toBe(6)
+  await close()
+})
+
 test('a refresh that disagrees with hours set by hand asks first', async ({
   launch,
   seed,

@@ -1,5 +1,8 @@
 /** Domain model shared by the main and renderer processes. */
 
+import type { ChildQueryMode } from './settings'
+import type { TaskTemplate } from './taskCreation'
+
 /** Calendar date as `YYYY-MM-DD`. Never a Date object — these are serialised to JSON on disk. */
 export type ISODate = string
 
@@ -200,8 +203,17 @@ export interface Sprint {
    * mark; auto-assign places them like any other task.
    */
   hiddenBacklog?: number[]
-  /** TFS query the work items were imported from. */
+  /** TFS query the work items were imported from, and the one Refresh reads. */
   queryUrl?: string
+  /**
+   * The sprint's own copy of settings the app keeps defaults for (`sprintSettings.ts`): how
+   * Refresh fetches child tasks, and who DOC and QA tasks created here go to, from which
+   * templates. Absent on sprints saved before they had a copy; they get the app's when opened.
+   */
+  childQueryMode?: ChildQueryMode
+  docOwner?: string
+  qaOwner?: string
+  taskTemplates?: TaskTemplate[]
   lastRefreshedAt?: string
   /**
    * Frozen layout for days that have already passed, captured at each refresh so that

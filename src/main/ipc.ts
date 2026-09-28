@@ -1,6 +1,7 @@
 import { app, ipcMain } from 'electron'
 import type {
   AppSettings,
+  ChildQueryMode,
   SprintSummary,
   StartSprintRequest,
   WritableSettings
@@ -34,7 +35,7 @@ import {
   takeSnapshot,
   updateSettings
 } from './storage'
-import { exportFiles, sanitiseDrafts, writable } from './validate'
+import { childMode, exportFiles, sanitiseDrafts, writable } from './validate'
 
 /**
  * Everything the renderer can ask the main process to do — one line per route. What each one
@@ -65,7 +66,9 @@ export function registerIpc(): void {
   ipcMain.handle('sprint:start', (_event, request: StartSprintRequest) =>
     guard(() => startSprint(request))
   )
-  ipcMain.handle('sprint:refresh', (_event, url: string) => guard(() => fetchSprintItems(url)))
+  ipcMain.handle('sprint:refresh', (_event, url: string, mode?: ChildQueryMode) =>
+    guard(() => fetchSprintItems(url, childMode(mode)))
+  )
   ipcMain.handle('sprint:save', (_event, sprint: Sprint) => guard(() => saveSprint(sprint)))
   ipcMain.handle('sprint:load', (_event, id: string) => loadSprint(id))
   ipcMain.handle('sprint:list', (): Promise<SprintSummary[]> => listSprints())
