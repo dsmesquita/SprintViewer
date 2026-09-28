@@ -574,7 +574,24 @@ export class TfsClient {
     }
 
     const contentType = response.headers.get('content-type') ?? ''
-    if (!contentType.includes('application/json')) {
+    const isJson = contentType.includes('application/json')
+
+    // The status first: a query that is gone answers 404 whether the server sends its error as
+    // data or as a web page, and calling that "not signed in" sent people after their token.
+    if (!response.ok) {
+      const detail = isJson
+        ? await response
+            .json()
+            .then((body) => (body as { message?: string }).message)
+            .catch(() => undefined)
+        : undefined
+      if (response.status === 400 && detail?.includes('version')) {
+        throw new TfsError(`API version ${version} not supported: ${detail}`)
+      }
+      throw new TfsError(this.failureText(response, detail))
+    }
+
+    if (!isJson) {
       // A sign-in page comes back as HTML with a 200, which would otherwise parse as garbage.
       throw new TfsError(
         `${this.target.host} answered with a web page instead of data, which usually means ` +
@@ -582,18 +599,36 @@ export class TfsClient {
       )
     }
 
-    if (!response.ok) {
-      const detail = await response
-        .json()
-        .then((body) => (body as { message?: string }).message)
-        .catch(() => undefined)
-      if (response.status === 400 && detail?.includes('version')) {
-        throw new TfsError(`API version ${version} not supported: ${detail}`)
-      }
-      throw new TfsError(detail ?? `TFS returned ${response.status} ${response.statusText}.`)
-    }
-
     return (await response.json()) as T
+  }
+
+  /** What to tell the user about a refused request: TFS's own words, and what to do next. */
+  private failureText(response: Response, detail: string | undefined): string {
+    const status = response.status
+    const code = response.statusText ? `${status} ${response.statusText}` : String(status)
+    const said = detail?.trim()
+    // A query using @CurrentIteration can only run for a team, and a query's address names none.
+    if (said && /@CurrentIteration/i.test(said)) {
+      return (
+        `${said}\nThe query uses @CurrentIteration, which TFS can only resolve for a team. ` +
+        'Use the sprint’s taskboard address instead, or a query that names the iteration path.'
+      )
+    }
+    if (said) return said
+    if (status === 404) {
+      return (
+        `TFS could not find what this URL points at (404). If it is a query, it may have been ` +
+        'deleted or moved, or your account may not be allowed to read it — open it in TFS and ' +
+        'copy its address again.'
+      )
+    }
+    if (status >= 500) {
+      return (
+        `${this.target.host} had an error of its own (${code}). Try again in a ` +
+        'moment; if it keeps happening, the problem is on the server.'
+      )
+    }
+    return `TFS returned ${code}.`
   }
 }
 
