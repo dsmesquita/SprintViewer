@@ -405,3 +405,13 @@ export function setMemberCapacity(
     capacityOverrides: { ...sprint.capacityOverrides, [memberId]: forMember }
   }
 }
+
+/**
+ * Points the sprint at another TFS query or sprint URL: the one Refresh reads from now on. The
+ * sprint keeps its own URL, set when it was started, so this is the only way to change it.
+ */
+export function setQueryUrl(sprint: Sprint, url: string): Sprint {
+  const next = url.trim()
+  if (next.length === 0 || next === sprint.queryUrl) return sprint
+  return { ...sprint, queryUrl: next }
+}

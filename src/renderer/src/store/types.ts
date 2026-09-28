@@ -82,6 +82,8 @@ export interface BoardSlice {
   setCustomHours: (workItemId: number, hours: number) => void
   clearCustomHours: (workItemId: number) => void
   clearSprint: () => void
+  /** Changes the query or sprint URL that Refresh reads the open sprint from. */
+  setQueryUrl: (url: string) => void
   /** Replaces the sprint with one already transformed by the caller, then persists it. */
   applySprint: (next: Sprint, label?: string) => void
   splitBlock: (blockId: string, keepHours: number) => void

@@ -27,6 +27,10 @@ export default function SettingsDialog(): JSX.Element {
   const applyHoursPerDay = useApp((s) => s.setHoursPerDay)
   const syncSprintMembers = useApp((s) => s.syncSprintMembers)
   const isSample = useApp((s) => s.isSample)
+  const setQueryUrl = useApp((s) => s.setQueryUrl)
+  // The open sprint refreshes from the URL it carries, so while one is open this field is that
+  // URL: editing it here is how the sprint is pointed at another query.
+  const sprintUrl = sprint && !isSample ? sprint.queryUrl : undefined
 
   const [members, setMembers] = useState<Member[]>(settings?.members ?? [])
   const [hoursPerDay, setHoursPerDay] = useState(settings?.hoursPerDay ?? 8)
@@ -50,7 +54,7 @@ export default function SettingsDialog(): JSX.Element {
     )
   )
   const [token, setToken] = useState('')
-  const [testUrl, setTestUrl] = useState(settings?.lastQueryUrl ?? '')
+  const [testUrl, setTestUrl] = useState(sprintUrl ?? settings?.lastQueryUrl ?? '')
   const [apiVersion, setApiVersion] = useState(settings?.apiVersion ?? '')
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -136,7 +140,10 @@ export default function SettingsDialog(): JSX.Element {
     const roster = named.map((member, order) => ({ ...member, name: member.name.trim(), order }))
     // The sprint keeps its own copy of the rows, so a sync reaches it only when asked to.
     if (synced?.toSprint) syncSprintMembers(roster)
+    const url = testUrl.trim()
+    if (sprintUrl && url) setQueryUrl(url)
     await saveSettings({
+      ...(url ? { lastQueryUrl: url } : {}),
       members: roster,
       hoursPerDay,
       authMode,
@@ -268,6 +275,11 @@ export default function SettingsDialog(): JSX.Element {
             {busy ? 'Testing…' : 'Test'}
           </button>
         </div>
+        <p className="hint">
+          {sprintUrl
+            ? `Refresh reads “${sprint!.name}” from this URL. Change it and Save to point the sprint at another query.`
+            : 'New sprints start from this URL.'}
+        </p>
       </div>
 
       <div className="field">

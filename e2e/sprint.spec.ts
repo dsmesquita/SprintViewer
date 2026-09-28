@@ -87,6 +87,40 @@ test('Refresh reads the new figures from TFS', async ({ launch, seed, tfs, dataD
   expect(tfs.requests.some((r) => r.path.endsWith(`/_apis/wit/wiql/${tfsQueryId(tfs)}`))).toBe(true)
 })
 
+test('a new query URL saved in Settings is the one Refresh reads', async ({
+  launch,
+  seed,
+  tfs,
+  dataDir
+}) => {
+  storyWithTasks(tfs)
+  // Started from a query TFS no longer has.
+  const gone = tfs.queryUrl.replace(/query\/.*$/, 'query/00000000-0000-0000-0000-000000000000')
+  const sprint = sprintFor(tfs, { queryUrl: gone })
+  await seed({ settings: { ...settingsFor(tfs), activeSprintId: sprint.id }, sprints: [sprint] })
+  const { page } = await launch()
+  const refresh = page.locator('.toolbar').getByRole('button', { name: 'Refresh', exact: true })
+
+  await refresh.click()
+  await expect(page.locator('.toolbar')).toContainText('refresh failed')
+
+  await page.locator('.toolbar').getByRole('button', { name: 'Settings' }).click()
+  const settings = page.getByRole('dialog', { name: 'Settings' })
+  await expect(settings.getByLabel('Query or sprint URL')).toHaveValue(gone)
+  await settings.getByLabel('Query or sprint URL').fill(tfs.queryUrl)
+  await settings.getByRole('button', { name: 'Save' }).click()
+  await expect(settings).toBeHidden()
+
+  tfs.update(DEV, { 'Microsoft.VSTS.Scheduling.RemainingWork': 1 })
+  await refresh.click()
+  await expect(refresh).toBeEnabled()
+  await expect(page.locator('.toolbar')).not.toContainText('refresh failed')
+  await expect
+    .poll(async () => (await savedSprint(dataDir, sprint.id))?.workItems[DEV]?.remainingWork)
+    .toBe(1)
+  expect((await savedSprint(dataDir, sprint.id))?.queryUrl).toBe(tfs.queryUrl)
+})
+
 test('a refresh that disagrees with hours set by hand asks first', async ({
   launch,
   seed,

@@ -87,6 +87,39 @@ describe('SettingsDialog', () => {
     expect(useApp.getState().sprint!.hoursPerDay).toBe(6)
   })
 
+  it('the URL is the open sprint’s: changing it and saving is what Refresh reads next', async () => {
+    const OLD = QUERY.replace('5555', '0000')
+    const NEW = QUERY
+    useApp.setState({ sprint: sprint({ queryUrl: OLD }), settings: { ...DEFAULT_SETTINGS } })
+    const user = userEvent.setup()
+    render(<SettingsDialog />)
+    const field = screen.getByLabelText('Query or sprint URL')
+    // It shows the sprint's URL, not whatever the last new sprint started from.
+    expect(field).toHaveValue(OLD)
+    expect(screen.getByText(/Refresh reads “Test sprint” from this URL/)).toBeInTheDocument()
+
+    fireEvent.change(field, { target: { value: ` ${NEW} ` } })
+    await save(user)
+    expect(useApp.getState().sprint!.queryUrl).toBe(NEW)
+    expect(saved().lastQueryUrl).toBe(NEW)
+
+    await useApp.getState().refresh()
+    expect(fake.api.refreshSprint).toHaveBeenLastCalledWith(NEW)
+  })
+
+  it('with no sprint open, the URL is only where new sprints start from', async () => {
+    useApp.setState({ sprint: null })
+    const user = userEvent.setup()
+    render(<SettingsDialog />)
+    expect(screen.getByLabelText('Query or sprint URL')).toHaveValue(QUERY)
+    expect(screen.getByText('New sprints start from this URL.')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Query or sprint URL'), {
+      target: { value: 'https://tfs.example/other' }
+    })
+    await save(user)
+    expect(saved().lastQueryUrl).toBe('https://tfs.example/other')
+  })
+
   it('Read me opens in place of Settings, and closing it comes back with edits intact', async () => {
     const user = userEvent.setup()
     render(<SettingsDialog />)

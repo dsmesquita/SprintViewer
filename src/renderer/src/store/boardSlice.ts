@@ -9,6 +9,7 @@ import {
   setDayCapacity,
   setHoursPerDay,
   setMemberCapacity,
+  setQueryUrl,
   splitAndReturn,
   splitIntoN,
   unlockDay,
@@ -107,6 +108,7 @@ export const createBoardSlice: StateCreator<AppState, [], [], BoardSlice> = (set
         'manual hours'
       ),
     clearSprint: () => change(clearCalendar, 'clear sprint'),
+    setQueryUrl: (url) => change((sprint) => setQueryUrl(sprint, url), 'query URL'),
     applySprint: (next, label = 'change') => change(() => next, label),
     splitBlock: (blockId, keepHours) =>
       change((sprint) => splitAndReturn(sprint, blockId, keepHours, newId), 'split'),

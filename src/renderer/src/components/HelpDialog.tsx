@@ -554,6 +554,11 @@ const SECTIONS: Section[] = [
             again) or your Windows sign-in. <em>Test</em> checks it against a URL.
           </li>
           <li>
+            <strong>Query or sprint URL</strong> — while a sprint is open, the URL{' '}
+            <strong>Refresh</strong> reads it from. Paste another query's address and Save to point
+            the sprint at it. With no sprint open, it is where new sprints start from.
+          </li>
+          <li>
             <strong>Hours in a working day</strong> — also rescales the open sprint; days off and
             half days stay off and half.
           </li>

@@ -10,6 +10,7 @@ import {
   setDayCapacity,
   setHoursPerDay,
   setMemberCapacity,
+  setQueryUrl,
   splitAndReturn,
   splitInPlace,
   splitIntoN,
@@ -422,5 +423,19 @@ describe('capacity', () => {
   it('a personal day off moves that person’s work, and only theirs', () => {
     const s = setMemberCapacity(three(), 'diogo', MON, 0)
     expect(drawn(s, MON, 'diogo', 'a')).toEqual(['09-15@0+4'])
+  })
+})
+
+describe('the query Refresh reads from', () => {
+  const old = 'https://tfs.example/tfs/Coll/Proj/_queries/query/old'
+  it('is replaced, trimmed', () => {
+    expect(setQueryUrl(sprint({ queryUrl: old }), '  https://tfs.example/new ').queryUrl).toBe(
+      'https://tfs.example/new'
+    )
+  })
+  it('an empty or unchanged URL changes nothing', () => {
+    const s = sprint({ queryUrl: old })
+    expect(setQueryUrl(s, '  ')).toBe(s)
+    expect(setQueryUrl(s, old)).toBe(s)
   })
 })
