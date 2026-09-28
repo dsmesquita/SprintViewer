@@ -124,3 +124,48 @@
   padding-top: 12px;
   border-top: 1px solid var(--border);
 }
+
+/* The ⚠ beside "refresh failed", and the dialog it opens. */
+.toolbar .refresh-error-button {
+  padding: 2px 4px;
+  color: var(--danger);
+}
+
+.refresh-error-message {
+  white-space: pre-line;
+}
+
+.refresh-error-facts {
+  margin: 12px 0;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.refresh-error-facts > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.refresh-error-facts dt {
+  color: var(--text-3);
+}
+
+.refresh-error-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.refresh-error-response {
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}

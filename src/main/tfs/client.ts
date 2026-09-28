@@ -1,3 +1,4 @@
+import { excerpt, type FailureStep } from '@shared/failure'
 import { net } from 'electron'
 import { isContainerType, schedulableItems } from '@shared/grouping'
 import type { CreateTasksResult, TaskDraft } from '@shared/taskCreation'
@@ -52,7 +53,24 @@ const OPTIONAL_FIELDS = [
 /** TFS caps a work item batch at 200 ids. */
 const BATCH_SIZE = 200
 
-export class TfsError extends Error {}
+/** What the server answered to a failed request, for the details behind the message. */
+export interface TfsAnswer {
+  status?: number
+  statusText?: string
+  /** The start of the body, as text. */
+  response?: string
+  /** The error underneath, when there was no answer at all. */
+  cause?: string
+}
+
+export class TfsError extends Error {
+  constructor(
+    message: string,
+    readonly answer: TfsAnswer = {}
+  ) {
+    super(message)
+  }
+}
 
 export interface TfsCredentials {
   mode: AuthMode
@@ -81,6 +99,10 @@ export class TfsClient {
   private orderField: string | undefined
   /** What the query or sprint itself returned, before any parent was added to it. */
   private resolvedIds: number[] = []
+  /** Which part of reading a sprint is under way, so a failure can say where it happened. */
+  step: FailureStep = 'connect'
+  /** The last request sent — after a failure, the one that failed. Never holds the token. */
+  lastRequest: { method: string; url: string } | undefined
 
   constructor(
     private readonly target: ParsedTfsUrl,
@@ -97,8 +119,14 @@ export class TfsClient {
     return this.orderField
   }
 
+  /** The REST API version in use, once one is settled. */
+  get version(): string | undefined {
+    return this.apiVersion
+  }
+
   /** Confirms the server is reachable and the credentials work, and settles the API version. */
   async connect(): Promise<{ user: string; apiVersion: string }> {
+    this.step = 'connect'
     const candidates = this.apiVersion
       ? [this.apiVersion, ...API_VERSIONS.filter((v) => v !== this.apiVersion)]
       : [...API_VERSIONS]
@@ -153,10 +181,12 @@ export class TfsClient {
    */
   async fetchWorkItems(): Promise<WorkItem[]> {
     if (!this.apiVersion) await this.connect()
+    this.step = 'query'
     const ids = await this.resolveIds()
     this.resolvedIds = ids
     if (ids.length === 0) return []
 
+    this.step = 'items'
     const items = await this.fetchByIds(ids)
     const known = new Set(items.map((item) => item.id))
 
@@ -204,6 +234,7 @@ export class TfsClient {
     if (mode === 'auto' && containers.length < items.length) return items
 
     const merged = new Map(items.map((item) => [item.id, item]))
+    this.step = 'children'
     for (const child of await this.fetchChildTasks(containers)) merged.set(child.id, child)
     return [...merged.values()]
   }
@@ -539,21 +570,21 @@ export class TfsClient {
         'Basic ' + Buffer.from(`:${this.credentials.pat}`, 'utf8').toString('base64')
     }
 
+    const address = `${url}${separator}api-version=${version}`
+    this.lastRequest = { method, url: address }
     let response: Response
     try {
-      response = await net.fetch(`${url}${separator}api-version=${version}`, {
-        method,
-        headers,
-        body,
-        credentials: 'include'
-      })
+      response = await net.fetch(address, { method, headers, body, credentials: 'include' })
     } catch (error) {
+      const cause = (error as Error).message
       throw new TfsError(
-        `Could not reach ${this.target.host}. ${(error as Error).message}\n` +
+        `Could not reach ${this.target.host}. ${cause}\n` +
           'Check the URL, your VPN, and whether the server uses a certificate this machine ' +
-          'does not trust yet.'
+          'does not trust yet.',
+        { cause }
       )
     }
+    const answer: TfsAnswer = { status: response.status, statusText: response.statusText }
 
     if (response.status === 401 || response.status === 403) {
       throw new TfsError(
@@ -563,7 +594,8 @@ export class TfsClient {
           : this.credentials.mode === 'pat'
             ? 'TFS rejected the personal access token (401). Check that it has not expired and ' +
               'that it grants Work Items (Read), or Read & Write to create tasks.'
-            : 'TFS rejected your Windows credentials (401). Try a personal access token instead.'
+            : 'TFS rejected your Windows credentials (401). Try a personal access token instead.',
+        answer
       )
     }
 
@@ -579,23 +611,22 @@ export class TfsClient {
     // The status first: a query that is gone answers 404 whether the server sends its error as
     // data or as a web page, and calling that "not signed in" sent people after their token.
     if (!response.ok) {
-      const detail = isJson
-        ? await response
-            .json()
-            .then((body) => (body as { message?: string }).message)
-            .catch(() => undefined)
-        : undefined
+      const text = await response.text().catch(() => '')
+      answer.response = excerpt(text)
+      const detail = isJson ? messageIn(text) : undefined
       if (response.status === 400 && detail?.includes('version')) {
-        throw new TfsError(`API version ${version} not supported: ${detail}`)
+        throw new TfsError(`API version ${version} not supported: ${detail}`, answer)
       }
-      throw new TfsError(this.failureText(response, detail))
+      throw new TfsError(this.failureText(response, detail), answer)
     }
 
     if (!isJson) {
       // A sign-in page comes back as HTML with a 200, which would otherwise parse as garbage.
+      answer.response = excerpt(await response.text().catch(() => ''))
       throw new TfsError(
         `${this.target.host} answered with a web page instead of data, which usually means ` +
-          'the request was not authenticated. Check the token or switch the authentication mode.'
+          'the request was not authenticated. Check the token or switch the authentication mode.',
+        answer
       )
     }
 
@@ -747,4 +778,14 @@ function compareVersions(a: string, b: string): number {
   const [aMajor, aMinor] = a.split('.').map(Number)
   const [bMajor, bMinor] = b.split('.').map(Number)
   return aMajor - bMajor || (aMinor ?? 0) - (bMinor ?? 0)
+}
+
+/** The `message` of a TFS error body, if the text is one. */
+function messageIn(text: string): string | undefined {
+  try {
+    const message = (JSON.parse(text) as { message?: unknown }).message
+    return typeof message === 'string' ? message : undefined
+  } catch {
+    return undefined
+  }
 }

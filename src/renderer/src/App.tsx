@@ -16,6 +16,7 @@ import HelpDialog from './components/HelpDialog'
 import HoursDialog from './components/HoursDialog'
 import NoteDialog from './components/NoteDialog'
 import PastFitDialog from './components/PastFitDialog'
+import RefreshErrorDialog from './components/RefreshErrorDialog'
 import RefreshHoursDialog from './components/RefreshHoursDialog'
 import SettingsDialog from './components/SettingsDialog'
 import SidePanel from './components/panel/SidePanel'
@@ -152,6 +153,7 @@ export default function App(): JSX.Element {
         {dialog === 'help' && <HelpDialog onClose={closeDialog} />}
         {dialog === 'create-tasks' && sprint && <CreateTasksDialog />}
         {dialog === 'export-calendar' && sprint && <CalendarExportDialog />}
+        {dialog === 'refresh-error' && <RefreshErrorDialog />}
         {pendingRefresh && <RefreshHoursDialog />}
         {doneQuestion && sprint && !pendingRefresh && <DoneHoursDialog ids={doneQuestion} />}
         {showPastFit && sprint && (

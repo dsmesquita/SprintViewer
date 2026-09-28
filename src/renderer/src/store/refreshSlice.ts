@@ -38,7 +38,10 @@ export const createRefreshSlice: StateCreator<AppState, [], [], RefreshSlice> = 
       sprintPlan(sprint, get().settings).childQueryMode
     )
     if (!result.ok) {
-      set({ refreshing: false, refreshStatus: { ok: false, text: result.message } })
+      set({
+        refreshing: false,
+        refreshStatus: { ok: false, text: result.message, detail: result.detail }
+      })
       return
     }
 

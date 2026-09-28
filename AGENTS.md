@@ -99,7 +99,8 @@ src/main/            Electron main process
                        teams, createTasks), sprint.ts (start, switch), files.ts (Save dialogs),
                        links.ts (the only way a link is opened: web addresses only)
   validate.ts          checking what the renderer sends (settings patches, task drafts)
-  result.ts            guard(): failures become a Result with a message for the user
+  result.ts            guard(): failures become a Result with a message for the user, and a
+                       DetailedError's details (a failed refresh: step, request, status, answer)
   storage.ts           JSON files on disk, settings + sealed PAT, snapshots, the auto baseline
   tfs/client.ts        TFS REST client: WIQL, batches, child tasks, createTasks, teams, versions
   tfs/url.ts           a query / sprint URL → server, collection, project, team
@@ -118,6 +119,7 @@ src/shared/          pure domain logic — no React, no Electron, no DOM, no zus
   hiddenBacklog.ts     tasks hidden from the backlog; placing one clears its mark (in `mutate`)
   sprintSettings.ts    a sprint's own copy of the app's defaults (URL, day, people, task
                        creation, child tasks) and applying Settings' Sprint tab
+  failure.ts           the details of a failed refresh (RefreshErrorDialog, Copy details)
   calendarExport.ts    a person's calendar as a day-by-day board (Export calendar…), and as
                        Markdown; the renderer draws the PNG (renderer/src/export/png.ts)
   snapshots.ts, baseline.ts, notes.ts, squad.ts, taskCreation.ts, tags.ts, grouping.ts,

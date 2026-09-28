@@ -104,6 +104,17 @@ test('a new query URL saved in Settings is the one Refresh reads', async ({
   await refresh.click()
   await expect(page.locator('.toolbar')).toContainText('refresh failed')
 
+  // The ⚠ says why: the step, the request that failed, what the fake TFS answered.
+  await page.getByRole('button', { name: 'Why the refresh failed' }).click()
+  const details = page.getByRole('dialog', { name: 'Refresh failed' })
+  await expect(details).toContainText('Running the query')
+  await expect(details).toContainText(gone)
+  await expect(details).toContainText('404')
+  await expect(details).toContainText('/_apis/wit/wiql/00000000-0000-0000-0000-000000000000')
+  await expect(details).toContainText('The fake TFS does not know GET')
+  await page.keyboard.press('Escape')
+  await expect(details).toBeHidden()
+
   await page.locator('.toolbar').getByRole('button', { name: 'Settings' }).click()
   const settings = page.getByRole('dialog', { name: 'Settings' })
   await expect(settings.getByLabel('Query or sprint URL')).toHaveValue(gone)

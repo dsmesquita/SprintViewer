@@ -1,3 +1,4 @@
+import type { FailureDetail } from '@shared/failure'
 import type { PlanSettings } from '@shared/sprintSettings'
 import type { CustomChoice, CustomConflict } from '@shared/customHours'
 import type { Location } from '@shared/mutations'
@@ -25,6 +26,7 @@ export type DialogKind =
   | 'summary'
   | 'help'
   | 'export-calendar'
+  | 'refresh-error'
 
 /** What the note dialog opens on: an existing note, or a blank one seeded from context. */
 export interface NoteTarget {
@@ -111,7 +113,7 @@ export interface BoardSlice {
 export interface RefreshSlice {
   refreshing: boolean
   /** Outcome of the last refresh, shown in the toolbar. */
-  refreshStatus: { ok: boolean; text: string } | null
+  refreshStatus: { ok: boolean; text: string; detail?: FailureDetail } | null
   /**
    * A refresh that has been fetched and reconciled but not committed, because it disagrees
    * with times the user set by hand. Held until they say what to do about each one.

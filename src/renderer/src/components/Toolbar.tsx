@@ -96,6 +96,19 @@ export default function Toolbar({
           · {refreshStatus.ok ? refreshStatus.text : 'refresh failed'}
         </span>
       )}
+      {refreshStatus && !refreshStatus.ok && (
+        // The message alone rarely says enough to fix it; the details say what was asked of
+        // which server, and what it answered.
+        <button
+          type="button"
+          className="ghost refresh-error-button"
+          aria-label="Why the refresh failed"
+          title="Why the refresh failed"
+          onClick={() => openDialog('refresh-error')}
+        >
+          <WarningIcon size={14} />
+        </button>
+      )}
       <span className="spacer" />
       <button
         type="button"

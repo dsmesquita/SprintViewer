@@ -2,9 +2,9 @@ import { session } from 'electron'
 import type { ChildQueryMode, ConnectionResult } from '@shared/settings'
 import type { TaskDraft } from '@shared/taskCreation'
 import { getSettings, readPat, updateSettings } from '../storage'
-import { TfsClient, type TfsCredentials } from '../tfs/client'
+import { TfsClient, TfsError, type TfsCredentials } from '../tfs/client'
 import { parseTfsUrl, type ParsedTfsUrl } from '../tfs/url'
-import { messageFor } from '../result'
+import { DetailedError, messageFor } from '../result'
 
 /** Talking to TFS with the credentials and network settings the user chose. */
 
@@ -56,12 +56,27 @@ export async function testConnection(url: string): Promise<ConnectionResult> {
  * `mode` is the sprint's own child-task setting; the app's default when it has none.
  */
 export async function fetchSprintItems(url: string, mode?: ChildQueryMode) {
-  const { client } = await clientFor(url)
-  const items = await client.fetchSprintItems(
-    mode ?? (await getSettings()).childQueryMode ?? 'auto'
-  )
-  await rememberBusinessOrderField(client)
-  return items
+  const settings = await getSettings()
+  const childQueryMode = mode ?? settings.childQueryMode ?? 'auto'
+  let client: TfsClient | undefined
+  try {
+    ;({ client } = await clientFor(url))
+    const items = await client.fetchSprintItems(childQueryMode)
+    await rememberBusinessOrderField(client)
+    return items
+  } catch (error) {
+    // The message says what went wrong; these say where, and what the server answered.
+    throw new DetailedError(messageFor(error), {
+      url,
+      step: client?.step ?? 'connect',
+      request: client?.lastRequest,
+      ...(error instanceof TfsError ? error.answer : {}),
+      apiVersion: client?.version ?? settings.apiVersion,
+      authMode: settings.authMode,
+      childQueryMode,
+      at: new Date().toISOString()
+    })
+  }
 }
 
 /**

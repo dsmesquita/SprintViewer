@@ -381,6 +381,35 @@ const SECTIONS: Section[] = [
         <p>
           The toolbar says what changed, and <strong>Back</strong> undoes a refresh.
         </p>
+        <h4>When a refresh fails</h4>
+        <p>
+          The toolbar says <em>refresh failed</em> with a ⚠ beside it. Click the ⚠ for the whole
+          story: which step failed, the sprint&rsquo;s URL, the request that failed, the status and
+          what TFS answered. <strong>Copy details</strong> puts it all on the clipboard, for a
+          message or a ticket — your token is never part of it.
+        </p>
+        <ul>
+          <li>
+            <strong>Not found (404)</strong> — the query was deleted or moved, or your account
+            cannot read it. Open it in TFS, copy its address, and paste it into Settings → This
+            sprint → Query or sprint URL.
+          </li>
+          <li>
+            <strong>Rejected (401 / 403)</strong> — the token has expired or lacks Work Items
+            (Read). Replace it in Settings → App &amp; new sprints.
+          </li>
+          <li>
+            <strong>Could not reach the server</strong> — check the VPN and the URL; a certificate
+            error needs the host in <em>Trust certificates from</em>.
+          </li>
+          <li>
+            <strong>@CurrentIteration</strong> — such a query only runs for a team. Use the
+            sprint&rsquo;s taskboard address, or a query naming the iteration path.
+          </li>
+        </ul>
+        <p>
+          <em>Test</em> in Settings runs the same query, so you can check a fix before refreshing.
+        </p>
       </>
     )
   },
