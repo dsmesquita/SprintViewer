@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import type {
   AppSettings,
   ChildQueryMode,
@@ -46,6 +46,9 @@ export function registerIpc(): void {
   ipcMain.handle('app:version', () => app.getVersion())
   ipcMain.handle('app:storagePath', () => storageRoot())
   ipcMain.handle('app:openExternal', (_event, url: string) => openInBrowser(url))
+  ipcMain.handle('window:setFullScreen', (event, on: boolean) => {
+    BrowserWindow.fromWebContents(event.sender)?.setFullScreen(on === true)
+  })
 
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:update', (_event, patch: WritableSettings) =>

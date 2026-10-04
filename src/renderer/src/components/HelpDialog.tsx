@@ -209,6 +209,13 @@ const SECTIONS: Section[] = [
           corner of the calendar, or hold <Keys>Ctrl</Keys> and scroll over it. The zoom is
           remembered on this computer.
         </p>
+        <h4>Full screen</h4>
+        <p>
+          The <strong>⛶</strong> button in the same corner, or <Keys>F11</Keys>, fills the screen
+          with the calendar alone: the toolbar and the side panel step aside. <Keys>Esc</Keys>,{' '}
+          <Keys>F11</Keys> or the button again brings them back. Right-click menus and dialogs work
+          as usual; Esc closes an open dialog first.
+        </p>
       </>
     )
   },

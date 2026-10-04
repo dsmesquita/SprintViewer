@@ -325,3 +325,14 @@
   margin-left: 5px;
   background: var(--today-line);
 }
+
+.corner-zoom .full-screen-button {
+  padding: 2px 3px;
+  color: var(--text-2);
+}
+
+.corner-zoom .full-screen-button:hover,
+.corner-zoom .full-screen-button:focus-visible,
+.corner-zoom .full-screen-button[aria-pressed='true'] {
+  color: var(--accent);
+}

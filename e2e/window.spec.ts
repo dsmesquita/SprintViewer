@@ -40,11 +40,13 @@ test('the page gets window.api and nothing else from Node or Electron', async ({
       'listTeams',
       'loadSnapshot',
       'loadSprint',
+      'onFullScreen',
       'openExternal',
       'openSnapshot',
       'refreshSprint',
       'saveSprint',
       'saveSummary',
+      'setFullScreen',
       'setPat',
       'startSprint',
       'switchSprint',
@@ -208,6 +210,44 @@ test('a snapshot opened later shows exactly what was on screen when it was taken
 
   expect(await picture(snapshot)).toEqual(seen)
   await snapshot.close()
+})
+
+test('full screen: the window fills the screen and only the calendar shows', async ({
+  launch,
+  seed,
+  tfs
+}) => {
+  const sprint = sprintFor(tfs)
+  await seed({ settings: { ...settingsFor(tfs), activeSprintId: sprint.id }, sprints: [sprint] })
+  const { app, page } = await launch()
+  await expect(page.locator('.toolbar .title')).toHaveText('Sprint E2E')
+  const windowFull = () =>
+    app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isFullScreen())
+  const onlyTheCalendar = async (on: boolean) => {
+    await expect.poll(windowFull).toBe(on)
+    await expect(page.locator('.toolbar')).toBeVisible({ visible: !on })
+    await expect(page.locator('.body > .panel')).toBeVisible({ visible: !on })
+    await expect(page.locator('.row-track').first()).toBeVisible()
+  }
+
+  // The corner button, and Esc to leave.
+  await page.getByRole('button', { name: 'Full screen' }).click()
+  await onlyTheCalendar(true)
+  await page.keyboard.press('Escape')
+  await onlyTheCalendar(false)
+
+  // F11, which the window itself answers, both ways. Pressed through Electron's own input, as
+  // a real key is: Playwright's keyboard goes straight to the page, past the window.
+  const pressF11 = () =>
+    app.evaluate(({ BrowserWindow }) => {
+      const { webContents } = BrowserWindow.getAllWindows()[0]
+      webContents.sendInputEvent({ type: 'keyDown', keyCode: 'F11' })
+      webContents.sendInputEvent({ type: 'keyUp', keyCode: 'F11' })
+    })
+  await pressF11()
+  await onlyTheCalendar(true)
+  await pressF11()
+  await onlyTheCalendar(false)
 })
 
 test('the ⓘ in the corner explains the keys and marks; Shift+wheel scrolls sideways', async ({

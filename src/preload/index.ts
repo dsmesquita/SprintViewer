@@ -21,6 +21,17 @@ import type { Sprint, WorkItem } from '@shared/types'
 const api = {
   // Opened by the main process, which only lets web addresses through.
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:openExternal', url),
+  /** Puts this window into Windows full screen, or takes it out. */
+  setFullScreen: (on: boolean): Promise<void> => ipcRenderer.invoke('window:setFullScreen', on),
+  /**
+   * Calls back whenever the window enters or leaves full screen, however that happened (the
+   * button, F11, Windows itself). Returns the way to stop listening.
+   */
+  onFullScreen: (listener: (on: boolean) => void): (() => void) => {
+    const handler = (_event: unknown, on: boolean): void => listener(on === true)
+    ipcRenderer.on('window:fullScreen', handler)
+    return () => ipcRenderer.removeListener('window:fullScreen', handler)
+  },
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
   getStoragePath: (): Promise<string> => ipcRenderer.invoke('app:storagePath'),
 

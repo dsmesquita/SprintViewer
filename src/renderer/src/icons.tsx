@@ -197,3 +197,17 @@ export function InfoIcon(props: IconProps): JSX.Element {
     </svg>
   )
 }
+
+export function FullScreenIcon({ on, ...props }: IconProps & { on: boolean }): JSX.Element {
+  return (
+    <svg {...svgProps(props)}>
+      {props.title && <title>{props.title}</title>}
+      {on ? (
+        // Corners pointing in: leave full screen.
+        <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+      ) : (
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+      )}
+    </svg>
+  )
+}

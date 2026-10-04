@@ -32,6 +32,29 @@ export function useUndoShortcut(): void {
 }
 
 /**
+ * Esc leaves full screen — unless a dialog or a menu is open, which Esc closes first. In the
+ * desktop app F11 is the window's own (see main); in a browser it toggles the calendar view.
+ */
+export function useFullScreenShortcut(): void {
+  const setFullScreen = useApp((s) => s.setFullScreen)
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      const { fullScreen } = useApp.getState()
+      if (event.key === 'F11' && !window.api?.setFullScreen) {
+        event.preventDefault()
+        setFullScreen(!fullScreen)
+        return
+      }
+      if (event.key !== 'Escape' || !fullScreen) return
+      if (document.querySelector('.backdrop, .context-menu')) return
+      setFullScreen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [setFullScreen])
+}
+
+/**
  * Shift + ← / → moves the selected task one working hour, or swaps it with the task beside
  * it. Not while typing, where Shift + arrow selects text, and not while a dialog is open,
  * where the calendar underneath is not what the keyboard is talking to.

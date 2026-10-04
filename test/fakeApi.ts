@@ -13,9 +13,17 @@ export function fakeApi(overrides: Record<string, unknown> = {}) {
   const saved = new Map<string, Sprint>()
   let settings: AppSettings = { ...DEFAULT_SETTINGS }
   const ok = <T>(value: T) => ({ ok: true as const, value })
+  // The window's full screen: setFullScreen changes it and tells every listener, as main does.
+  const fullScreenListeners = new Set<(on: boolean) => void>()
+  const tellFullScreen = (on: boolean): void => fullScreenListeners.forEach((listen) => listen(on))
 
   const defaults = {
     openExternal: vi.fn<Api['openExternal']>(async () => {}),
+    setFullScreen: vi.fn<Api['setFullScreen']>(async (on: boolean) => tellFullScreen(on)),
+    onFullScreen: vi.fn<Api['onFullScreen']>((listener: (on: boolean) => void) => {
+      fullScreenListeners.add(listener)
+      return () => fullScreenListeners.delete(listener)
+    }),
     getAppVersion: vi.fn<Api['getAppVersion']>(async () => 'test'),
     getStoragePath: vi.fn<Api['getStoragePath']>(async () => 'C:\\test'),
     getSettings: vi.fn<Api['getSettings']>(async () => settings),
@@ -62,6 +70,8 @@ export function fakeApi(overrides: Record<string, unknown> = {}) {
     /** The mocks themselves, so tests can stub answers and inspect calls. */
     api,
     saved,
+    /** The window entering or leaving full screen by itself — F11, or Windows. */
+    tellFullScreen,
     setSettings: (next: Partial<AppSettings>) => {
       settings = { ...settings, ...next }
     }

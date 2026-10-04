@@ -36,3 +36,16 @@
   gap: 12px;
   padding: 12px;
 }
+
+/*
+ * Full screen: only the calendar. The toolbar and the side panel step aside, and the calendar
+ * takes the whole window — which is itself the whole screen in the desktop app.
+ */
+.app.is-full-screen > .toolbar,
+.app.is-full-screen .body > .panel {
+  display: none;
+}
+
+.app.is-full-screen .body {
+  padding: 6px;
+}

@@ -13,7 +13,7 @@ import { effectiveCapacity, type MemberLayout } from '@shared/scheduling'
 import type { ISODate, Member, Segment, Sprint } from '@shared/types'
 import { cx, hours, toneFor } from '../format'
 import { DRAG_ID_PREFIX, MEMBER_DROP_PREFIX, zoomPercent, type DragData } from '../grid'
-import { LockIcon, NoteIcon, WarningIcon } from '../icons'
+import { FullScreenIcon, LockIcon, NoteIcon, WarningIcon } from '../icons'
 import CalendarKey from './CalendarKey'
 import { useApp, useSprint } from '../store'
 
@@ -55,6 +55,8 @@ export default function SprintGrid({
 }: Props): JSX.Element {
   const sprint = useSprint()
   const today = useApp((s) => s.today)
+  const fullScreen = useApp((s) => s.fullScreen)
+  const setFullScreen = useApp((s) => s.setFullScreen)
   const selectedMemberId = useApp((s) => s.selectedMemberId)
   const selectedBlockId = useApp((s) => s.selectedBlockId)
   const selectMember = useApp((s) => s.selectMember)
@@ -165,6 +167,16 @@ export default function SprintGrid({
                     Reset
                   </button>
                   <CalendarKey />
+                  <button
+                    type="button"
+                    className="ghost full-screen-button"
+                    onClick={() => setFullScreen(!fullScreen)}
+                    title={fullScreen ? 'Leave full screen (Esc or F11)' : 'Full screen (F11)'}
+                    aria-label={fullScreen ? 'Leave full screen' : 'Full screen'}
+                    aria-pressed={fullScreen}
+                  >
+                    <FullScreenIcon on={fullScreen} size={14} />
+                  </button>
                 </div>
               )}
             </div>

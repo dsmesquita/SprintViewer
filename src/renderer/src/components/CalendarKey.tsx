@@ -43,6 +43,7 @@ export default function CalendarKey(): JSX.Element {
               <Row keys={['Shift', 'wheel']}>Scroll the calendar sideways</Row>
               <Row keys={['Ctrl', 'wheel']}>Zoom in and out</Row>
               <Row keys={['Ctrl', 'Z']}>Undo the last change</Row>
+              <Row keys={['F11']}>Full screen: only the calendar; Esc leaves</Row>
               <Row keys={['Ctrl', 'click']}>Pick several people; Shift+click, a run of them</Row>
             </dl>
             <p className="calendar-key-tip">

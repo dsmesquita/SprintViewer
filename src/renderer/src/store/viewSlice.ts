@@ -18,6 +18,7 @@ export const createViewSlice: StateCreator<AppState, [], [], ViewSlice> = (set, 
   backlogSearch: '',
   collapsedGroups: [],
   showHiddenBacklog: false,
+  fullScreen: false,
 
   selectMember: (memberId) =>
     set({ selectedMemberId: memberId, panelTab: 'person', panelCollapsed: false }),
@@ -78,6 +79,12 @@ export const createViewSlice: StateCreator<AppState, [], [], ViewSlice> = (set, 
   highlightWorkItem: (highlightedWorkItemId) => set({ highlightedWorkItemId }),
   setBacklogSearch: (backlogSearch) => set({ backlogSearch }),
   setShowHiddenBacklog: (showHiddenBacklog) => set({ showHiddenBacklog }),
+  // In the desktop app the window decides, and says so through `onFullScreen`; in a browser,
+  // with no window to ask, only the calendar view changes.
+  setFullScreen: (on) => {
+    if (window.api?.setFullScreen) void window.api.setFullScreen(on)
+    else set({ fullScreen: on })
+  },
   toggleGroup: (key) =>
     set((state) => ({
       collapsedGroups: state.collapsedGroups.includes(key)

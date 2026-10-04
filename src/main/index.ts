@@ -31,6 +31,18 @@ function createWindow(): void {
 
   window.once('ready-to-show', () => window.show())
 
+  // Full screen belongs to the window, so the window says when it changes — however it was
+  // asked for — and the page follows by hiding everything but the calendar.
+  window.on('enter-full-screen', () => window.webContents.send('window:fullScreen', true))
+  window.on('leave-full-screen', () => window.webContents.send('window:fullScreen', false))
+  // F11 is caught here rather than in the page, so it works the same with or without a menu,
+  // and the menu's own F11 cannot toggle it a second time.
+  window.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || input.key !== 'F11') return
+    event.preventDefault()
+    window.setFullScreen(!window.isFullScreen())
+  })
+
   // Work item links open in the real browser, never inside the app.
   window.webContents.setWindowOpenHandler(({ url }) => {
     void openInBrowser(url)

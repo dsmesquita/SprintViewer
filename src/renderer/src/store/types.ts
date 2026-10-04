@@ -172,6 +172,11 @@ export interface ViewSlice {
   collapsedGroups: string[]
   /** Whether the backlog lists the tasks hidden from it, dimmed, so they can be unhidden. */
   showHiddenBacklog: boolean
+  /**
+   * Full screen: the window fills the screen and only the calendar shows. The window's own state,
+   * followed through `onFullScreen`, so F11 and Windows itself are reflected too.
+   */
+  fullScreen: boolean
 
   selectMember: (memberId: string) => void
   /**
@@ -191,6 +196,8 @@ export interface ViewSlice {
   toggleGroup: (key: string) => void
   setCollapsedGroups: (keys: string[]) => void
   setShowHiddenBacklog: (show: boolean) => void
+  /** Asks the window for full screen, or to leave it. */
+  setFullScreen: (on: boolean) => void
 }
 
 /** Which dialog is open, and what it is acting on. */

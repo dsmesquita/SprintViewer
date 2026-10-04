@@ -29,7 +29,12 @@ import Toolbar from './components/Toolbar'
 import { useSprintDnd } from './dnd/useSprintDnd'
 import { cx, hours, toneFor } from './format'
 import { useContextMenus } from './menus'
-import { useClickAwayDeselect, useNudgeShortcut, useUndoShortcut } from './shortcuts'
+import {
+  useClickAwayDeselect,
+  useFullScreenShortcut,
+  useNudgeShortcut,
+  useUndoShortcut
+} from './shortcuts'
 import { useApp } from './store'
 
 /**
@@ -72,6 +77,10 @@ export default function App(): JSX.Element {
   }, [init])
   useUndoShortcut()
   useNudgeShortcut()
+  useFullScreenShortcut()
+  const fullScreen = useApp((s) => s.fullScreen)
+  // The window says when it enters or leaves full screen, whatever asked it to.
+  useEffect(() => window.api?.onFullScreen?.((on) => useApp.setState({ fullScreen: on })), [])
   useClickAwayDeselect()
 
   const anchor = useMemo(() => (sprint ? anchorFor(sprint, today) : today), [sprint, today])
@@ -108,7 +117,7 @@ export default function App(): JSX.Element {
 
   return (
     <DndContext {...drag.dndProps}>
-      <div className="app">
+      <div className={cx('app', fullScreen && 'is-full-screen')}>
         <Toolbar
           conflicts={conflicts}
           spillover={spillover}
