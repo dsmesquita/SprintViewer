@@ -31,7 +31,8 @@ export default function SnapshotsDialog(): JSX.Element {
 
   const take = async (): Promise<void> => {
     setBusy(true)
-    const result = await window.api.takeSnapshot(sprint, name)
+    // Drawn as of the day on screen, so the snapshot is what the user is looking at.
+    const result = await window.api.takeSnapshot(sprint, name, useApp.getState().today)
     setBusy(false)
     setNote(result.ok ? `Saved “${result.value.name}”.` : result.message)
     if (result.ok) setName('')

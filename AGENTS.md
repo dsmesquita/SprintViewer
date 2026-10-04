@@ -122,7 +122,9 @@ src/shared/          pure domain logic — no React, no Electron, no DOM, no zus
   failure.ts           the details of a failed refresh (RefreshErrorDialog, Copy details)
   calendarExport.ts    a person's calendar as a day-by-day board (Export calendar…), and as
                        Markdown; the renderer draws the PNG (renderer/src/export/png.ts)
-  snapshots.ts, baseline.ts, notes.ts, squad.ts, taskCreation.ts, tags.ts, grouping.ts,
+  snapshots.ts         a snapshot keeps the sprint *and* its calendar as drawn (`view`); the
+                       snapshot window draws that, never a fresh layout
+  baseline.ts, notes.ts, squad.ts, taskCreation.ts, tags.ts, grouping.ts,
   nudge.ts, customHours.ts, pastFit.ts, assignment.ts, dates.ts, text.ts, settings.ts
   mock.ts              the sample sprint (also a handy test fixture)
 src/renderer/src/    React UI

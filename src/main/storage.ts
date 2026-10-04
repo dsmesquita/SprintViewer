@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { app, safeStorage } from 'electron'
 import { baselineAction, baselineName } from '@shared/baseline'
 import { DEFAULT_SETTINGS, type AppSettings, type SprintSummary } from '@shared/settings'
-import type { Snapshot, SnapshotMeta } from '@shared/snapshots'
+import { viewOf, type Snapshot, type SnapshotMeta } from '@shared/snapshots'
 import type { Sprint } from '@shared/types'
 
 /**
@@ -173,13 +173,22 @@ function snapshotsDir(sprintId: string): string {
   return join(root(), 'snapshots', sprintId)
 }
 
-export async function takeSnapshot(sprint: Sprint, name: string): Promise<SnapshotMeta> {
+/**
+ * Keeps a copy of the board, and of the calendar exactly as it is drawn on `today` — the day the
+ * person taking it is looking at — so the snapshot shows what they saw, whenever it is opened.
+ */
+export async function takeSnapshot(
+  sprint: Sprint,
+  name: string,
+  today: string
+): Promise<SnapshotMeta> {
   const snapshot: Snapshot = {
     id: randomUUID(),
     sprintId: sprint.id,
     name: name.trim() || new Date().toLocaleString(),
     takenAt: new Date().toISOString(),
-    sprint
+    sprint,
+    view: viewOf(sprint, today)
   }
   await mkdir(snapshotsDir(sprint.id), { recursive: true })
   await writeJson(join(snapshotsDir(sprint.id), `${snapshot.id}.json`), snapshot)
@@ -206,7 +215,8 @@ export async function ensureBaseline(
     name: existing?.name ?? baselineName(sprint, today),
     takenAt: new Date().toISOString(),
     kind: 'baseline',
-    sprint
+    sprint,
+    view: viewOf(sprint, today)
   }
   await mkdir(snapshotsDir(sprint.id), { recursive: true })
   await writeJson(join(snapshotsDir(sprint.id), `${snapshot.id}.json`), snapshot)

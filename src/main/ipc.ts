@@ -35,7 +35,7 @@ import {
   takeSnapshot,
   updateSettings
 } from './storage'
-import { childMode, exportFiles, sanitiseDrafts, writable } from './validate'
+import { childMode, exportFiles, isoDay, sanitiseDrafts, writable } from './validate'
 
 /**
  * Everything the renderer can ask the main process to do — one line per route. What each one
@@ -83,11 +83,11 @@ export function registerIpc(): void {
     guard(() => exportCalendar(exportFiles(files)))
   )
 
-  ipcMain.handle('snapshot:take', (_event, sprint: Sprint, name: string) =>
-    guard(() => takeSnapshot(sprint, name))
+  ipcMain.handle('snapshot:take', (_event, sprint: Sprint, name: string, today: string) =>
+    guard(() => takeSnapshot(sprint, name, isoDay(today)))
   )
   ipcMain.handle('snapshot:baseline', (_event, sprint: Sprint, today: string) =>
-    guard(() => ensureBaseline(sprint, String(today)))
+    guard(() => ensureBaseline(sprint, isoDay(today)))
   )
   ipcMain.handle('snapshot:list', (_event, sprintId: string) => listSnapshots(sprintId))
   ipcMain.handle('snapshot:load', (_event, sprintId: string, id: string) =>

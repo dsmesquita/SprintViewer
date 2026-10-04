@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { formatRange } from '@shared/dates'
-import { anchorFor, layoutSprint } from '@shared/scheduling'
-import { diffSprints, type Change, type Snapshot } from '@shared/snapshots'
+import { anchorFor } from '@shared/scheduling'
+import { diffSprints, snapshotView, type Change, type Snapshot } from '@shared/snapshots'
 import { todayISO } from '@shared/dates'
 import type { Sprint } from '@shared/types'
 import SprintGrid from './components/SprintGrid'
@@ -38,12 +38,19 @@ export default function SnapshotView({
       // The grid reads the sprint from the store, so the snapshot has to be in there *before*
       // the render that draws it — an effect would be one render too late, and the grid would
       // ask for a sprint that is not there yet. Nothing in this window ever writes it back.
-      useApp.setState({ sprint: loaded.sprint, isSample: true, loading: false })
+      // Its Today line goes where it was when the snapshot was taken, not on today's date.
+      useApp.setState({
+        sprint: loaded.sprint,
+        today: snapshotView(loaded).today,
+        isSample: true,
+        loading: false
+      })
       setSnapshot(loaded)
       setCurrent(await window.api.loadSprint(sprintId))
     })()
   }, [sprintId, snapshotId])
 
+  // The live board is compared as it stands on the real today; the snapshot is drawn as taken.
   const today = todayISO()
   const changes = useMemo<Change[]>(() => {
     if (!snapshot || !current) return []
@@ -54,8 +61,8 @@ export default function SnapshotView({
   if (!snapshot) return <div className="empty-state">Loading…</div>
 
   const sprint = snapshot.sprint
-  const anchor = anchorFor(sprint, today)
-  const layouts = layoutSprint(sprint, anchor)
+  // Exactly what was on screen when it was taken: never laid out again.
+  const { anchor, layouts } = snapshotView(snapshot)
   const changed = new Set(changes.map((change) => change.workItemId))
 
   return (

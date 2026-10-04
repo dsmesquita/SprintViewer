@@ -61,8 +61,9 @@ const api = {
   exportCalendar: (files: ExportFile[]): Promise<Result<string[] | null>> =>
     ipcRenderer.invoke('sprint:exportCalendar', files),
 
-  takeSnapshot: (sprint: Sprint, name: string): Promise<Result<SnapshotMeta>> =>
-    ipcRenderer.invoke('snapshot:take', sprint, name),
+  /** Keeps the board, and the calendar exactly as it is drawn on `today`. */
+  takeSnapshot: (sprint: Sprint, name: string, today: string): Promise<Result<SnapshotMeta>> =>
+    ipcRenderer.invoke('snapshot:take', sprint, name, today),
   ensureBaseline: (
     sprint: Sprint,
     today: string

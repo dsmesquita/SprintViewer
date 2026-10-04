@@ -1,3 +1,4 @@
+import { todayISO } from '@shared/dates'
 import type { ExportFile } from '@shared/calendarExport'
 import type { ChildQueryMode, WritableSettings } from '@shared/settings'
 import { parseTags, type TaskDraft } from '@shared/taskCreation'
@@ -100,6 +101,14 @@ export function exportFiles(value: unknown): ExportFile[] {
     }
     throw new Error('Only Markdown and PNG files can be exported.')
   })
+}
+
+/**
+ * A day the renderer sent, as `YYYY-MM-DD`, or this machine's today for anything else — a
+ * snapshot is drawn as of it, so a garbled day must not reach the layout.
+ */
+export function isoDay(value: unknown): string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : todayISO()
 }
 
 /** A child-task mode the renderer sent, or undefined for anything else. */

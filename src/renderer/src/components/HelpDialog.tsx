@@ -578,6 +578,12 @@ const SECTIONS: Section[] = [
           first day and kept up to date until the day ends, so there is always a record of the plan
           as it began.
         </p>
+        <p>
+          A snapshot is a picture of the calendar exactly as it was on screen: opened days or weeks
+          later, it shows the same blocks in the same places, with the Today line where it was —
+          nothing is laid out again from the day you open it. Snapshots from older versions are
+          drawn as of the day they were taken.
+        </p>
         <h4>Sprint summary</h4>
         <p>
           <strong>Summary</strong> saves a Markdown file meant for an AI agent to write the sprint

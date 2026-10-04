@@ -1,4 +1,5 @@
-import { layoutSprint } from './scheduling'
+import { toISO } from './dates'
+import { anchorFor, layoutSprint, type MemberLayout } from './scheduling'
 import type { ISODate, Sprint } from './types'
 import { round } from './math'
 
@@ -25,6 +26,35 @@ export interface SnapshotMeta {
 
 export interface Snapshot extends SnapshotMeta {
   sprint: Sprint
+  /**
+   * The calendar exactly as it was drawn when the snapshot was taken. A snapshot is a picture:
+   * laid out again later, from a later today, work would flow from that day instead and the
+   * past would be redrawn — not what anyone saw. Absent on snapshots from before it was kept.
+   */
+  view?: SnapshotView
+}
+
+export interface SnapshotView {
+  /** The day it was taken: where the Today line was. */
+  today: ISODate
+  /** Where the plan flowed from that day. */
+  anchor: ISODate
+  /** Every row, as drawn. */
+  layouts: Record<string, MemberLayout>
+}
+
+/** The calendar as the board draws it on `today`. */
+export function viewOf(sprint: Sprint, today: ISODate): SnapshotView {
+  const anchor = anchorFor(sprint, today)
+  return { today, anchor, layouts: layoutSprint(sprint, anchor) }
+}
+
+/**
+ * How a snapshot is drawn: exactly as it was taken — or, for one taken before the drawing was
+ * kept, laid out as of the day it was taken, the nearest there is to what was on screen.
+ */
+export function snapshotView(snapshot: Snapshot): SnapshotView {
+  return snapshot.view ?? viewOf(snapshot.sprint, toISO(new Date(snapshot.takenAt)))
 }
 
 export type ChangeKind = 'moved' | 'slipped' | 'pulled' | 'grew' | 'shrank' | 'gone' | 'added'

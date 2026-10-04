@@ -1,6 +1,7 @@
-import type { ElectronApplication } from '@playwright/test'
+import type { ElectronApplication, Page } from '@playwright/test'
+import { buildSprintDays } from '../src/shared/dates'
 import { expect, test } from './app'
-import { settingsFor, sprintFor, VAL } from './data'
+import { DEV, settingsFor, sprintFor, VAL } from './data'
 
 /** The windows themselves: what opens, what the page can reach, and what it cannot. */
 
@@ -152,6 +153,61 @@ test('a snapshot opens in its own read-only window, beside the board', async ({
   await snapshot.close()
   expect(app.windows()).toHaveLength(1)
   await expect(page.locator('.toolbar .title')).toHaveText('Sprint E2E')
+})
+
+test('a snapshot opened later shows exactly what was on screen when it was taken', async ({
+  launch,
+  seed,
+  tfs
+}) => {
+  // Taken on Wednesday 16 Sep, mid-sprint; opened a week later. Laid out again from that day,
+  // the plan would move: the days in between would become the past.
+  const base = sprintFor(tfs)
+  const sprint = {
+    ...base,
+    days: buildSprintDays('2026-09-14', 2, 8),
+    workItems: {
+      ...base.workItems,
+      [DEV]: { ...base.workItems[DEV], remainingWork: 12, completedWork: 2 }
+    },
+    queues: {
+      diogo: [{ id: 'dev', workItemId: DEV, hours: 12 }],
+      sofia: [{ id: 'val', workItemId: VAL, hours: 3 }]
+    },
+    backlog: []
+  }
+  await seed({ settings: settingsFor(tfs), sprints: [sprint] })
+  const { app, page } = await launch({ today: '2026-09-16', open: sprint.id, hourWidth: 20 })
+  await expect(page.locator('.toolbar .title')).toHaveText('Sprint E2E')
+
+  // Every block as drawn — whose row, where, how wide — and where the Today line is.
+  const picture = (window: Page) =>
+    window.evaluate(() => ({
+      blocks: [...document.querySelectorAll<HTMLElement>('.row-track[data-member] .seg')].map(
+        (seg) =>
+          `${seg.closest<HTMLElement>('.row-track')!.dataset.member} ${seg.style.left} ${seg.style.width} ${seg.textContent}`
+      ),
+      today: document.querySelector<HTMLElement>('.today-marker')?.style.left
+    }))
+  const seen = await picture(page)
+  expect(seen.blocks.length).toBeGreaterThan(0)
+
+  await page.getByRole('button', { name: 'Snapshot' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('Snapshot name').fill('Wednesday')
+  await dialog.getByRole('button', { name: 'Take snapshot' }).click()
+  // A week passes. The clock is the whole app's, so the snapshot window lives in it too.
+  await page.clock.setSystemTime(new Date('2026-09-23T09:00:00'))
+  const opening = app.waitForEvent('window')
+  await dialog
+    .locator('.snapshot', { hasText: 'Wednesday' })
+    .getByRole('button', { name: 'Open' })
+    .click()
+  const snapshot = await opening
+  await expect(snapshot.locator('.seg').first()).toBeVisible()
+
+  expect(await picture(snapshot)).toEqual(seen)
+  await snapshot.close()
 })
 
 test('the ⓘ in the corner explains the keys and marks; Shift+wheel scrolls sideways', async ({

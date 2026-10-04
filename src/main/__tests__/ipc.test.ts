@@ -312,6 +312,17 @@ describe('sprints, snapshots and files', () => {
     await invoke('snapshot:delete', 'files', taken.value.id)
     expect(await invoke('snapshot:export', 'files', taken.value.id)).toMatchObject({ ok: false })
   })
+
+  it('a snapshot is drawn as of the day sent; anything that is not a day means today', async () => {
+    const asSent = await invoke<Result<{ id: string }>>('snapshot:take', s, 'Wed', '2026-09-16')
+    const garbled = await invoke<Result<{ id: string }>>('snapshot:take', s, 'X', '../16')
+    if (!asSent.ok || !garbled.ok) throw new Error('not taken')
+    const view = async (id: string) =>
+      (await invoke<{ view: { today: string } }>('snapshot:load', 'files', id)).view.today
+    expect(await view(asSent.value.id)).toBe('2026-09-16')
+    expect(await view(garbled.value.id)).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(await view(garbled.value.id)).not.toBe('../16')
+  })
 })
 
 describe('tfs:test', () => {

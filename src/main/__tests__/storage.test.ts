@@ -18,7 +18,8 @@ import {
   trustedHostsSync,
   updateSettings
 } from '../storage'
-import { block, sprint } from '../../../test/fixtures'
+import { layoutSprint } from '@shared/scheduling'
+import { block, item, MON, sprint, WED } from '../../../test/fixtures'
 import { setEncryptionAvailable, userData } from '../../../test/electron'
 
 /** Everything on disk, against a throwaway folder standing in for %APPDATA%\SprintViewer. */
@@ -111,14 +112,31 @@ describe('snapshots', () => {
   })
 
   it('take, list (newest first), load and delete', async () => {
-    const first = await takeSnapshot(s, 'Agreed plan')
+    const first = await takeSnapshot(s, 'Agreed plan', MON)
     await new Promise((r) => setTimeout(r, 5))
-    const second = await takeSnapshot(s, '   ')
+    const second = await takeSnapshot(s, '   ', MON)
     expect(second.name.length).toBeGreaterThan(0) // a blank name becomes the date
     expect((await listSnapshots(s.id)).map((m) => m.id)).toEqual([second.id, first.id])
     expect((await loadSnapshot(s.id, first.id))?.sprint).toEqual(s)
     await deleteSnapshot(s.id, first.id)
     expect((await listSnapshots(s.id)).map((m) => m.id)).toEqual([second.id])
+  })
+
+  it('keeps the calendar exactly as drawn on the day it was taken', async () => {
+    const board = {
+      ...sprint({
+        items: [item(1, { remainingWork: 6, completedWork: 2 })],
+        queues: { diogo: [block('a', 1, 6)] }
+      }),
+      id: 'view-sprint'
+    }
+    const meta = await takeSnapshot(board, 'Wednesday', WED)
+    const kept = await loadSnapshot(board.id, meta.id)
+    expect(kept?.view).toEqual({
+      today: WED,
+      anchor: WED,
+      layouts: layoutSprint(board, WED)
+    })
   })
 
   it('a sprint with no snapshots lists none', async () => {
@@ -131,6 +149,7 @@ describe('snapshots', () => {
     const planning = b.days[0].date
     const taken = await ensureBaseline(b, planning)
     expect(taken.action).toBe('take')
+    expect((await loadSnapshot(b.id, taken.meta!.id))?.view?.today).toBe(planning)
     const replaced = await ensureBaseline(b, planning)
     expect(replaced).toMatchObject({ action: 'replace', meta: { id: taken.meta?.id } })
     expect((await ensureBaseline(b, b.days[3].date)).action).toBe('none')
