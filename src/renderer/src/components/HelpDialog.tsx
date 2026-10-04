@@ -429,6 +429,10 @@ const SECTIONS: Section[] = [
           <li>then tasks whose parent's Business Order is 50 or lower,</li>
           <li>then the shortest first.</li>
         </ol>
+        <p>
+          <strong>Spikes</strong> (<code>Spike::</code> or <code>[Spike]</code>, in any case) come
+          after all of a person&rsquo;s other tasks, so they only get the room that is left.
+        </p>
         <h4>Rules</h4>
         <ul>
           <li>Nobody is put over their capacity. What does not fit stays in the backlog.</li>

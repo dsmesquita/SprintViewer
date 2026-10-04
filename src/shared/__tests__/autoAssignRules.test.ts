@@ -3,6 +3,7 @@ import {
   compareForAssignment,
   isChainedVal,
   isMeeting,
+  isSpike,
   ownerOf,
   planAutoAssign,
   spreadDays
@@ -16,6 +17,28 @@ const sorted = (s: ReturnType<typeof sprint>, blocks: ReturnType<typeof block>[]
   [...blocks].sort((a, b) => compareForAssignment(s, a, b)).map((b) => b.id)
 
 describe('ordering, key by key', () => {
+  it('first of all, spikes come after everything else — whatever the other keys say', () => {
+    const s = sprint({
+      items: [
+        story(1, { state: 'Active', businessOrder: 1 }),
+        item(2, { type: 'Bug', state: 'New' }),
+        // The spike would win every other key: Active story, top priority, shortest.
+        item(10, { parentId: 1, title: 'SPIKE:: Try the new API', remainingWork: 1 }),
+        item(20, { parentId: 2, title: 'DEV:: Build it', remainingWork: 8 }),
+        item(30, { title: 'Tidy the docs', remainingWork: 5 }),
+        item(40, { parentId: 1, title: '[Spike] Measure it', remainingWork: 2 })
+      ]
+    })
+    expect(
+      sorted(s, [
+        block('spike', 10, 1),
+        block('dev', 20, 8),
+        block('other', 30, 5),
+        block('spike2', 40, 2)
+      ])
+    ).toEqual(['other', 'dev', 'spike', 'spike2'])
+  })
+
   it('1. tasks under an Active parent come first', () => {
     const s = sprint({
       items: [
@@ -69,6 +92,17 @@ describe('ordering, key by key', () => {
 })
 
 describe('recognising tasks', () => {
+  it('a spike is tagged Spike, in any case, with colons or brackets', () => {
+    for (const title of ['Spike:: Look', 'SPIKE:: Look', '[Spike] Look', '[SPIKE] Look']) {
+      expect(isSpike(item(1, { title }))).toBe(true)
+    }
+    for (const title of ['Spikes to remove', 'DEV:: Spike handling', 'Spike the punch']) {
+      expect(isSpike(item(1, { title }))).toBe(false)
+    }
+    // A story is a heading, not a task to place.
+    expect(isSpike(item(1, { title: 'Spike:: Look', type: 'User Story' }))).toBe(false)
+  })
+
   it('a meeting is a task titled just Meeting(s), tag or not', () => {
     expect(isMeeting(item(1, { title: 'Meetings' }))).toBe(true)
     expect(isMeeting(item(1, { title: 'MTG:: meeting' }))).toBe(true)
@@ -169,5 +203,26 @@ describe('meetings over the sprint', () => {
       [2, 0],
       [2, 0]
     ])
+  })
+})
+
+describe('spikes in a plan', () => {
+  it('a spike gets only the room DEV work leaves', () => {
+    // Diogo has 10 free hours from Friday 25 Sep (the last two days of the sprint, 8h each,
+    // less 6h already planned): the DEV task fits, then the spike would not.
+    const s = sprint({
+      items: [
+        item(1, { title: 'SPIKE:: Try it', remainingWork: 4, assignedTo: 'Diogo Mesquita' }),
+        item(2, { title: 'DEV:: Build it', remainingWork: 8, assignedTo: 'Diogo Mesquita' })
+      ],
+      backlog: [block('spike', 1, 4), block('dev', 2, 8)]
+    })
+    const plan = planAutoAssign(s, FRI2)
+    expect(plan.sprint.queues.diogo.map((b) => b.id)).toEqual(['dev'])
+    expect(plan.sprint.backlog.map((b) => b.id)).toEqual(['spike'])
+
+    // With room for both, both go — the spike after the DEV task.
+    const roomy = planAutoAssign(s, MON2)
+    expect(roomy.sprint.queues.diogo.map((b) => b.id)).toEqual(['dev', 'spike'])
   })
 })

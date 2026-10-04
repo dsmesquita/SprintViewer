@@ -1,6 +1,7 @@
 import { memberFor } from '../assignment'
 import { plannedHoursIn } from '../sizing'
 import type { Block, Sprint, WorkItem } from '../types'
+import { isSpike } from './kinds'
 
 /** Who a task belongs to, and in what order a person's tasks are placed. */
 
@@ -8,12 +9,13 @@ import type { Block, Sprint, WorkItem } from '../types'
 export const PRIORITY_ORDER = 50
 
 /**
- * Orders one person's ordinary tasks. Four keys, most significant first:
+ * Orders one person's ordinary tasks. Five keys, most significant first:
  *
- *  1. tasks whose parent work item is Active — work the team has already started on,
- *  2. then tasks under a User Story before tasks under anything else,
- *  3. then tasks whose parent's Business Order is 50 or lower,
- *  4. then the shortest first, which fits the most work into whatever room is left.
+ *  1. everything before spikes — a spike gets only the room the rest leaves,
+ *  2. then tasks whose parent work item is Active — work the team has already started on,
+ *  3. then tasks under a User Story before tasks under anything else,
+ *  4. then tasks whose parent's Business Order is 50 or lower,
+ *  5. then the shortest first, which fits the most work into whatever room is left.
  *
  * Ties break on the work item id, so running it twice gives the same answer twice.
  */
@@ -23,6 +25,7 @@ export function compareForAssignment(sprint: Sprint, a: Block, b: Block): number
   if (!left || !right) return 0
 
   return (
+    rank(!isSpike(right), !isSpike(left)) ||
     rank(parentActive(sprint, right), parentActive(sprint, left)) ||
     rank(underStory(sprint, right), underStory(sprint, left)) ||
     rank(prioritised(sprint, right), prioritised(sprint, left)) ||

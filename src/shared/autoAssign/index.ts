@@ -12,7 +12,7 @@
  * calendar is only ever moved with the user's say-so — the plan reports what it would disturb.
  */
 
-export { isChainedVal, isMeeting } from './kinds'
+export { isChainedVal, isMeeting, isSpike } from './kinds'
 export { meetingPieces, spreadDays } from './meetings'
 export { compareForAssignment, ownerOf } from './ordering'
 export { planAutoAssign } from './plan'

@@ -29,6 +29,14 @@ export function devSiblings(sprint: Sprint, item: WorkItem): WorkItem[] {
   )
 }
 
+/**
+ * A spike: research to size or de-risk work, tagged `Spike::` or `[Spike]` in any case. It
+ * matters less than delivering, so auto-assign gives it whatever room is left.
+ */
+export function isSpike(item: WorkItem | undefined): boolean {
+  return item !== undefined && isTagged(item, 'SPIKE')
+}
+
 /** A VAL task with a DEV task to follow. A VAL on its own is ordinary work. */
 export function isChainedVal(sprint: Sprint, item: WorkItem | undefined): boolean {
   return item !== undefined && isTagged(item, 'VAL') && devSiblings(sprint, item).length > 0
