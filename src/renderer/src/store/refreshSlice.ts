@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand'
 import { applyCustomChoices, customConflicts } from '@shared/customHours'
 import { doneToDecide, keepDoneInBacklog, placeDone } from '@shared/doneHours'
+import { hasEnded } from '@shared/dates'
 import { applyRefresh, type RefreshSummary } from '@shared/refresh'
 import { anchorFor } from '@shared/scheduling'
 import { sprintPlan } from '@shared/sprintSettings'
@@ -30,7 +31,8 @@ export const createRefreshSlice: StateCreator<AppState, [], [], RefreshSlice> = 
 
   refresh: async () => {
     const { sprint, today } = get()
-    if (!sprint?.queryUrl) return
+    // A sprint that is over keeps its figures as they were when it ended.
+    if (!sprint?.queryUrl || hasEnded(sprint, today)) return
 
     set({ refreshing: true, refreshStatus: null })
     const result = await window.api.refreshSprint(

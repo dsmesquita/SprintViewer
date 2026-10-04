@@ -1,4 +1,4 @@
-import type { ISODate, SprintDay } from './types'
+import type { ISODate, Sprint, SprintDay } from './types'
 
 /**
  * Date helpers. Everything is a local calendar date — no times, no timezones. Parsing goes
@@ -89,4 +89,13 @@ export function buildSprintDays(
     days.push({ date, capacity: hoursPerDay })
   }
   return days
+}
+
+/**
+ * Whether the sprint is over: its last day is behind today. Its figures are final then — a
+ * refresh would only redraw a finished sprint with whatever TFS says weeks later.
+ */
+export function hasEnded(sprint: Sprint, today: ISODate): boolean {
+  const last = sprint.days[sprint.days.length - 1]?.date
+  return last !== undefined && last < today
 }

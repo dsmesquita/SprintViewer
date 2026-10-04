@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatRange } from '@shared/dates'
+import { formatRange, hasEnded } from '@shared/dates'
 import { doneWaiting } from '@shared/doneHours'
 import type { PastConflict } from '@shared/pastFit'
 import { cx, hours } from '../format'
@@ -46,6 +46,7 @@ export default function Toolbar({
   const refreshing = useApp((s) => s.refreshing)
   const refreshStatus = useApp((s) => s.refreshStatus)
   const refresh = useApp((s) => s.refresh)
+  const today = useApp((s) => s.today)
   const openDialog = useApp((s) => s.openDialog)
   const undo = useApp((s) => s.undo)
   const undoStack = useApp((s) => s.undoStack)
@@ -56,6 +57,7 @@ export default function Toolbar({
   const first = sprint?.days[0]?.date
   const last = sprint?.days[sprint.days.length - 1]?.date
   const lastChange = undoStack[undoStack.length - 1]?.label
+  const ended = sprint !== null && hasEnded(sprint, today)
 
   return (
     <header className="toolbar">
@@ -123,11 +125,13 @@ export default function Toolbar({
       </button>
       <button
         type="button"
-        disabled={!sprint?.queryUrl || refreshing}
+        disabled={!sprint?.queryUrl || refreshing || ended}
         title={
-          sprint?.queryUrl
-            ? 'Re-read remaining hours from TFS and re-flow the sprint'
-            : 'Only a sprint imported from TFS can be refreshed'
+          !sprint?.queryUrl
+            ? 'Only a sprint imported from TFS can be refreshed'
+            : ended
+              ? 'This sprint has ended'
+              : 'Re-read remaining hours from TFS and re-flow the sprint'
         }
         onClick={() => void refresh()}
       >

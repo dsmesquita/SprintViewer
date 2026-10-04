@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../App'
 import { useApp } from '../../store'
 import { failureReport, type FailureDetail } from '@shared/failure'
-import { item, sprint } from '../../../../../test/fixtures'
+import { item, MON, sprint } from '../../../../../test/fixtures'
 import { installFakeApi } from '../../../../../test/fakeApi'
 
 /** A failed refresh: the ⚠ beside "refresh failed", and the details it opens. */
@@ -29,13 +29,31 @@ let fake: ReturnType<typeof installFakeApi>
 
 beforeEach(async () => {
   fake = installFakeApi()
-  useApp.setState({ ...initial }, true)
+  // A day inside the sprint: one that has ended cannot be refreshed.
+  useApp.setState({ ...initial, today: MON }, true)
   fake.saved.set('test', sprint({ queryUrl: QUERY, items: [item(1)] }))
   fake.setSettings({ activeSprintId: 'test' })
 })
 
 const toolbar = () => document.querySelector('.toolbar') as HTMLElement
 const refreshButton = () => within(toolbar()).getByRole('button', { name: 'Refresh' })
+
+describe('a sprint that has ended', () => {
+  it('cannot be refreshed: the button is off, and says why', async () => {
+    useApp.setState({ today: '2026-09-26' }) // the day after its last
+    render(<App />)
+    await screen.findByText('Diogo')
+    expect(refreshButton()).toBeDisabled()
+    expect(refreshButton()).toHaveAttribute('title', 'This sprint has ended')
+  })
+
+  it('on its last day it still can', async () => {
+    useApp.setState({ today: '2026-09-25' })
+    render(<App />)
+    await screen.findByText('Diogo')
+    expect(refreshButton()).toBeEnabled()
+  })
+})
 
 describe('a refresh that fails', () => {
   it('shows a ⚠ that opens the full details, and Copy details copies them', async () => {

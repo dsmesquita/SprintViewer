@@ -17,6 +17,7 @@ beforeEach(() => {
   useApp.setState({
     sprint: sprint(),
     isSample: false,
+    today: MON,
     dialog: 'settings',
     settings: {
       ...DEFAULT_SETTINGS,

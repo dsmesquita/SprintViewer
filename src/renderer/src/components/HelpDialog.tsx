@@ -385,7 +385,9 @@ const SECTIONS: Section[] = [
           </li>
         </ul>
         <p>
-          The toolbar says what changed, and <strong>Back</strong> undoes a refresh.
+          The toolbar says what changed, and <strong>Back</strong> undoes a refresh. Once a
+          sprint&rsquo;s last day has passed, Refresh is switched off: a finished sprint keeps the
+          figures it ended with.
         </p>
         <h4>When a refresh fails</h4>
         <p>

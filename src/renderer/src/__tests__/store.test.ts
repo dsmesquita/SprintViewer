@@ -140,6 +140,13 @@ describe('refresh', () => {
     expect(state.sprint!.lastRefreshedAt).toBeDefined()
   })
 
+  it('a sprint that has ended is not refreshed: its figures stay as they were', async () => {
+    useApp.setState({ today: '2026-09-26' })
+    await useApp.getState().refresh()
+    expect(fake.api.refreshSprint).not.toHaveBeenCalled()
+    expect(useApp.getState().refreshStatus).toBeNull()
+  })
+
   it('a DEV task started since goes first today; the status says so, and Back undoes it', async () => {
     useApp.setState({ today: WED })
     fake.api.refreshSprint.mockResolvedValueOnce({
