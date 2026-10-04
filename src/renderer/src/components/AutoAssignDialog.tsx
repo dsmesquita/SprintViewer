@@ -186,6 +186,10 @@ function Summary({ summary }: { summary: AssignSummary }): JSX.Element {
       `${one(summary.waitingForDev, 'VAL task stays', 'VAL tasks stay')} in the backlog until ${one(summary.waitingForDev, 'its', 'their')} DEV is planned`
     ],
     [
+      summary.meetingsTooLate,
+      `${one(summary.meetingsTooLate, 'meeting stays', 'meetings stay')} in the backlog — only the sprint's last day is left, and its morning is too short (its afternoon is kept free of meetings)`
+    ],
+    [
       summary.unattributed,
       `${one(summary.unattributed, 'stays', 'stay')} in the backlog — TFS names nobody on this team against ${one(summary.unattributed, 'it', 'them')}`
     ],

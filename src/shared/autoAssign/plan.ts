@@ -14,7 +14,7 @@ import type {
 } from './types'
 import { isMeeting, isChainedVal } from './kinds'
 import { compareForAssignment, ownerOf } from './ordering'
-import { meetingDays, placeMeeting } from './meetings'
+import { lastWorkingDay, meetingDays, placeMeeting, runsIntoLastAfternoon } from './meetings'
 import { type Point, before, valStart, devUnplanned, drawnHours, latestFit } from './valChain'
 
 /** How many times VAL placements are revisited when placing one pushes another DEV later. */
@@ -73,6 +73,7 @@ export function planAutoAssign(
     tooBig: 0,
     unsized: 0,
     meetingsSplit: 0,
+    meetingsTooLate: 0,
     valsChained: 0,
     valsLate: 0,
     waitingForDev: 0,
@@ -141,21 +142,39 @@ export function planAutoAssign(
   let pieceCount = 0
   const newId = (): string => options.newId?.() ?? `auto-meeting-${Date.now()}-${++pieceCount}`
 
-  // 1. Meetings, spread over the sprint.
+  // 1. Meetings, spread over the sprint — never into the afternoon of its last working day,
+  // which is for the review and the retrospective. A piece too long for that morning sends the
+  // whole meeting over the other days instead.
+  const lastDay = lastWorkingDay(sprint)
   for (const candidate of accepted.filter((c) => c.kind === 'meeting')) {
-    const days = meetingDays(next, candidate.memberId, anchor)
-    let placed = placeMeeting(next, candidate.block, candidate.memberId, days, newId)
-    if (placed && keepBase && disturbs(placed.sprint)) {
-      // Only days after this person's existing work can take a pin without moving any of it.
-      const last = lastBaseDay(next, anchor, candidate.memberId, baseIds)
-      placed = placeMeeting(
+    const place = (days: ISODate[]) => {
+      const placed = placeMeeting(next, candidate.block, candidate.memberId, days, newId)
+      if (
+        !placed ||
+        !runsIntoLastAfternoon(placed.sprint, candidate.memberId, placed.pieces, anchor)
+      )
+        return placed
+      return placeMeeting(
         next,
         candidate.block,
         candidate.memberId,
-        days.filter((day) => last === null || day > last),
+        days.filter((day) => day !== lastDay),
         newId
       )
+    }
+    const days = meetingDays(next, candidate.memberId, anchor)
+    let placed = place(days)
+    if (placed && keepBase && disturbs(placed.sprint)) {
+      // Only days after this person's existing work can take a pin without moving any of it.
+      const last = lastBaseDay(next, anchor, candidate.memberId, baseIds)
+      placed = place(days.filter((day) => last === null || day > last))
       if (placed && disturbs(placed.sprint)) placed = null
+    }
+    if (!placed && days.length > 0 && days.every((day) => day === lastDay)) {
+      // The last day is all that is left, and its morning is too short: as ordinary work it
+      // would run into the afternoon all the same, so it waits in the backlog.
+      summary.meetingsTooLate++
+      continue
     }
     if (!placed) {
       // Nowhere to spread it: it goes in with the ordinary work, whole.

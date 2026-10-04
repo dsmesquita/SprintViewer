@@ -8,6 +8,7 @@ import {
   planAutoAssign,
   spreadDays
 } from '@shared/autoAssign'
+import { layoutSprint } from '@shared/scheduling'
 import { block, FRI2, item, MON, MON2, sprint, TUE } from '../../../test/fixtures'
 
 /** The individual rules behind auto-assign, one at a time. */
@@ -163,6 +164,70 @@ describe('recognising tasks', () => {
 })
 
 describe('meetings over the sprint', () => {
+  // A meeting allowance for Diogo, planned from `anchor`, as [date, start, hours] per piece.
+  const meetingPlan = (
+    hours: number,
+    anchor: string,
+    extra: Partial<ReturnType<typeof sprint>> = {}
+  ) => {
+    const s = sprint({
+      items: [
+        item(1, { title: 'Meetings', assignedTo: 'Diogo Mesquita', remainingWork: hours }),
+        item(2, { title: 'DEV:: Wrap up', remainingWork: 3 })
+      ],
+      backlog: [block('m', 1, hours)],
+      ...extra
+    })
+    let n = 0
+    const plan = planAutoAssign(s, anchor, { newId: () => `p${++n}` })
+    const pieces = plan.sprint.queues.diogo.filter((b) => b.workItemId === 1)
+    const drawn = layoutSprint(plan.sprint, anchor).diogo.segments.filter((x) => x.workItemId === 1)
+    return { plan, pieces, drawn }
+  }
+  const THU2 = '2026-09-24'
+  const WED2 = '2026-09-23'
+
+  it('still splits and spreads, and may use the morning of the last working day', () => {
+    // 10h from Monday 21: five days left, five 2h pieces, one each, the last on Friday 25.
+    const { plan, pieces, drawn } = meetingPlan(10, MON2)
+    expect(plan.summary.meetingsSplit).toBe(1)
+    expect(pieces.map((b) => [b.pin?.date, b.pin?.startHour, b.hours])).toEqual([
+      [MON2, 0, 2],
+      ['2026-09-22', 0, 2],
+      [WED2, 0, 2],
+      [THU2, 0, 2],
+      [FRI2, 0, 2]
+    ])
+    // Friday's piece ends by the middle of the day.
+    expect(drawn.filter((x) => x.date === FRI2).map((x) => x.startHour + x.hours)).toEqual([2])
+  })
+
+  it('never into the afternoon of the last day: too long for its morning, it spreads elsewhere', () => {
+    // 15h from Wednesday 23 would be 5h on each of Wed, Thu and Fri — 5h runs past Friday's 4h.
+    const { plan, pieces } = meetingPlan(15, WED2)
+    expect(pieces.map((b) => b.pin?.date)).not.toContain(FRI2)
+    expect(pieces.reduce((sum, b) => sum + b.hours, 0)).toBe(15)
+    expect(plan.summary.placed).toBe(1)
+    expect(plan.summary.meetingsTooLate).toBe(0)
+  })
+
+  it('a task already at the start of the last day counts: the morning left is shorter', () => {
+    // 3h pinned to Friday 9:00 leaves 1h of Friday's morning: a 2h piece there would end at 5.
+    const { pieces, drawn } = meetingPlan(10, MON2, {
+      queues: { diogo: [block('wrap', 2, 3, { date: FRI2, startHour: 0 })] }
+    })
+    expect(pieces.map((b) => b.pin?.date)).not.toContain(FRI2)
+    expect(drawn.every((x) => x.date !== FRI2 || x.startHour + x.hours <= 4)).toBe(true)
+  })
+
+  it('the last day is the sprint’s last working day: a day off at the end moves it', () => {
+    // Friday 25 is off for everyone, so Thursday 24 is the last day and keeps its afternoon.
+    const days = sprint().days.map((d) => (d.date === FRI2 ? { ...d, capacity: 0 } : d))
+    const { pieces, drawn } = meetingPlan(15, MON2, { days })
+    expect(pieces.map((b) => b.pin?.date)).not.toContain(FRI2)
+    expect(drawn.every((x) => x.date !== THU2 || x.startHour + x.hours <= 4)).toBe(true)
+  })
+
   it('spreadDays picks the middle of equal shares', () => {
     const days = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
     expect(spreadDays(days, 3)).toEqual(['2', '5', '8'])

@@ -148,11 +148,31 @@ for (const [hours, days, expected] of table) {
     J(late.sprint.queues.gil.map((p) => p.hours)) === '[4,4]',
     late.sprint.queues.gil
   )
-  const last = planAutoAssign(s, '2026-09-25', { newId }) // only Fri left
+  // Only Fri left — the sprint's last day, whose afternoon is kept free of meetings. 8h would run
+  // into it, so the meeting waits in the backlog; 4h fits the morning, in one piece.
+  const last = planAutoAssign(s, '2026-09-25', { newId })
   check(
-    'meeting: one day left → one piece there',
-    last.sprint.queues.gil.length === 1 && last.sprint.queues.gil[0].pin?.date === '2026-09-25',
+    'meeting: last day only, too long for its morning → stays in the backlog',
+    last.sprint.queues.gil.length === 0 &&
+      last.sprint.backlog.length === 1 &&
+      last.summary.meetingsTooLate === 1,
     last.sprint.queues.gil
+  )
+  const short = planAutoAssign(
+    {
+      ...s,
+      workItems: { ...s.workItems, 1: { ...s.workItems[1], remainingWork: 4 } },
+      backlog: [b('m', 1, 4)]
+    },
+    '2026-09-25',
+    { newId }
+  )
+  check(
+    'meeting: last day only, short enough → one piece there, in the morning',
+    short.sprint.queues.gil.length === 1 &&
+      short.sprint.queues.gil[0].pin?.date === '2026-09-25' &&
+      short.summary.meetingsTooLate === 0,
+    short.sprint.queues.gil
   )
 }
 

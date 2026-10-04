@@ -1,4 +1,4 @@
-import { effectiveCapacity } from '../scheduling'
+import { effectiveCapacity, layoutSprint } from '../scheduling'
 import type { Block, ISODate, Sprint } from '../types'
 import { round } from '../math'
 
@@ -69,6 +69,34 @@ export function meetingDays(sprint: Sprint, memberId: string, anchor: ISODate): 
         effectiveCapacity(sprint, memberId, day.date) > 0
     )
     .map((day) => day.date)
+}
+
+/** The sprint's last working day: review and retrospective, whose afternoon stays free. */
+export function lastWorkingDay(sprint: Sprint): ISODate | undefined {
+  return [...sprint.days].reverse().find((day) => day.capacity > 0)?.date
+}
+
+/**
+ * Whether any of these newly placed pieces runs into the second half of the sprint's last
+ * working day — measured on the calendar as drawn, so a meeting already at the start of that
+ * day, which pushes a new piece along, counts too.
+ */
+export function runsIntoLastAfternoon(
+  sprint: Sprint,
+  memberId: string,
+  pieces: Block[],
+  anchor: ISODate
+): boolean {
+  const last = lastWorkingDay(sprint)
+  if (!last || !pieces.some((piece) => piece.pin?.date === last)) return false
+  const middle = effectiveCapacity(sprint, memberId, last) / 2
+  const ids = new Set(pieces.map((piece) => piece.id))
+  return (layoutSprint(sprint, anchor)[memberId]?.segments ?? []).some(
+    (segment) =>
+      ids.has(segment.blockId) &&
+      segment.date === last &&
+      segment.startHour + segment.hours > middle + 1e-9
+  )
 }
 
 /**

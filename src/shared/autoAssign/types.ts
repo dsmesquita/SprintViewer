@@ -15,6 +15,11 @@ export interface AssignSummary {
   unsized: number
   /** Meetings spread over more than one day. */
   meetingsSplit: number
+  /**
+   * Meetings left in the backlog because only the sprint's last working day is left, and its
+   * morning is too short for them — its afternoon is kept free of meetings.
+   */
+  meetingsTooLate: number
   /** VAL tasks started straight after their DEV task. */
   valsChained: number
   /**

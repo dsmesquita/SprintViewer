@@ -26,6 +26,27 @@ describe('AutoAssignDialog', () => {
     expect(onApply).toHaveBeenCalledWith(allow)
   })
 
+  it('a meeting too long for the last morning says why it stays behind', () => {
+    // Only Friday 25, the sprint's last day, is left: 8h would run into its afternoon.
+    const s = sprint({
+      items: [item(1, { title: 'Meetings', assignedTo: 'Diogo Mesquita', remainingWork: 8 })],
+      backlog: [block('m', 1, 8)]
+    })
+    const allow = planAutoAssign(s, '2026-09-25', { newId: ids() })
+    render(
+      <AutoAssignDialog
+        sprint={s}
+        allow={allow}
+        keep={null}
+        onApply={() => {}}
+        onClose={() => {}}
+      />
+    )
+    expect(
+      screen.getByText(/^meeting stays in the backlog — only the sprint's last day is left/)
+    ).toBeInTheDocument()
+  })
+
   it('nothing to assign says why', () => {
     const s = sprint({ items: [item(2, { remainingWork: 2 })], backlog: [block('b', 2, 2)] })
     const allow = planAutoAssign(s, MON, { newId: ids() })

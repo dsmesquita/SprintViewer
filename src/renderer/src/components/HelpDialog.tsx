@@ -441,7 +441,11 @@ const SECTIONS: Section[] = [
           <li>
             <strong>Meetings</strong> (a task titled just "Meeting" or "Meetings", or starting with
             it and a colon, like "Meetings:: Tech talk + Others") are split into 2–5 pieces and
-            spread over the sprint, never on the first day.
+            spread over the sprint, never on the first day, and never in the second half of the
+            sprint&rsquo;s last working day — that afternoon is for the review and the
+            retrospective. A piece that would run into it goes on the other days instead; if the
+            last day is all that is left and its morning is too short, the meeting stays in the
+            backlog.
           </li>
           <li>
             A <strong>VAL</strong> task starts the hour its DEV task (under the same parent) ends,
