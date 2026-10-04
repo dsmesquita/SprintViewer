@@ -140,6 +140,23 @@ describe('refresh', () => {
     expect(state.sprint!.lastRefreshedAt).toBeDefined()
   })
 
+  it('a DEV task started since goes first today; the status says so, and Back undoes it', async () => {
+    useApp.setState({ today: WED })
+    fake.api.refreshSprint.mockResolvedValueOnce({
+      ok: true,
+      value: [
+        item(1, { remainingWork: 4 }),
+        item(2, { remainingWork: 3, completedWork: 1, title: 'DEV:: two' })
+      ]
+    } as never)
+    await useApp.getState().refresh()
+    const state = useApp.getState()
+    expect(state.sprint!.queues.diogo.map((b) => b.id)).toEqual(['b', 'a'])
+    expect(state.refreshStatus?.text).toBe('1 updated, 1 in progress first today')
+    useApp.getState().undo()
+    expect(useApp.getState().sprint!.queues.diogo.map((b) => b.id)).toEqual(['a', 'b'])
+  })
+
   describe('a new backlog task with hours already done by someone on the team', () => {
     const refreshWithDoneWork = async () => {
       fake.api.refreshSprint.mockResolvedValueOnce({

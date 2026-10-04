@@ -364,6 +364,12 @@ const SECTIONS: Section[] = [
           <li>A task with nothing left leaves the days ahead; its hours are drawn behind today.</li>
           <li>New tasks arrive in the backlog.</li>
           <li>
+            A <strong>DEV task in progress</strong> — hours done and hours left in TFS — is what its
+            person is working on, so it goes first today on its row: after anything pinned to the
+            start of the day, such as a meeting, and even if it was pinned somewhere else. Several
+            keep their order; anything on a locked day stays where it is.
+          </li>
+          <li>
             If tasks in the backlog have hours <strong>already done</strong> by someone on the team,
             you are asked once where those go: <em>Place on the calendar</em> draws them on that
             person's row, where they were worked; <em>Keep in the backlog</em> leaves them as a card

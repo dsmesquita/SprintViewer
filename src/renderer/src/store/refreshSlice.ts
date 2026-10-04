@@ -109,5 +109,6 @@ function describe(summary: RefreshSummary): string {
   if (summary.completed) parts.push(`${summary.completed} finished`)
   if (summary.added) parts.push(`${summary.added} new`)
   if (summary.missing) parts.push(`${summary.missing} no longer in the query`)
+  if (summary.startedFirst) parts.push(`${summary.startedFirst} in progress first today`)
   return parts.length === 0 ? 'Up to date' : parts.join(', ')
 }

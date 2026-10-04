@@ -3,6 +3,7 @@ import { appendToBacklog, removeBlocks, setBlockHours } from './blocks'
 import { pinReportedAt } from './mutations'
 import { layoutSprint, liveRecord, recordPast } from './scheduling'
 import { completedHours, isReportedOnly, plannedHours, reportedHours } from './sizing'
+import { tagOf } from './tags'
 import type { Block, ISODate, Segment, Sprint, WorkItem } from './types'
 import { round } from './math'
 
@@ -29,6 +30,8 @@ export interface RefreshSummary {
   added: number
   /** Work items the sprint holds that the query no longer returns. */
   missing: number
+  /** DEV tasks in progress moved to the start of today, on their row. */
+  startedFirst?: number
 }
 
 export interface RefreshResult {
@@ -125,7 +128,58 @@ export function applyRefresh(
     summary.updated++
   }
 
+  // What someone has started is what they are working on, so it goes first today.
+  const started = inProgressFirst(next)
+  next = started.sprint
+  if (started.moved > 0) summary.startedFirst = started.moved
+
   return { sprint: { ...next, lastRefreshedAt: new Date().toISOString() }, summary }
+}
+
+/**
+ * A DEV task with hours both done and left: someone has started it and not finished it, which
+ * is the task they are working on now.
+ */
+export function isInProgressDev(item: WorkItem | undefined): boolean {
+  return (
+    item !== undefined &&
+    !isContainerType(item.type) &&
+    tagOf(item.title) === 'DEV' &&
+    (completedHours(item) ?? 0) > 0 &&
+    item.remainingWork > 0
+  )
+}
+
+/**
+ * Moves every DEV task in progress to the front of its row's queue, so it starts at the first
+ * free hour of today — after done hours spilling onto today and anything pinned to the start
+ * of the day, such as a meeting. A pin of its own is dropped: it is being worked on now,
+ * whatever was planned for it. Several keep the order they had; anything on a locked day stays
+ * where it is, because nothing leaves a locked day.
+ */
+export function inProgressFirst(sprint: Sprint): { sprint: Sprint; moved: number } {
+  const locked = new Set(sprint.lockedDays ?? [])
+  const queues = { ...sprint.queues }
+  const moved = new Set<number>()
+
+  for (const [memberId, queue] of Object.entries(sprint.queues)) {
+    const starts = (block: Block): boolean =>
+      isInProgressDev(sprint.workItems[block.workItemId]) &&
+      !(block.pin && locked.has(block.pin.date))
+    const first = queue.filter(starts).map(({ pin: _pin, ...block }) => block)
+    if (first.length === 0) continue
+    const already = first.every((block, index) => {
+      const current = queue[index]
+      return current.id === block.id && current.pin === undefined
+    })
+    if (already) continue
+    queues[memberId] = [...first, ...queue.filter((block) => !starts(block))]
+    for (const block of first) moved.add(block.workItemId)
+  }
+
+  return moved.size === 0
+    ? { sprint, moved: 0 }
+    : { sprint: { ...sprint, queues }, moved: moved.size }
 }
 
 /**
