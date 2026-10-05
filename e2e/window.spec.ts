@@ -292,13 +292,25 @@ test('the Read me keeps one size; long sections and the contents scroll inside i
   const first = await size()
   const sections = dialog.locator('.help-toc-item')
   let scrolls = 0
+  let shots = 0
   for (let index = 0; index < (await sections.count()); index++) {
     await sections.nth(index).click()
     expect(await size()).toEqual(first)
     if (await body.evaluate((el) => el.scrollHeight > el.clientHeight)) scrolls++
+    // Every screenshot in the section loads from the packaged files, rather than a broken image.
+    const images = body.locator('.help-shot img')
+    for (let i = 0; i < (await images.count()); i++) {
+      const image = images.nth(i)
+      await image.scrollIntoViewIfNeeded()
+      await expect
+        .poll(() => image.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth))
+        .toBeGreaterThan(0)
+      shots++
+    }
   }
   // Some sections are longer than the dialog: those scroll inside it.
   expect(scrolls).toBeGreaterThan(0)
+  expect(shots).toBe(10)
 
   // In a small window the dialog shrinks to fit, and the contents list scrolls on its own.
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1024, 640))

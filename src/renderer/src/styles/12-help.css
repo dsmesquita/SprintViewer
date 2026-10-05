@@ -140,3 +140,22 @@
     flex-wrap: wrap;
   }
 }
+
+/* Screenshots: never wider than the column, a narrow one at its own size. */
+.help-shot {
+  margin: 12px 0 16px;
+}
+
+.help-shot img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.help-shot figcaption {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--text-2);
+}

@@ -124,6 +124,19 @@ describe('HelpDialog', () => {
     ).toBeDisabled()
   })
 
+  it('screenshots of the app sit in their sections, each with a caption', async () => {
+    render(<HelpDialog onClose={() => {}} />)
+    // The first section opens on the whole window.
+    const shot = screen.getByRole('img', { name: /a row per person/ })
+    expect(shot.closest('figure')).toHaveTextContent(/a row per person/)
+    expect(shot.getAttribute('src')).toMatch(/overview\.png/)
+    const notes = [...document.querySelectorAll<HTMLElement>('.help-toc-item')].find((item) =>
+      item.textContent?.trim().endsWith('Notes')
+    )!
+    await userEvent.setup().click(notes)
+    expect(screen.getByRole('img', { name: /Adding a note/ })).toBeInTheDocument()
+  })
+
   it('Close calls back', async () => {
     const onClose = vi.fn()
     render(<HelpDialog onClose={onClose} />)

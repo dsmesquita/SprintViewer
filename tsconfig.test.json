@@ -5,7 +5,8 @@
     "e2e/**/*",
     "vitest.config.ts",
     "playwright.config.ts",
-    "src/preload/*.d.ts"
+    "src/preload/*.d.ts",
+    "src/renderer/src/assets.d.ts"
   ],
   "compilerOptions": {
     "target": "ES2022",

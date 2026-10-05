@@ -1,3 +1,13 @@
+import addNote from '../assets/readme/add-note.png'
+import backlog from '../assets/readme/backlog.png'
+import blockMenu from '../assets/readme/block-menu.png'
+import blockWarning from '../assets/readme/block-warning.png'
+import dayMenu from '../assets/readme/day-menu.png'
+import exportCalendars from '../assets/readme/export-calendars.png'
+import keysAndMarks from '../assets/readme/keys-and-marks.png'
+import overview from '../assets/readme/overview.png'
+import settingsSprint from '../assets/readme/settings-sprint.png'
+import sprintsMenu from '../assets/readme/sprints-menu.png'
 import { useState, type ReactNode } from 'react'
 import { NOTE_CATEGORIES } from '@shared/notes'
 import { cx } from '../format'
@@ -80,6 +90,16 @@ function Keys({ children }: { children: ReactNode }): JSX.Element {
   return <kbd>{children}</kbd>
 }
 
+/** A screenshot of the app, with what it shows underneath. */
+function Shot({ src, caption }: { src: string; caption: string }): JSX.Element {
+  return (
+    <figure className="help-shot">
+      <img src={src} alt={caption} loading="lazy" />
+      <figcaption>{caption}</figcaption>
+    </figure>
+  )
+}
+
 const SECTIONS: Section[] = [
   {
     id: 'intro',
@@ -98,6 +118,10 @@ const SECTIONS: Section[] = [
           new tasks. Everything else — where blocks sit, notes, snapshots — is saved on this
           computer.
         </p>
+        <Shot
+          src={overview}
+          caption="A sprint mid-way: a row per person, a column per day cut into hours, the backlog on the right."
+        />
         <h4>First time here</h4>
         <ol>
           <li>
@@ -146,6 +170,11 @@ const SECTIONS: Section[] = [
           You can also right-click a day header and choose <em>Start sprint here…</em> to start the
           next sprint from that date.
         </p>
+        <p>
+          Every sprint you start is kept. The <strong>Sprints</strong> menu in the toolbar switches
+          between them.
+        </p>
+        <Shot src={sprintsMenu} caption="The Sprints menu: every sprint started, newest first." />
       </>
     )
   },
@@ -203,6 +232,18 @@ const SECTIONS: Section[] = [
             that starts before its DEV work ends. Hover it to see why.
           </li>
         </ul>
+        <Shot
+          src={keysAndMarks}
+          caption="The ⓘ in the corner: the keyboard shortcuts, and what the marks mean."
+        />
+        <Shot
+          src={blockWarning}
+          caption="A ⚠ on a block, and its tooltip: this VAL starts before its DEV work ends."
+        />
+        <Shot
+          src={exportCalendars}
+          caption="Several people picked with Ctrl+click, then right-clicked: export all their calendars."
+        />
         <h4>Zoom</h4>
         <p>
           Use <strong>−</strong> / <strong>+</strong> / <strong>Reset</strong> in the top-left
@@ -233,6 +274,10 @@ const SECTIONS: Section[] = [
           nobody on this squad — either nobody at all, or someone outside the team. Auto-assign
           leaves those alone.
         </p>
+        <Shot
+          src={backlog}
+          caption="The backlog: grouped under each story or bug, with the tag filters and Show hidden at the top."
+        />
         <h4>Person</h4>
         <p>Click someone's name: their capacity, hours planned against it, and their notes.</p>
         <h4>Task</h4>
@@ -302,6 +347,14 @@ const SECTIONS: Section[] = [
             hidden, even if it goes back to the backlog.
           </li>
         </ul>
+        <Shot
+          src={blockMenu}
+          caption="Right-click a block: split it, set its hours, add a note, or send it back."
+        />
+        <Shot
+          src={dayMenu}
+          caption="Right-click a day header: start a sprint there, or make it a day off or a half day for everyone."
+        />
         <h4>Set hours</h4>
         <p>
           Overrides the size TFS gives a task. The block shows a ✎ while a manual time is set, and a
@@ -570,6 +623,10 @@ const SECTIONS: Section[] = [
           Notes show in the person's panel and in the task panel. The <strong>Notes</strong> button
           in the toolbar exports them all to a Markdown file.
         </p>
+        <Shot
+          src={addNote}
+          caption="Adding a note: who it is about, a category, and the tasks it mentions."
+        />
       </>
     )
   },
@@ -614,6 +671,10 @@ const SECTIONS: Section[] = [
           <em>Use this sprint&rsquo;s settings as defaults</em> copy one tab into the other; Save
           writes both.
         </p>
+        <Shot
+          src={settingsSprint}
+          caption="Settings → This sprint: its name, the URL Refresh reads, its working day and its people."
+        />
         <ul>
           <li>
             <strong>Authentication</strong> (app only) — a Personal Access Token (stored encrypted,
