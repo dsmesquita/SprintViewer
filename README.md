@@ -5,6 +5,8 @@ working day cut into hours, and every TFS task a block you can drag. Work items 
 TFS / Azure DevOps Server query; the app reads them and writes back in one place only —
 creating Tasks under a User Story or Bug.
 
+![A sprint mid-way: a row per person, a column per day cut into hours, the backlog on the right](src/renderer/src/assets/readme/overview.png)
+
 Everything else is local. Sprints, snapshots and settings live in `%APPDATA%\SprintViewer` as
 plain JSON; the personal access token is encrypted with Windows DPAPI. The only network traffic
 is to your TFS server.
@@ -12,6 +14,15 @@ is to your TFS server.
 **How to use it** is documented inside the app: _Settings → Read me_, or _Read me_ on the start
 screen. Use **Load sample data** there to look around without connecting to TFS. Ideas raised
 but not built are in [ROADMAP.md](ROADMAP.md).
+
+<p>
+  <img src="src/renderer/src/assets/readme/keys-and-marks.png" width="52%" alt="The ⓘ in the calendar's corner: keyboard shortcuts, and what the marks on the calendar mean" />
+  &nbsp;
+  <img src="src/renderer/src/assets/readme/backlog.png" width="30%" alt="The backlog: tasks not yet planned, grouped under their story or bug, with tag filters" />
+</p>
+
+_Left: the ⓘ in the calendar's corner lists the shortcuts and what the marks mean. Right: the
+backlog, grouped under each story or bug, with tag filters._
 
 ## Working on it
 
